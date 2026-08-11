@@ -34,6 +34,10 @@ crash.*.log
 
 # Ansible temporary files
 *.retry
+*.vault_pass
+
+# Cloudflare Tunnel credentials (never commit)
+**/credentials.json
 
 # Environment variable files
 **/.env

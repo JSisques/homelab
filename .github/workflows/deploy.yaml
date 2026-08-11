@@ -59,12 +59,22 @@ jobs:
         run: |
           ansible-galaxy collection install -r requirements.yml
 
+      - name: Install yq
+        run: pip install yq
+
       - name: Generate inventory
-        run: ./scripts/generation/generate-inventory.sh
+        run: |
+          chmod +x scripts/generation/generate-inventory.sh
+          ./scripts/generation/generate-inventory.sh
 
       - name: Run Ansible
         working-directory: ansible
         run: |
           ansible-playbook \
             -i inventory/hosts.yml \
-            playbooks/site.yml
+            playbooks/site.yml \
+            -e "n8n_postgres_password=${N8N_POSTGRES_PASSWORD}" \
+            -e "cloudflared_credentials_json=${CLOUDFLARED_CREDS_JSON}"
+        env:
+          N8N_POSTGRES_PASSWORD: ${{ secrets.N8N_POSTGRES_PASSWORD }}
+          CLOUDFLARED_CREDS_JSON: ${{ secrets.CLOUDFLARED_CREDS_JSON }}
