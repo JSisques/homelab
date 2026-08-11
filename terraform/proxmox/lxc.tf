@@ -1,4 +1,3 @@
-```hcl
 resource "proxmox_virtual_environment_container" "monitoring" {
   node_name = var.proxmox_node
 
@@ -149,4 +148,3 @@ resource "proxmox_virtual_environment_container" "uptime_kuma" {
 
   started = true
 }
-```
