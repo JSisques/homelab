@@ -1,0 +1,38 @@
+---
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount point for the vault
+  ansible.builtin.file:
+    path: "{{ obsidian_vault_mount_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount the NAS NFS export
+  ansible.posix.mount:
+    path: "{{ obsidian_vault_mount_path }}"
+    src: "{{ obsidian_nas_export }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Create Obsidian application directory
+  ansible.builtin.file:
+    path: "{{ obsidian_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Obsidian Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/obsidian/compose.yaml"
+    dest: "{{ obsidian_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Obsidian
+  community.docker.docker_compose_v2:
+    project_src: "{{ obsidian_app_dir }}"
+    state: present
