@@ -53,6 +53,7 @@ scrape_configs:
 EOF
 
 # Per-service metrics, declared in config/services.yaml.
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 yq -r '
   .services
   | to_entries[]
@@ -66,6 +67,7 @@ yq -r '
 # mandatory Ansible baseline (see ansible/README.md) regardless of which
 # application is deployed there, so they're scraped from config/hosts.yaml
 # directly rather than from a per-service monitoring block.
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 HOST_IPS="$(yq -r '
   .hosts
   | to_entries[]

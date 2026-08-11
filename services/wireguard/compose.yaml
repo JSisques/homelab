@@ -12,10 +12,10 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Madrid
-      - SERVERURL=vpn.jsisques.net # REPLACE_WITH_REAL_ENDPOINT — see README
+      - SERVERURL=vpn.jsisques.net  # REPLACE_WITH_REAL_ENDPOINT — see README
       - SERVERPORT=51820
       - PEERS=5
-      - PEERDNS=192.168.1.26 # adguard-home: ad-blocking + *.home.arpa
+      - PEERDNS=192.168.1.26  # adguard-home: ad-blocking + *.home.arpa
       - INTERNAL_SUBNET=10.13.13.0
       - ALLOWEDIPS=192.168.1.0/24
 

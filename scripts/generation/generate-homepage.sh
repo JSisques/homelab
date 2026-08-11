@@ -24,6 +24,7 @@ mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating Homepage configuration..."
 
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 yq -y '
   .services
   | to_entries

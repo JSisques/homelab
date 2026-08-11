@@ -4,18 +4,18 @@
 # tier: internal service has an HTTP(S) UI but no Prometheus support —
 # see services/blackbox-exporter/README.md.
 - targets:
-    - "http://192.168.1.21:3000" # homepage
-    - "http://192.168.1.22:3001" # uptime-kuma
-    - "http://192.168.1.23:8080" # it-tools
-    - "http://192.168.1.24:5678" # n8n
-    - "http://192.168.1.26:3000" # adguard-home
+    - "http://192.168.1.21:3000"  # homepage
+    - "http://192.168.1.22:3001"  # uptime-kuma
+    - "http://192.168.1.23:8080"  # it-tools
+    - "http://192.168.1.24:5678"  # n8n
+    - "http://192.168.1.26:3000"  # adguard-home
   labels:
     module: http_2xx
 
 # pbs and k3s-server both terminate TLS with a self-signed cert; the k3s
 # apiserver also returns 401/403 unauthenticated, which still proves it's up.
 - targets:
-    - "https://192.168.1.30:8007" # pbs
-    - "https://192.168.1.31:6443" # k3s-server apiserver
+    - "https://192.168.1.30:8007"  # pbs
+    - "https://192.168.1.31:6443"  # k3s-server apiserver
   labels:
     module: http_2xx_insecure

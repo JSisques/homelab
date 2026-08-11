@@ -195,8 +195,8 @@ services:
     uptime:
       enabled: true
 
-    # No native /metrics — it's a static tools page. Covered by
-    # blackbox_exporter instead, see services/prometheus/blackbox-targets.yml.
+  # No native /metrics — it's a static tools page. Covered by
+  # blackbox_exporter instead, see services/prometheus/blackbox-targets.yml.
 
   n8n:
     name: n8n

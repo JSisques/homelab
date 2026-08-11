@@ -2,7 +2,7 @@ hosts:
   proxmox:
     type: server
     platform: proxmox
-    address: TBD # LAN IP not confirmed yet
+    address: TBD  # LAN IP not confirmed yet
     role:
       - hypervisor
 

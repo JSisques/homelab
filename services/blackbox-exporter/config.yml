@@ -4,7 +4,7 @@ modules:
     timeout: 5s
     http:
       valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-      valid_status_codes: [] # any 2xx
+      valid_status_codes: []  # any 2xx
       method: GET
 
   # For self-signed backends (PBS, the K3s apiserver) — same as http_2xx

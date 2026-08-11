@@ -8,4 +8,4 @@ k3s_node_ready_timeout: 120
 k3s_kubeconfig_local_path: "~/.kube/homelab-k3s.yaml"
 
 k3s_argocd_namespace: argocd
-k3s_argocd_install_manifest: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+k3s_argocd_install_manifest: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml  # yamllint disable-line rule:line-length

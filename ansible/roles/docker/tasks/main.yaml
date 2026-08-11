@@ -29,7 +29,10 @@
 
 - name: Configure Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ docker_apt_architecture }} signed-by={{ docker_apt_keyring }}] {{ docker_apt_repository }} {{ ansible_facts.distribution_release }} {{ docker_apt_channel }}"
+    repo: >-
+      deb [arch={{ docker_apt_architecture }}
+      signed-by={{ docker_apt_keyring }}] {{ docker_apt_repository }}
+      {{ ansible_facts.distribution_release }} {{ docker_apt_channel }}
     filename: docker
     state: present
     update_cache: true

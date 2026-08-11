@@ -24,12 +24,16 @@ mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating Terraform variables..."
 
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 SKIPPED="$(yq -r '.hosts | to_entries[] | select(.value.type == "lxc" or .value.type == "vm") | select(.value.address == "TBD") | .key' "${SOURCE}")"
 if [[ -n "${SKIPPED}" ]]; then
     echo "Warning: skipping hosts without a confirmed address (address: TBD):"
-    echo "${SKIPPED}" | sed 's/^/  - /'
+    while IFS= read -r host; do
+        echo "  - ${host}"
+    done <<<"${SKIPPED}"
 fi
 
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 yq '
   .hosts as $hosts
   | {

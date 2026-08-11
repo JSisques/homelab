@@ -4,7 +4,6 @@ resource "proxmox_virtual_environment_container" "lxc" {
   node_name = var.proxmox_node
 
   description = "Homelab ${each.key} service"
-  hostname    = each.key
 
   unprivileged = true
 
