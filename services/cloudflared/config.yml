@@ -1,0 +1,14 @@
+tunnel: REPLACE_WITH_TUNNEL_ID
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # sisqueslabs.com — public homelab apps
+  - hostname: gardenia.sisqueslabs.com
+    service: http://gardenia.home.arpa:3000
+
+  # jsisques.net — personal apps (add entries here as they're deployed)
+  # - hostname: <app>.jsisques.net
+  #   service: http://<internal-target>
+
+  # Anything not matched above is refused rather than silently routed.
+  - service: http_status:404

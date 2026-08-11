@@ -1,0 +1,46 @@
+---
+- name: Create Prometheus application directory
+  ansible.builtin.file:
+    path: "{{ prometheus_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Prometheus Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/compose.yaml"
+    dest: "{{ prometheus_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Prometheus configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/prometheus.yml"
+    dest: "{{ prometheus_app_dir }}/prometheus.yml"
+    mode: "0644"
+
+- name: Start Prometheus
+  community.docker.docker_compose_v2:
+    project_src: "{{ prometheus_app_dir }}"
+    state: present
+
+- name: Create Grafana application directory
+  ansible.builtin.file:
+    path: "{{ grafana_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Grafana Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/grafana/compose.yaml"
+    dest: "{{ grafana_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Grafana provisioning configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/grafana/config/"
+    dest: "{{ grafana_app_dir }}/config/"
+    mode: "0644"
+
+- name: Start Grafana
+  community.docker.docker_compose_v2:
+    project_src: "{{ grafana_app_dir }}"
+    state: present

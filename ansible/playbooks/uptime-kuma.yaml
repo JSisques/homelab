@@ -1,10 +1,10 @@
 ---
-- name: Deploy n8n
-  hosts: n8n
+- name: Deploy Uptime Kuma
+  hosts: uptime-kuma
   become: true
 
   roles:
     - common
     - node-exporter
     - docker
-    - n8n
+    - uptime-kuma

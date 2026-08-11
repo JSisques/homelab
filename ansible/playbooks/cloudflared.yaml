@@ -1,10 +1,10 @@
 ---
-- name: Deploy n8n
-  hosts: n8n
+- name: Deploy Cloudflare Tunnel
+  hosts: cloudflared
   become: true
 
   roles:
     - common
     - node-exporter
     - docker
-    - n8n
+    - cloudflared

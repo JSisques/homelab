@@ -1,0 +1,3 @@
+---
+prometheus_app_dir: /opt/prometheus
+grafana_app_dir: /opt/grafana
