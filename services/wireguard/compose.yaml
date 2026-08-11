@@ -1,0 +1,33 @@
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    restart: unless-stopped
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Madrid
+      - SERVERURL=vpn.jsisques.net # REPLACE_WITH_REAL_ENDPOINT — see README
+      - SERVERPORT=51820
+      - PEERS=5
+      - PEERDNS=192.168.1.26 # adguard-home: ad-blocking + *.home.arpa
+      - INTERNAL_SUBNET=10.13.13.0
+      - ALLOWEDIPS=192.168.1.0/24
+
+    ports:
+      - "51820:51820/udp"
+
+    volumes:
+      - wireguard-config:/config
+      - /lib/modules:/lib/modules:ro
+
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+
+volumes:
+  wireguard-config:

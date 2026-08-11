@@ -1,0 +1,11 @@
+---
+pbs_apt_keyring: /etc/apt/keyrings/proxmox-backup.gpg
+pbs_apt_key_url: https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg  # yamllint disable-line rule:line-length
+pbs_apt_repository: http://download.proxmox.com/debian/pbs
+pbs_apt_suite: bookworm
+pbs_apt_channel: pbs-no-subscription
+
+# Adjust to the NAS's real NFS export before running this role.
+pbs_nas_export: "192.168.0.111:/export/pbs"
+pbs_mount_path: /mnt/datastore/nas
+pbs_datastore_name: nas-backups

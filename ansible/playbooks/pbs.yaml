@@ -1,0 +1,7 @@
+---
+- name: Deploy Proxmox Backup Server
+  hosts: pbs
+  become: true
+
+  roles:
+    - pbs

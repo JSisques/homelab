@@ -3,4 +3,3 @@ dependencies:
   - role: common
   - role: node-exporter
   - role: promtail
-  - role: docker

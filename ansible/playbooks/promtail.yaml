@@ -1,0 +1,7 @@
+---
+- name: Deploy Promtail everywhere
+  hosts: all
+  become: true
+
+  roles:
+    - promtail
