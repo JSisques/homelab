@@ -1,6 +1,6 @@
 # Ansible
 
-This directory configures every LXC/VM host and deploys the application running on it, using Docker Compose files from `services/` as the single source of truth (except for the handful of roles — `pbs`, `promtail` — that install a native package instead of a container).
+This directory configures every LXC/VM host and deploys the application running on it, using Docker Compose files from `services/` as the single source of truth (except for the handful of roles — `pbs`, `promtail`, `k3s` — that install a native package instead of a container).
 
 ## Directory Structure
 
@@ -17,12 +17,12 @@ ansible/
 │   ├── site.yaml          # everything, in order
 │   ├── it-tools.yaml  n8n.yaml  monitoring.yaml  homepage.yaml
 │   ├── uptime-kuma.yaml  cloudflared.yaml  adguard-home.yaml
-│   ├── wireguard.yaml  pbs.yaml
+│   ├── wireguard.yaml  pbs.yaml  k3s-server.yaml
 │   └── promtail.yaml      # promtail alone, against every host
 └── roles/
     ├── common/  node-exporter/  promtail/  docker/    # mandatory baseline
     └── it-tools/  n8n/  monitoring/  homepage/  uptime-kuma/
-        cloudflared/  adguard-home/  wireguard/  pbs/
+        cloudflared/  adguard-home/  wireguard/  pbs/  k3s/
 ```
 
 ## Mandatory Baseline: Every Host Gets Node Exporter + Promtail
@@ -52,7 +52,7 @@ Because of this, playbooks only need to list the service role itself:
 
 Ansible resolves `it-tools`'s dependencies first, so the actual run order is `common → node-exporter → promtail → docker → it-tools` — automatically, every time, regardless of whether the playbook is run on its own or as part of `site.yaml`. Verified with `ansible-playbook --list-tasks` for every role in this repo. There is no way to deploy a service without also getting metrics and logs.
 
-**When adding a new role**, give it the same `meta/main.yml`. If the host doesn't run Docker — `pbs` is the current example, it's a native APT package, not a container — drop the `docker` dependency but keep `common`, `node-exporter`, and `promtail`.
+**When adding a new role**, give it the same `meta/main.yml`. If the host doesn't run Docker — `pbs` and `k3s` are the current examples, both native installs rather than containers — drop the `docker` dependency but keep `common`, `node-exporter`, and `promtail`.
 
 `promtail` itself only depends on `common` (an empty dependency chain would work too, but the base packages don't hurt). It's installed as a native systemd service via Grafana's APT repo rather than Docker specifically so it also works on `pbs`, which has no Docker at all. Don't add `promtail` to `promtail`'s own dependencies — an earlier version of this repo did, and Ansible ran `common`'s tasks twice per host because of it (role dependency de-duplication doesn't reach across nested dependency chains the way you'd expect). If you ever see a role's tasks listed twice in `--list-tasks`, that's the symptom to look for.
 

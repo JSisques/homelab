@@ -49,7 +49,7 @@ The intended inventory and service catalog live in `config/hosts.yaml` and `conf
 
 ### Kubernetes
 
-K3s runs on virtual machines and can be extended with Raspberry Pi nodes. Argo CD watches the repository and reconciles Kubernetes resources from Git.
+K3s runs as a single-node server on the `k3s-server` VM (`ansible/roles/k3s/`) and can be extended with worker VMs and/or the Raspberry Pi nodes already tagged `role: [k3s, worker]` in `config/hosts.yaml` — joining them as agents isn't built yet. Argo CD watches the repository and reconciles Kubernetes resources from Git; it's installed and empty until `Application` resources are applied.
 
 The Kubernetes tree is split into:
 

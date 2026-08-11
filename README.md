@@ -18,7 +18,7 @@ What exists so far:
 * A Cloudflare Tunnel (`services/cloudflared/`) scaffolded to route `sisqueslabs.com` and `jsisques.net` to internal services — the ingress rules are in Git, but the tunnel itself still needs a one-time manual setup (see `services/cloudflared/README.md`) before it can run for real.
 * A WireGuard VPN gateway (`services/wireguard/`) for internal-only remote access, and AdGuard Home for network-wide DNS/ad-blocking — both still need a one-time manual step outside Git (router port-forward + Dynamic DNS for WireGuard; nothing for AdGuard beyond its first-run wizard).
 * Proxmox Backup Server (`ansible/roles/pbs/`), backing up onto the NAS over NFS — installed as a native package (not Docker), on its own VM. The Proxmox VE side (registering PBS as a storage backend, the actual backup job) is still a manual one-time step; see `ansible/roles/pbs/README.md`.
-* Kubernetes/Argo CD manifests for Kafka (via Strimzi) under `kubernetes/` — the K3s cluster itself is not yet provisioned. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`.
+* A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it.
 * A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
 
@@ -128,7 +128,7 @@ homelab/
 │   └── roles/
 │       ├── common/  docker/  node-exporter/  promtail/
 │       ├── it-tools/  n8n/  monitoring/  homepage/  uptime-kuma/
-│       └── cloudflared/  adguard-home/  wireguard/  pbs/
+│       └── cloudflared/  adguard-home/  wireguard/  pbs/  k3s/
 │
 ├── kubernetes/
 │   ├── argocd/
@@ -173,7 +173,7 @@ make validate              # Terraform + Ansible + YAML + shell + Compose checks
 make status                # show current Terraform-managed infrastructure
 ```
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, and `monitoring` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`); see the matching role's README.
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`, `k3s-server`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, and `monitoring` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`); see the matching role's README.
 
 ## Configuration
 
@@ -263,11 +263,11 @@ Terraform answers *"what machines should exist?"*; Ansible answers *"how should 
 
 ## Kubernetes
 
-K3s is intended to run the cluster's workloads, on VMs and/or Raspberry Pi nodes, reconciled via Argo CD. This layer is defined (`kubernetes/infrastructure/kafka/` via Strimzi, `kubernetes/argocd/`) but the cluster itself has not been provisioned yet — see the Project Status section above.
+K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.1.31`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
 
 ### Helm / Argo CD
 
-Helm packages Kubernetes applications; Argo CD provides GitOps-based continuous delivery, reconciling what's committed to the repo with the running cluster.
+Helm packages Kubernetes applications; Argo CD provides GitOps-based continuous delivery, reconciling what's committed to the repo with the running cluster. The `k3s` Ansible role installs Argo CD (`argocd` namespace) as part of provisioning the node, but applies no `Application` resources — it comes up empty. `kubernetes/argocd/projects/homelab.yaml` (the `AppProject` everything should use) is ready to apply; `kubernetes/argocd/applications/kafka.yaml` is **not** — see the comment at the top of that file for why (missing Strimzi operator wiring, more capacity needed than a single node has). See `ansible/roles/k3s/README.md` for how to reach the Argo CD UI.
 
 ## Observability
 
@@ -314,12 +314,13 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, uptime-kuma, Kafka, Cloudflare Tunnel, WireGuard, AdGuard Home, Proxmox Backup Server, Gardenia on Kubernetes. The next priorities:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Proxmox Backup Server, a single-node K3s server with Argo CD. The next priorities:
 
+* **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
+* **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.
 * **NAS-backed application storage** — PBS now uses the NAS for backups; a general S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) for application data is still open.
 * **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
 * **Authelia / Authentik** — SSO in front of exposed apps.
-* **K3s nodes** — `config/hosts.yaml` has no `type: vm` entries for K3s yet, so Kafka/Argo CD have nowhere to run. Same mechanism as `pbs` (generic `vm_nodes`), just needs the entries and a `k3s` Ansible role.
 
 This list will grow as needs are identified — the intent is that any new service gets an entry in `config/services.yaml`, a home in `terraform/`/`ansible/`/`services/`/`kubernetes/` depending on how it's deployed, and a tier from the [Domains](#domains-and-network-access) table above.
 
