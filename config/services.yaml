@@ -87,7 +87,7 @@ services:
     icon: homepage.png
 
     homepage:
-      enabled: false # Homepage does not need to link to itself
+      enabled: false  # Homepage does not need to link to itself
       description: Central dashboard for homelab services
 
     uptime:
@@ -96,7 +96,7 @@ services:
   gardenia:
     name: Gardenia
     category: Applications
-    tier: public # deployed on Kubernetes, exposed via Cloudflare Tunnel
+    tier: public  # deployed on Kubernetes, exposed via Cloudflare Tunnel
     url: https://gardenia.sisqueslabs.com
     icon: mdi-sprout
 
@@ -126,13 +126,12 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      target: it-tools-exporter:8080
-      path: /metrics
+      endpoint: http://it-tools-exporter:8080/metrics
 
   n8n:
     name: n8n
     category: Automation
-    tier: internal # exposed only through VPN/reverse proxy per services/n8n/README.md
+    tier: internal  # exposed only via VPN/reverse proxy, see services/n8n
     url: https://n8n.home.arpa
     icon: n8n.png
 
@@ -146,5 +145,4 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      target: n8n-exporter:8080
-      path: /metrics
+      endpoint: http://n8n-exporter:8080/metrics

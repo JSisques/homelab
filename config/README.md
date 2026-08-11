@@ -60,8 +60,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      target: grafana:3000
-      path: /metrics
+      endpoint: http://grafana:3000/metrics
 
     uptime:
       enabled: true
@@ -94,8 +93,10 @@ tier: internal
 Valid values:
 
 * `internal` — LAN/VPN only, served under `*.home.arpa`, never given a public DNS record or Cloudflare route.
-* `personal` — personal-facing service, served under `*.jsisques.net`.
-* `public` — public homelab app, served under `*.sisqueslabs.com` and exposed through Cloudflare Tunnel.
+* `personal` — personal-facing service, served under `*.jsisques.net`, exposed through Cloudflare Tunnel.
+* `public` — public homelab app, served under `*.sisqueslabs.com`, exposed through Cloudflare Tunnel.
+
+Both `personal` and `public` services must get a matching `ingress` entry in `services/cloudflared/config.yml`; `internal` services must not.
 
 Default to `internal` unless a service has a deliberate reason to be reachable from outside the home network.
 
@@ -117,8 +118,7 @@ The `monitoring` section describes how the service should be monitored by Promet
 monitoring:
   enabled: true
   type: prometheus
-  target: grafana:3000
-  path: /metrics
+  endpoint: http://grafana:3000/metrics
 ```
 
 This information is consumed by:

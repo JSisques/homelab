@@ -1,8 +1,41 @@
+# This file is generated.
+# Do not edit manually.
+# Source: config/services.yaml
+
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: prometheus
+  - job_name: "proxmox"
     static_configs:
       - targets:
-          - localhost:9090
+          - "prometheus-pve-exporter:9221"
+  - job_name: "grafana"
+    static_configs:
+      - targets:
+          - "grafana:3000"
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "prometheus:9090"
+  - job_name: "kafka"
+    static_configs:
+      - targets:
+          - "kafka-exporter:9308"
+  - job_name: "uptime-kuma"
+    static_configs:
+      - targets:
+          - "uptime-kuma:3001"
+  - job_name: "gardenia"
+    static_configs:
+      - targets:
+          - "gardenia:3000"
+  - job_name: "it-tools"
+    static_configs:
+      - targets:
+          - "it-tools-exporter:8080"
+  - job_name: "n8n"
+    static_configs:
+      - targets:
+          - "n8n-exporter:8080"

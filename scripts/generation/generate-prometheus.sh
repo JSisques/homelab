@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 SOURCE="${ROOT_DIR}/config/services.yaml"
-OUTPUT_DIR="${ROOT_DIR}/services/prometheus/config"
+OUTPUT_DIR="${ROOT_DIR}/services/prometheus"
 OUTPUT="${OUTPUT_DIR}/prometheus.yml"
 
 if ! command -v yq >/dev/null 2>&1; then
@@ -41,8 +41,8 @@ yq -r '
   | to_entries[]
   | select(.value.monitoring.enabled == true)
   | select(.value.monitoring.type == "prometheus")
-  |
-  "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets:\n          - \"\(.value.monitoring.endpoint | sub(\"^https?://\"; \"\") | sub(\"/metrics$\"; \"\") | sub(\"/pve$\"; \"\"))\""
+  | (.value.monitoring.endpoint | sub("^https?://"; "") | sub("/metrics$"; "") | sub("/pve$"; "")) as $target
+  | "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets:\n          - \"\($target)\""
 ' "${SOURCE}" >> "${OUTPUT}"
 
 echo ""

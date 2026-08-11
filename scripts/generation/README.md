@@ -138,9 +138,15 @@ Generates Prometheus configuration based on the services that expose metrics.
 
 ## Requirements
 
-The generation scripts are written in POSIX-compatible shell/Bash and use `yq` for YAML processing.
+The generation scripts are written in POSIX-compatible shell/Bash and use [`yq`](https://github.com/kislyuk/yq) — the Python/jq wrapper, **not** mikefarah's Go `yq` — for YAML processing, since they rely on jq filter syntax (`to_entries`, `group_by`, `sub()`, ...).
 
-Install `yq` before running the scripts.
+Install it with:
+
+```bash
+pip install yq
+```
+
+GitHub Actions runners ship mikefarah's `yq` by default, which is not compatible with these scripts. CI installs the correct one explicitly before running them.
 
 The scripts should fail with a clear error message if required dependencies are missing.
 

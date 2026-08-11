@@ -42,7 +42,7 @@ yq -y '
                 }
                 | with_entries(select(.value != null))
               )
-            )
+            })
             | add
           )
         }

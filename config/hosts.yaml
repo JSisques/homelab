@@ -49,6 +49,13 @@ hosts:
     role:
       - n8n
 
+  cloudflared:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.25
+    role:
+      - cloudflared
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
