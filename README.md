@@ -154,9 +154,28 @@ homelab/
 │
 ├── website/
 │
-└── .github/
-    └── workflows/
+├── .github/
+│   └── workflows/
+│
+└── Makefile
 ```
+
+## Deployment
+
+The root `Makefile` wraps Terraform, Ansible, and the `config/` generators behind a small set of targets — run `make help` for the full list.
+
+```bash
+make generate           # regenerate everything derived from config/ (inventory, Terraform vars, Homepage, Prometheus)
+make plan                # terraform plan
+make apply                # terraform apply — provisions/updates every LXC and VM
+make deploy               # apply + deploy EVERY service (Terraform apply, then the full Ansible site.yaml)
+make deploy-n8n           # deploy a single service only (see `make services` for the full list)
+make ping                 # check SSH/Ansible connectivity to every host
+make validate              # Terraform + Ansible + YAML + shell + Compose checks, all in one
+make status                # show current Terraform-managed infrastructure
+```
+
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `monitoring` (Prometheus + Grafana), `homepage`, `uptime-kuma`, `cloudflared` — it only runs that one playbook, not the whole fleet. `n8n` and `cloudflared` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`); see `ansible/roles/n8n/README.md` and `ansible/roles/cloudflared/README.md`.
 
 ## Configuration
 
@@ -172,6 +191,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.23
+    cpu: 2
+    memory: 1024
+    disk: 8
     role:
       - it-tools
 
@@ -184,7 +206,14 @@ hosts:
       - worker
 ```
 
-This is the single source of truth consumed by Terraform (`lxc_network` in `terraform.tfvars`), and by Ansible via `scripts/generation/generate-inventory.sh`, which turns it into `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together).
+`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't.
+
+This is the **only** place addresses and sizing are written down. Two generators consume it, and neither is edited by hand:
+
+* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `k3s_nodes`, auto-loaded by Terraform — no more copy-pasting IPs into `terraform.tfvars`).
+* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together).
+
+A host with `address: TBD` (like `proxmox` today) is skipped by both, with a warning, instead of generating a broken config.
 
 ### Services
 
@@ -224,7 +253,7 @@ Note: some entries in `services.yaml` (`kafka`, `uptime-kuma`, `gardenia`, `prox
 
 ### Terraform
 
-Terraform provisions infrastructure on Proxmox: virtual machines, LXC containers, CPU/memory/disk allocation, networking, and cloud-init metadata. It uses the [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) provider (see `terraform/proxmox/`). Every LXC is provisioned generically from the `lxc_network` map (`for_each`), so adding a new service's LXC is a one-entry change in `terraform.tfvars`, not new HCL.
+Terraform provisions infrastructure on Proxmox: virtual machines, LXC containers, CPU/memory/disk allocation, networking, and cloud-init metadata. It uses the [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) provider (see `terraform/proxmox/`). Every LXC is provisioned generically from the `lxc_network` map (`for_each`), generated straight from `config/hosts.yaml` — adding a new service's LXC is a `config/hosts.yaml` entry, not new HCL.
 
 Terraform defines **what infrastructure exists** — it does not configure the OS or deploy applications.
 
@@ -256,6 +285,8 @@ Observability is meant to be centralized rather than deploying a separate monito
 ```
 
 Prometheus (a standalone Compose service, see `services/prometheus/`, deployed by the `monitoring` Ansible role) collects metrics from hosts, containers, VMs, and — once provisioned — Kubernetes nodes and workloads. Its scrape config is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh`. Grafana provides centralized dashboards from `services/grafana/`, deployed by the same role.
+
+Host-level metrics are non-negotiable: every Ansible service role depends on the `node-exporter` role (via `meta/main.yml`), so any LXC or VM deployed through Ansible gets Node Exporter automatically, with no per-playbook opt-in. See `ansible/README.md`.
 
 ## Uptime Monitoring & Homepage
 
