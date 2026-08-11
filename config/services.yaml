@@ -10,6 +10,11 @@ services:
       enabled: true
       description: Virtualization platform
 
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://prometheus-pve-exporter:9221/pve
+
   grafana:
     name: Grafana
     category: Monitoring
@@ -19,6 +24,11 @@ services:
     homepage:
       enabled: true
       description: Monitoring dashboards
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://grafana:3000/metrics
 
   prometheus:
     name: Prometheus
@@ -30,6 +40,11 @@ services:
       enabled: true
       description: Metrics and monitoring
 
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://prometheus:9090/metrics
+
   kafka:
     name: Kafka
     category: Infrastructure
@@ -39,6 +54,11 @@ services:
     homepage:
       enabled: true
       description: Event streaming platform
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://kafka-exporter:9308/metrics
 
   uptime-kuma:
     name: Uptime Kuma
@@ -50,6 +70,11 @@ services:
       enabled: true
       description: Service monitoring
 
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://uptime-kuma:3001/metrics
+
   gardenia:
     name: Gardenia
     category: Applications
@@ -59,3 +84,8 @@ services:
     homepage:
       enabled: true
       description: Garden management platform
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://gardenia:3000/metrics
