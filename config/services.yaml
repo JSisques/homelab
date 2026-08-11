@@ -148,6 +148,14 @@ services:
     uptime:
       enabled: true
 
+    # No native /metrics — Homepage is a static dashboard. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
+
   adguard-home:
     name: AdGuard Home
     category: Networking
@@ -165,6 +173,14 @@ services:
 
     uptime:
       enabled: true
+
+    # No native /metrics — AdGuard Home has no Prometheus support. Probed
+    # by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
 
   traefik:
     name: Traefik
@@ -219,8 +235,13 @@ services:
     uptime:
       enabled: true
 
-  # No native /metrics — it's a static tools page. Covered by
-  # blackbox_exporter instead, see services/prometheus/blackbox-targets.yml.
+    # No native /metrics — it's a static tools page. Covered by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
 
   n8n:
     name: n8n
@@ -243,4 +264,45 @@ services:
     # No native Prometheus endpoint wired up here (n8n has an optional
     # N8N_METRICS flag worth checking against current docs — not enabled
     # in services/n8n/compose.yml). Covered by blackbox_exporter for now,
-    # see services/prometheus/blackbox-targets.yml.
+    # see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 5678
+      scheme: http
+      module: http_2xx
+
+  pbs:
+    name: Proxmox Backup Server
+    category: Infrastructure
+    tier: internal
+    # Not yet in Homepage/Traefik/Uptime Kuma — this is a minimal catalog
+    # entry that exists only so pbs can opt into blackbox_exporter probing.
+    # The host itself (address, sizing) lives in config/hosts.yaml; the
+    # "pbs" key here matches that host key directly, no role fallback
+    # needed. Self-signed TLS, hence the *_insecure module.
+
+    # No native /metrics — PBS has no Prometheus support. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8007
+      scheme: https
+      module: http_2xx_insecure
+
+  k3s-server:
+    name: K3s API Server
+    category: Infrastructure
+    tier: internal
+    # Same rationale as pbs above: minimal catalog entry only for
+    # blackbox_exporter, matching the "k3s-server" host key in
+    # config/hosts.yaml directly. The apiserver returns 401/403
+    # unauthenticated, which the *_insecure module still counts as "up".
+
+    # No native /metrics scraped here — the K3s apiserver isn't covered by
+    # a `monitoring:` block yet. Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 6443
+      scheme: https
+      module: http_2xx_insecure

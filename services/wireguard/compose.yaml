@@ -15,8 +15,13 @@ services:
       - SERVERURL=vpn.jsisques.net  # REPLACE_WITH_REAL_ENDPOINT — see README
       - SERVERPORT=51820
       - PEERS=5
-      - PEERDNS=192.168.1.26  # adguard-home: ad-blocking + *.home.arpa
+      # adguard-home's LAN address for ad-blocking + *.home.arpa — see the
+      # "adguard-home" host in config/hosts.yaml if it ever changes.
+      - PEERDNS=192.168.1.26
       - INTERNAL_SUBNET=10.13.13.0
+      # The whole LAN subnet every host in config/hosts.yaml lives on, not
+      # a single host's address — not something a generator would help
+      # with, left hardcoded.
       - ALLOWEDIPS=192.168.1.0/24
 
     ports:

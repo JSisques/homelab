@@ -1,4 +1,6 @@
 ---
+# The "monitoring" host in config/hosts.yaml — update this if that
+# host's address ever changes.
 promtail_loki_url: http://192.168.1.20:3100/loki/api/v1/push
 promtail_config_path: /etc/promtail/config.yml
 

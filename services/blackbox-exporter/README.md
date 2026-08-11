@@ -6,9 +6,9 @@ Runs on the shared `monitoring` LXC alongside Prometheus, Grafana, Loki, and Ale
 
 ## How it fits together
 
-Prometheus scrapes `blackbox-exporter:9115/probe` with the target and module passed as query params, rather than scraping the target directly. The target list lives in [`../prometheus/blackbox-targets.yml`](../prometheus/blackbox-targets.yml), a hand-authored `file_sd_config` — Prometheus watches this file directly, so adding a target only needs a Prometheus reload (or `docker compose restart prometheus`), not a full `make generate`.
+Prometheus scrapes `blackbox-exporter:9115/probe` with the target and module passed as query params, rather than scraping the target directly. The target list lives in [`../prometheus/blackbox-targets.yml`](../prometheus/blackbox-targets.yml), a generated `file_sd_config` — Prometheus watches this file directly, so a reload (or `docker compose restart prometheus`) picks up changes without a Prometheus restart, but the file itself is produced by `scripts/generation/generate-blackbox.sh` from `config/services.yaml`/`config/hosts.yaml` and should not be hand-edited.
 
-`scripts/generation/generate-prometheus.sh` emits a static `blackbox` scrape job (relabeling `__address__`/`__param_target`/`instance`/`__param_module`) that points at that file — see that script and [`../prometheus/README.md`](../prometheus/README.md).
+`scripts/generation/generate-prometheus.sh` emits a static `blackbox` scrape job (relabeling `__address__`/`__param_target`/`instance`/`__param_module`) that points at that file — see that script, `scripts/generation/generate-blackbox.sh`, and [`../prometheus/README.md`](../prometheus/README.md).
 
 ## Modules (`config.yml`)
 
@@ -18,7 +18,7 @@ Prometheus scrapes `blackbox-exporter:9115/probe` with the target and module pas
 
 ## Adding a target
 
-Add an entry to [`../prometheus/blackbox-targets.yml`](../prometheus/blackbox-targets.yml) under the group matching the module you need (or add a new group). No script or generator needs to change.
+Add a `blackbox: {enabled: true, port: <n>, scheme: http|https, module: <name>}` block to the service's entry in `config/services.yaml` and run `make generate` (or `./scripts/generation/generate-blackbox.sh` directly) — do not hand-edit [`../prometheus/blackbox-targets.yml`](../prometheus/blackbox-targets.yml), it's regenerated from that catalog. The backend address is resolved from `config/hosts.yaml` the same way Traefik does it (host key first, then `role`).
 
 ## Deployment
 

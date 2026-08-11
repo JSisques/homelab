@@ -12,7 +12,7 @@ services/prometheus/
 ├── compose.yaml
 ├── prometheus.yml          # generated — do not edit
 ├── alerts.yml              # hand-authored
-└── blackbox-targets.yml    # hand-authored
+└── blackbox-targets.yml    # generated — do not edit
 ```
 
 ## Configuration
@@ -35,7 +35,7 @@ Every service and host in the homelab is scraped one of three ways:
 
 1. **Native `/metrics`** — any service with `monitoring.enabled: true` and `monitoring.type: prometheus` in `config/services.yaml` gets a scrape job automatically.
 2. **Host-level agents** — every `type: lxc`/`type: vm` host in `config/hosts.yaml` gets `node-exporter` (`:9100`) and `promtail` (`:9080`) scrape targets automatically, since both are a mandatory Ansible baseline on every host (see [`ansible/README.md`](../../ansible/README.md)) regardless of which application is deployed there.
-3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (e.g. IT-Tools, n8n, AdGuard Home) are probed for up/down + latency instead. Targets live in `blackbox-targets.yml`, see [`../blackbox-exporter/README.md`](../blackbox-exporter/README.md).
+3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (e.g. IT-Tools, n8n, AdGuard Home) are probed for up/down + latency instead. Targets live in `blackbox-targets.yml`, generated from each service's `blackbox:` block in `config/services.yaml` by `scripts/generation/generate-blackbox.sh`, see [`../blackbox-exporter/README.md`](../blackbox-exporter/README.md).
 
 ## Deployment
 

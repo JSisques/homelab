@@ -96,9 +96,10 @@ fi
 
 # Services with no native /metrics endpoint (a static tools page, a DNS
 # server with no Prometheus support, ...) still get basic up/down +
-# latency via blackbox_exporter. Targets live in blackbox-targets.yml
-# (hand-authored, not generated) so adding one doesn't require touching
-# this script — see services/blackbox-exporter/README.md.
+# latency via blackbox_exporter. Targets live in blackbox-targets.yml,
+# generated separately by generate-blackbox.sh from each service's
+# `blackbox:` block, so adding one doesn't require touching this script —
+# see services/blackbox-exporter/README.md.
 cat >> "${OUTPUT}" <<'EOF'
   - job_name: "blackbox"
     metrics_path: /probe
