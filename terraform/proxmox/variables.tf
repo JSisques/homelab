@@ -8,3 +8,14 @@ variable "k3s_nodes" {
     ip            = string
   }))
 }
+
+variable "lxc_network" {
+  description = "Network and resource configuration for LXC containers"
+
+  type = map(object({
+    ip     = string
+    cores  = number
+    memory = number
+    disk   = number
+  }))
+}

@@ -1,0 +1,22 @@
+lxc_network = {
+  monitoring = {
+    ip     = "192.168.1.20"
+    cores  = 4
+    memory = 4096
+    disk   = 32
+  }
+
+  homepage = {
+    ip     = "192.168.1.21"
+    cores  = 2
+    memory = 1024
+    disk   = 8
+  }
+
+  uptime-kuma = {
+    ip     = "192.168.1.22"
+    cores  = 2
+    memory = 1024
+    disk   = 8
+  }
+}
