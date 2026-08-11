@@ -19,7 +19,9 @@ hosts:
     address: 192.168.1.20
     cpu: 2
     memory: 2560
-    disk: 48
+    # OS + Docker images + retained Prometheus/Loki data (~15GB at
+    # typical retention settings, see prometheus.yml/config.yml).
+    disk: 20
     role:
       - prometheus
       - grafana
@@ -32,7 +34,7 @@ hosts:
     address: 192.168.1.21
     cpu: 1
     memory: 256
-    disk: 8
+    disk: 4
     role:
       - homepage
 
@@ -42,7 +44,7 @@ hosts:
     address: 192.168.1.22
     cpu: 1
     memory: 512
-    disk: 8
+    disk: 4
     role:
       - uptime-kuma
 
@@ -52,7 +54,7 @@ hosts:
     address: 192.168.1.23
     cpu: 1
     memory: 256
-    disk: 8
+    disk: 4
     role:
       - it-tools
 
@@ -62,7 +64,7 @@ hosts:
     address: 192.168.1.24
     cpu: 2
     memory: 2560
-    disk: 32
+    disk: 16
     role:
       - n8n
 
@@ -74,7 +76,7 @@ hosts:
     # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
     # so this can't be trimmed as far as the other LXCs.
     memory: 2048
-    disk: 20
+    disk: 8
     role:
       - obsidian
 
@@ -87,7 +89,7 @@ hosts:
     # becomes the common case.
     cpu: 2
     memory: 1536
-    disk: 16
+    disk: 10
     role:
       - jellyfin
 
@@ -97,7 +99,7 @@ hosts:
     address: 192.168.1.25
     cpu: 1
     memory: 128
-    disk: 8
+    disk: 4
     role:
       - cloudflared
 
@@ -107,7 +109,7 @@ hosts:
     address: 192.168.1.26
     cpu: 1
     memory: 256
-    disk: 8
+    disk: 4
     role:
       - adguard-home
 
@@ -117,7 +119,7 @@ hosts:
     address: 192.168.1.28
     cpu: 1
     memory: 256
-    disk: 8
+    disk: 4
     role:
       - traefik
 
@@ -152,7 +154,7 @@ hosts:
     # as workers and take workload off this node.
     cpu: 2
     memory: 3072
-    disk: 50
+    disk: 30
     role:
       - k3s
       - server
