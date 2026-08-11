@@ -59,7 +59,7 @@ The Kubernetes tree is split into:
 
 ### Services Outside Kubernetes
 
-Some services run directly on VMs or LXC containers. Prometheus is currently described by `services/prometheus/compose.yaml`, with its data stored in the Docker volume `prometheus-data`. Grafana and Homepage are provisioned from the `services/` directory.
+Most services run directly on dedicated LXC containers rather than Kubernetes: Prometheus and Grafana (both on the shared `monitoring` LXC), Homepage, IT-Tools, n8n, Uptime Kuma, and the `cloudflared` tunnel. Each has a matching directory under `services/` (the Compose source of truth) and an Ansible role under `ansible/roles/` that deploys it unmodified. Prometheus stores its data in the Docker volume `prometheus-data`.
 
 ## Data and Control Flow
 
@@ -81,7 +81,7 @@ Git repository
 - Ansible should configure hosts and standalone services, not replace Argo CD for Kubernetes workloads.
 - Kubernetes stateful workloads must declare storage explicitly.
 - Secrets must be injected through the selected secret-management process and never committed in plaintext.
-- Public access should terminate at the reverse proxy or Cloudflare boundary; internal services should remain private.
+- Public access terminates at the Cloudflare Tunnel (`services/cloudflared/`, deployed on its own LXC). It is the only ingress path for `tier: public` (`sisqueslabs.com`) and `tier: personal` (`jsisques.net`) services; `tier: internal` (`*.home.arpa`) services must never get an entry in its ingress config and stay reachable only over the LAN/VPN.
 
 ## Source of Truth
 

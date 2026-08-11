@@ -12,12 +12,15 @@ The homelab should be recoverable from scratch by deploying the desired state de
 
 What exists so far:
 
-* Terraform configuration for Proxmox (`terraform/proxmox/`) — not yet applied to a running cluster.
-* Ansible roles and playbooks for a handful of services (`n8n`, `it-tools`) plus base host setup (`common`, `docker`, `node-exporter`).
-* Standalone Docker Compose definitions for `prometheus`, `grafana`, `homepage`, `it-tools`, and `n8n` under `services/`.
+* Terraform configuration for Proxmox (`terraform/proxmox/`) that provisions every LXC declaratively from `lxc_network` — not yet applied to a running cluster.
+* Ansible roles and playbooks for every LXC-based service (`it-tools`, `n8n`, `monitoring` [Prometheus + Grafana], `homepage`, `uptime-kuma`, `cloudflared`) plus base host setup (`common`, `docker`, `node-exporter`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
+* Standalone Docker Compose definitions for `prometheus`, `grafana`, `homepage`, `it-tools`, `n8n`, `uptime-kuma`, and `cloudflared` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config.
+* A Cloudflare Tunnel (`services/cloudflared/`) scaffolded to route `sisqueslabs.com` and `jsisques.net` to internal services — the ingress rules are in Git, but the tunnel itself still needs a one-time manual setup (see `services/cloudflared/README.md`) before it can run for real.
 * Kubernetes/Argo CD manifests for Kafka (via Strimzi) under `kubernetes/` — the K3s cluster itself is not yet provisioned. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`.
 * A NAS already exists on the local network (`config/hosts.yaml`) and is the intended backing store for shared/persistent data once a storage layer is built on top of it.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
+
+None of this has been applied to real infrastructure yet — `terraform apply`/the `deploy.yaml` workflow have not been run. Treat everything above as "ready to deploy," not "deployed."
 
 As pieces go from "defined in Git" to "actually running," this README and `docs/` should be updated to reflect it.
 
@@ -93,12 +96,12 @@ Services are split across three access tiers, depending on who they're for and h
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
 | Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n |
-| Personal | `jsisques.net` | Personal-facing services and projects | Personal apps/site |
+| Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia (Kubernetes) |
 
 Each service's tier is declared explicitly via the `tier` field in `config/services.yaml` (see [`config/README.md`](config/README.md#tier)) — nothing is public by default.
 
-`home.arpa` is the [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375) reserved name for home networks and is used for anything that should stay LAN/VPN-only — it never gets a public DNS record or a Cloudflare route. `jsisques.net` and `sisqueslabs.com` are real domains routed through Cloudflare Tunnel for services that are meant to be reachable from outside the home network.
+`home.arpa` is the [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375) reserved name for home networks and is used for anything that should stay LAN/VPN-only — it never gets a public DNS record or a Cloudflare route. `jsisques.net` and `sisqueslabs.com` are both routed through the **same** Cloudflare Tunnel (`services/cloudflared/`), which terminates on a dedicated LXC and forwards each hostname to its internal target per `services/cloudflared/config.yml`. No inbound ports are opened on the home network for this.
 
 `config/services.yaml` should be updated to reflect which tier each service belongs to as the domain scheme is rolled out; today it still uses `home.arpa` as a placeholder for all services.
 
@@ -116,8 +119,14 @@ homelab/
 │   └── proxmox/
 │
 ├── ansible/
+│   ├── ansible.cfg
+│   ├── requirements.yml
+│   ├── inventory/          # generated from config/hosts.yaml, do not edit
 │   ├── playbooks/
 │   └── roles/
+│       ├── common/  docker/  node-exporter/
+│       ├── it-tools/  n8n/  monitoring/  homepage/
+│       └── uptime-kuma/  cloudflared/
 │
 ├── kubernetes/
 │   ├── argocd/
@@ -129,7 +138,9 @@ homelab/
 │   ├── grafana/
 │   ├── homepage/
 │   ├── it-tools/
-│   └── n8n/
+│   ├── n8n/
+│   ├── uptime-kuma/
+│   └── cloudflared/
 │
 ├── scripts/
 │   ├── bootstrap/
@@ -153,10 +164,17 @@ The `config/` directory contains the high-level desired state of the homelab. Se
 
 ### Hosts
 
-`config/hosts.yaml` describes the machines that should exist. Today it only lists the two Raspberry Pi nodes; Proxmox itself, VMs, and the NAS still need to be added here as they're provisioned.
+`config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `cloudflared`), and the two Raspberry Pi K3s workers.
 
 ```yaml
 hosts:
+  it-tools:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.23
+    role:
+      - it-tools
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
@@ -166,7 +184,7 @@ hosts:
       - worker
 ```
 
-This information can be consumed by Terraform and Ansible to provision and configure the corresponding hosts.
+This is the single source of truth consumed by Terraform (`lxc_network` in `terraform.tfvars`), and by Ansible via `scripts/generation/generate-inventory.sh`, which turns it into `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together).
 
 ### Services
 
@@ -206,7 +224,7 @@ Note: some entries in `services.yaml` (`kafka`, `uptime-kuma`, `gardenia`, `prox
 
 ### Terraform
 
-Terraform provisions infrastructure on Proxmox: virtual machines, LXC containers, CPU/memory/disk allocation, networking, and cloud-init metadata. It uses the [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) provider (see `terraform/proxmox/`).
+Terraform provisions infrastructure on Proxmox: virtual machines, LXC containers, CPU/memory/disk allocation, networking, and cloud-init metadata. It uses the [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) provider (see `terraform/proxmox/`). Every LXC is provisioned generically from the `lxc_network` map (`for_each`), so adding a new service's LXC is a one-entry change in `terraform.tfvars`, not new HCL.
 
 Terraform defines **what infrastructure exists** — it does not configure the OS or deploy applications.
 
@@ -237,11 +255,11 @@ Observability is meant to be centralized rather than deploying a separate monito
               Metrics      Logs   Traces
 ```
 
-Prometheus (currently running as a standalone Compose service, see `services/prometheus/`) collects metrics from hosts, containers, VMs, and — once provisioned — Kubernetes nodes and workloads. Grafana provides centralized dashboards from `services/grafana/`.
+Prometheus (a standalone Compose service, see `services/prometheus/`, deployed by the `monitoring` Ansible role) collects metrics from hosts, containers, VMs, and — once provisioned — Kubernetes nodes and workloads. Its scrape config is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh`. Grafana provides centralized dashboards from `services/grafana/`, deployed by the same role.
 
 ## Uptime Monitoring & Homepage
 
-Uptime Kuma (planned) and [Homepage](https://gethomepage.dev/) (`services/homepage/`) are both intended to be generated from `config/services.yaml`, so adding a service to the catalog can automatically create its dashboard entry and uptime monitor. See `scripts/generation/`.
+[Uptime Kuma](https://github.com/louislam/uptime-kuma) (`services/uptime-kuma/`) and [Homepage](https://gethomepage.dev/) (`services/homepage/`) both read from the same service catalog conceptually, but only Homepage is actually generated from `config/services.yaml` today (`scripts/generation/generate-homepage.sh`) — Uptime Kuma has no config-as-code format, so its monitors are still created by hand through its UI.
 
 ## GitOps Workflow
 
@@ -267,7 +285,7 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Beyond what's already scaffolded (monitoring, n8n, it-tools, Kafka, Gardenia on Kubernetes), the next two priorities are:
+Beyond what's already scaffolded (monitoring, n8n, it-tools, uptime-kuma, Kafka, Cloudflare Tunnel, Gardenia on Kubernetes), the next two priorities are:
 
 * **VPN (WireGuard/Tailscale)** — internal-only access to services like Grafana without exposing them publicly. This becomes the standard way to reach anything tagged `tier: internal`.
 * **NAS-backed storage** — a NAS already exists on the local network (`nas`, see `config/hosts.yaml`); next up is an S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) plus Restic/Borg for backups. Anything that needs real persistence should live on the NAS rather than node-local disk.
@@ -299,6 +317,7 @@ This list will grow as needs are identified — the intent is that any new servi
 * [Scripts](scripts/README.md)
 * [Terraform / Proxmox](terraform/proxmox/README.md)
 * [Argo CD](kubernetes/argocd/README.md)
+* [Cloudflare Tunnel](services/cloudflared/README.md) — one-time setup + ingress rules
 * Public documentation site: `website/` (Astro/Starlight, deployed via GitHub Pages)
 
 ---
