@@ -292,7 +292,9 @@ services:
   jellyfin:
     name: Jellyfin
     category: Media
-    tier: internal  # LAN via Traefik; also reachable remotely at jellyfin.jsisques.net via Cloudflare Tunnel, see services/cloudflared/config.yml
+    # LAN via Traefik; also on jellyfin.jsisques.net via Cloudflare
+    # Tunnel for remote access, see services/cloudflared/config.yml
+    tier: internal
     url: https://jellyfin.home.arpa
     icon: jellyfin.png
 
@@ -308,7 +310,8 @@ services:
       enabled: true
 
     # No native /metrics — Jellyfin has no built-in Prometheus support.
-    # Probed by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
     blackbox:
       enabled: true
       port: 8096
