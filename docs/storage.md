@@ -59,9 +59,9 @@ Backups should cover:
 
 - This Git repository and its history.
 - Terraform state and its remote backend, if used.
-- Proxmox VM and LXC backups.
+- Proxmox VM and LXC backups — via Proxmox Backup Server (`ansible/roles/pbs/`), datastore on the NAS over NFS, not on the Proxmox host's own disk.
 - Kubernetes resource definitions and persistent volume data.
-- The Prometheus Docker volume.
+- The Prometheus and Loki Docker volumes.
 - Grafana provisioning and dashboards.
 - Secret material in an encrypted backup format.
 

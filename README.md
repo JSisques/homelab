@@ -12,12 +12,14 @@ The homelab should be recoverable from scratch by deploying the desired state de
 
 What exists so far:
 
-* Terraform configuration for Proxmox (`terraform/proxmox/`) that provisions every LXC declaratively from `lxc_network` — not yet applied to a running cluster.
-* Ansible roles and playbooks for every LXC-based service (`it-tools`, `n8n`, `monitoring` [Prometheus + Grafana], `homepage`, `uptime-kuma`, `cloudflared`) plus base host setup (`common`, `docker`, `node-exporter`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
-* Standalone Docker Compose definitions for `prometheus`, `grafana`, `homepage`, `it-tools`, `n8n`, `uptime-kuma`, and `cloudflared` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config.
+* Terraform configuration for Proxmox (`terraform/proxmox/`) that provisions every LXC and VM declaratively from `config/hosts.yaml` (`lxc_network` / `vm_nodes`, both generated) — not yet applied to a running cluster.
+* Ansible roles and playbooks for every LXC/VM service (`it-tools`, `n8n`, `monitoring` [Prometheus + Grafana + Loki + Alertmanager], `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`) plus a mandatory base (`common`, `node-exporter`, `promtail`, `docker`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
+* Standalone Docker Compose definitions for `prometheus`, `grafana`, `loki`, `alertmanager`, `homepage`, `it-tools`, `n8n`, `uptime-kuma`, `cloudflared`, `adguard-home`, and `wireguard` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config. `pbs` and `promtail` are native packages instead (no Docker involved).
 * A Cloudflare Tunnel (`services/cloudflared/`) scaffolded to route `sisqueslabs.com` and `jsisques.net` to internal services — the ingress rules are in Git, but the tunnel itself still needs a one-time manual setup (see `services/cloudflared/README.md`) before it can run for real.
+* A WireGuard VPN gateway (`services/wireguard/`) for internal-only remote access, and AdGuard Home for network-wide DNS/ad-blocking — both still need a one-time manual step outside Git (router port-forward + Dynamic DNS for WireGuard; nothing for AdGuard beyond its first-run wizard).
+* Proxmox Backup Server (`ansible/roles/pbs/`), backing up onto the NAS over NFS — installed as a native package (not Docker), on its own VM. The Proxmox VE side (registering PBS as a storage backend, the actual backup job) is still a manual one-time step; see `ansible/roles/pbs/README.md`.
 * Kubernetes/Argo CD manifests for Kafka (via Strimzi) under `kubernetes/` — the K3s cluster itself is not yet provisioned. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`.
-* A NAS already exists on the local network (`config/hosts.yaml`) and is the intended backing store for shared/persistent data once a storage layer is built on top of it.
+* A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
 
 None of this has been applied to real infrastructure yet — `terraform apply`/the `deploy.yaml` workflow have not been run. Treat everything above as "ready to deploy," not "deployed."
@@ -95,7 +97,7 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n |
+| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, AdGuard Home |
 | Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia (Kubernetes) |
 
@@ -124,9 +126,9 @@ homelab/
 │   ├── inventory/          # generated from config/hosts.yaml, do not edit
 │   ├── playbooks/
 │   └── roles/
-│       ├── common/  docker/  node-exporter/
-│       ├── it-tools/  n8n/  monitoring/  homepage/
-│       └── uptime-kuma/  cloudflared/
+│       ├── common/  docker/  node-exporter/  promtail/
+│       ├── it-tools/  n8n/  monitoring/  homepage/  uptime-kuma/
+│       └── cloudflared/  adguard-home/  wireguard/  pbs/
 │
 ├── kubernetes/
 │   ├── argocd/
@@ -134,13 +136,9 @@ homelab/
 │       └── kafka/
 │
 ├── services/
-│   ├── prometheus/
-│   ├── grafana/
-│   ├── homepage/
-│   ├── it-tools/
-│   ├── n8n/
-│   ├── uptime-kuma/
-│   └── cloudflared/
+│   ├── prometheus/  grafana/  loki/  alertmanager/
+│   ├── homepage/  it-tools/  n8n/  uptime-kuma/
+│   └── cloudflared/  adguard-home/  wireguard/
 │
 ├── scripts/
 │   ├── bootstrap/
@@ -175,7 +173,7 @@ make validate              # Terraform + Ansible + YAML + shell + Compose checks
 make status                # show current Terraform-managed infrastructure
 ```
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `monitoring` (Prometheus + Grafana), `homepage`, `uptime-kuma`, `cloudflared` — it only runs that one playbook, not the whole fleet. `n8n` and `cloudflared` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`); see `ansible/roles/n8n/README.md` and `ansible/roles/cloudflared/README.md`.
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, and `monitoring` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`); see the matching role's README.
 
 ## Configuration
 
@@ -279,14 +277,14 @@ Observability is meant to be centralized rather than deploying a separate monito
                          Grafana
                        /    |    \
                       /     |     \
-             Prometheus    Loki   Tempo
+             Prometheus    Loki  Alertmanager
                  │          │       │
-              Metrics      Logs   Traces
+              Metrics      Logs   Alerts (Telegram)
 ```
 
-Prometheus (a standalone Compose service, see `services/prometheus/`, deployed by the `monitoring` Ansible role) collects metrics from hosts, containers, VMs, and — once provisioned — Kubernetes nodes and workloads. Its scrape config is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh`. Grafana provides centralized dashboards from `services/grafana/`, deployed by the same role.
+Prometheus, Grafana, Loki, and Alertmanager all run on the shared `monitoring` LXC (`services/prometheus/`, `services/grafana/`, `services/loki/`, `services/alertmanager/`, deployed together by the `monitoring` Ansible role), attached to a common Docker network so they can reach each other by name. Prometheus's scrape config is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh`; its alert rules (`services/prometheus/alerts.yml`) are hand-authored and fire into Alertmanager, which routes them to Telegram once `monitoring_alertmanager_telegram_bot_token`/`_chat_id` are set (see `ansible/roles/monitoring/README.md`) — without them, alerts still fire but land nowhere.
 
-Host-level metrics are non-negotiable: every Ansible service role depends on the `node-exporter` role (via `meta/main.yml`), so any LXC or VM deployed through Ansible gets Node Exporter automatically, with no per-playbook opt-in. See `ansible/README.md`.
+Host-level metrics and logs are non-negotiable: every Ansible service role depends on `node-exporter` and `promtail` (via `meta/main.yml`), so any LXC or VM deployed through Ansible ships both automatically, with no per-playbook opt-in. See `ansible/README.md`.
 
 ## Uptime Monitoring & Homepage
 
@@ -308,7 +306,7 @@ CI (`.github/workflows/`) validates every push/PR; the `deploy.yaml` workflow (m
 
 ## Storage
 
-Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. A NAS on the local network is planned as the backing store for services that need shared/network storage rather than node-local disks — for example an S3-compatible object store (evaluating [rustfs](https://rustfs.com/) over MinIO) with its data actually living on the NAS. See [`docs/storage.md`](docs/storage.md) for details and rules.
+Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network has its first concrete role: Proxmox Backup Server (`ansible/roles/pbs/`) mounts an NFS export from it as its datastore, so LXC/VM backups live off the host they protect. A general-purpose storage layer on top of the NAS — an S3-compatible object store (evaluating [rustfs](https://rustfs.com/) over MinIO) plus Restic/Borg for backups of anything outside Proxmox's own backup scope — is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
 
 ## Secrets
 
@@ -316,16 +314,12 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Beyond what's already scaffolded (monitoring, n8n, it-tools, uptime-kuma, Kafka, Cloudflare Tunnel, Gardenia on Kubernetes), the next two priorities are:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, uptime-kuma, Kafka, Cloudflare Tunnel, WireGuard, AdGuard Home, Proxmox Backup Server, Gardenia on Kubernetes. The next priorities:
 
-* **VPN (WireGuard/Tailscale)** — internal-only access to services like Grafana without exposing them publicly. This becomes the standard way to reach anything tagged `tier: internal`.
-* **NAS-backed storage** — a NAS already exists on the local network (`nas`, see `config/hosts.yaml`); next up is an S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) plus Restic/Borg for backups. Anything that needs real persistence should live on the NAS rather than node-local disk.
-
-Further out, once those land:
-
-* **Pi-hole / AdGuard Home** — network-wide DNS and ad-blocking.
+* **NAS-backed application storage** — PBS now uses the NAS for backups; a general S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) for application data is still open.
 * **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
 * **Authelia / Authentik** — SSO in front of exposed apps.
+* **K3s nodes** — `config/hosts.yaml` has no `type: vm` entries for K3s yet, so Kafka/Argo CD have nowhere to run. Same mechanism as `pbs` (generic `vm_nodes`), just needs the entries and a `k3s` Ansible role.
 
 This list will grow as needs are identified — the intent is that any new service gets an entry in `config/services.yaml`, a home in `terraform/`/`ansible/`/`services/`/`kubernetes/` depending on how it's deployed, and a tier from the [Domains](#domains-and-network-access) table above.
 

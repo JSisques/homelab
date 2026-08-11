@@ -59,7 +59,7 @@ The Kubernetes tree is split into:
 
 ### Services Outside Kubernetes
 
-Most services run directly on dedicated LXC containers rather than Kubernetes: Prometheus and Grafana (both on the shared `monitoring` LXC), Homepage, IT-Tools, n8n, Uptime Kuma, and the `cloudflared` tunnel. Each has a matching directory under `services/` (the Compose source of truth) and an Ansible role under `ansible/roles/` that deploys it unmodified. Prometheus stores its data in the Docker volume `prometheus-data`.
+Most services run directly on dedicated LXC containers (or, for Proxmox Backup Server, a VM) rather than Kubernetes: Prometheus, Grafana, Loki, and Alertmanager (all on the shared `monitoring` LXC), Homepage, IT-Tools, n8n, Uptime Kuma, `cloudflared`, AdGuard Home, and WireGuard. Each has a matching directory under `services/` (the Compose source of truth) and an Ansible role under `ansible/roles/` that deploys it unmodified. Proxmox Backup Server and Promtail are the exceptions — native packages installed by Ansible, no Docker involved. Prometheus stores its data in the Docker volume `prometheus-data`.
 
 ## Data and Control Flow
 
