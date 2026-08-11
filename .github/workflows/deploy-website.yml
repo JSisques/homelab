@@ -4,8 +4,8 @@ on:
   push:
     branches: [master]
     paths:
-      - 'website/**'
-      - '.github/workflows/deploy-website.yml'
+      - "website/**"
+      - ".github/workflows/deploy-website.yml"
   workflow_dispatch:
 
 permissions:
