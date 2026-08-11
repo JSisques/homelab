@@ -1,5 +1,4 @@
 services:
-
   proxmox:
     name: Proxmox
     category: Infrastructure
@@ -89,7 +88,7 @@ services:
       enabled: true
       type: prometheus
       endpoint: http://gardenia:3000/metrics
-  
+
   it-tools:
     name: IT-Tools
     category: Utilities
@@ -107,4 +106,23 @@ services:
       enabled: true
       type: prometheus
       target: it-tools-exporter:8080
+      path: /metrics
+
+  n8n:
+    name: n8n
+    category: Automation
+    url: https://n8n.home.arpa
+    icon: n8n.png
+
+    homepage:
+      enabled: true
+      description: Workflow automation platform
+
+    uptime:
+      enabled: true
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      target: n8n-exporter:8080
       path: /metrics
