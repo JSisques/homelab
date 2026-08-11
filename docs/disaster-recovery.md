@@ -6,13 +6,13 @@ This runbook describes how to rebuild the homelab after a host, storage, cluster
 
 Document these values for each critical service:
 
-| Service | RPO | RTO | Recovery source |
-| --- | --- | --- | --- |
-| Proxmox infrastructure | TBD | TBD | Proxmox backup |
-| K3s and Argo CD | TBD | TBD | Git and cluster backup |
-| Kafka | TBD | TBD | Persistent volume backup / topic replication |
-| Prometheus | TBD | TBD | `prometheus-data` backup |
-| Grafana | TBD | TBD | Provisioning files and database backup |
+| Service                | RPO | RTO | Recovery source                              |
+| ---------------------- | --- | --- | -------------------------------------------- |
+| Proxmox infrastructure | TBD | TBD | Proxmox backup                               |
+| K3s and Argo CD        | TBD | TBD | Git and cluster backup                       |
+| Kafka                  | TBD | TBD | Persistent volume backup / topic replication |
+| Prometheus             | TBD | TBD | `prometheus-data` backup                     |
+| Grafana                | TBD | TBD | Provisioning files and database backup       |
 
 RPO is the maximum acceptable data loss. RTO is the maximum acceptable restoration time.
 

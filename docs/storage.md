@@ -24,13 +24,13 @@ Prometheus uses the named Docker volume `prometheus-data` for `/prometheus`. The
 
 ## Data Classification
 
-| Class | Examples | Recovery priority |
-| --- | --- | --- |
-| Configuration | Git manifests, Compose files, Ansible and Terraform | Highest |
-| Metrics | Prometheus time series and Grafana dashboards | Medium |
-| Event data | Kafka topics and consumer state | High |
-| Secrets | Credentials, keys, certificates | Highest, encrypted |
-| Cache | Temporary downloads and derived data | Low |
+| Class         | Examples                                            | Recovery priority  |
+| ------------- | --------------------------------------------------- | ------------------ |
+| Configuration | Git manifests, Compose files, Ansible and Terraform | Highest            |
+| Metrics       | Prometheus time series and Grafana dashboards       | Medium             |
+| Event data    | Kafka topics and consumer state                     | High               |
+| Secrets       | Credentials, keys, certificates                     | Highest, encrypted |
+| Cache         | Temporary downloads and derived data                | Low                |
 
 ## Storage Rules
 
