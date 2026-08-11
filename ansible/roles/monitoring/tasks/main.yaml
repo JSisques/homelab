@@ -28,6 +28,12 @@
     dest: "{{ monitoring_prometheus_app_dir }}/alerts.yml"
     mode: "0644"
 
+- name: Deploy Prometheus blackbox_exporter targets
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/blackbox-targets.yml"
+    dest: "{{ monitoring_prometheus_app_dir }}/blackbox-targets.yml"
+    mode: "0644"
+
 - name: Start Prometheus
   community.docker.docker_compose_v2:
     project_src: "{{ monitoring_prometheus_app_dir }}"
@@ -108,4 +114,27 @@
 - name: Start Alertmanager
   community.docker.docker_compose_v2:
     project_src: "{{ monitoring_alertmanager_app_dir }}"
+    state: present
+
+- name: Create blackbox_exporter application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_blackbox_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy blackbox_exporter Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/blackbox-exporter/compose.yaml"
+    dest: "{{ monitoring_blackbox_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy blackbox_exporter configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/blackbox-exporter/config.yml"
+    dest: "{{ monitoring_blackbox_app_dir }}/config.yml"
+    mode: "0644"
+
+- name: Start blackbox_exporter
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_blackbox_app_dir }}"
     state: present

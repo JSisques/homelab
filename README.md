@@ -282,7 +282,17 @@ Observability is meant to be centralized rather than deploying a separate monito
               Metrics      Logs   Alerts (Telegram)
 ```
 
-Prometheus, Grafana, Loki, and Alertmanager all run on the shared `monitoring` LXC (`services/prometheus/`, `services/grafana/`, `services/loki/`, `services/alertmanager/`, deployed together by the `monitoring` Ansible role), attached to a common Docker network so they can reach each other by name. Prometheus's scrape config is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh`; its alert rules (`services/prometheus/alerts.yml`) are hand-authored and fire into Alertmanager, which routes them to Telegram once `monitoring_alertmanager_telegram_bot_token`/`_chat_id` are set (see `ansible/roles/monitoring/README.md`) — without them, alerts still fire but land nowhere.
+Prometheus, Grafana, Loki, Alertmanager, and blackbox_exporter all run on the shared `monitoring` LXC (`services/prometheus/`, `services/grafana/`, `services/loki/`, `services/alertmanager/`, `services/blackbox-exporter/`, deployed together by the `monitoring` Ansible role), attached to a common Docker network so they can reach each other by name. Its alert rules (`services/prometheus/alerts.yml`) fire into Alertmanager, which routes them to Telegram once `monitoring_alertmanager_telegram_bot_token`/`_chat_id` are set (see `ansible/roles/monitoring/README.md`) — without them, alerts still fire but land nowhere.
+
+### Prometheus coverage
+
+Every service and host in the homelab is scraped one of three ways, and Prometheus's scrape config (`services/prometheus/prometheus.yml`) is generated from `config/services.yaml` **and** `config/hosts.yaml` by `scripts/generation/generate-prometheus.sh`:
+
+1. **Native `/metrics`** — most services (Grafana, Prometheus itself, Kafka, Uptime Kuma, Traefik, Gardenia, Loki, Alertmanager, Cloudflared) export Prometheus metrics directly; `config/services.yaml`'s `monitoring:` block for each declares the endpoint.
+2. **Host-level agents** — every `type: lxc`/`type: vm` host in `config/hosts.yaml` automatically gets `node-exporter` (`:9100`) and `promtail` (`:9080`) scrape targets, since both are a mandatory Ansible baseline on every host (see `ansible/README.md`) regardless of which application is deployed there — no per-service opt-in needed.
+3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (IT-Tools, n8n, AdGuard Home, Homepage, plus the self-signed PBS and K3s apiserver endpoints) are probed for up/down + latency instead. Targets live in `services/prometheus/blackbox-targets.yml`, see `services/blackbox-exporter/README.md`.
+
+The one known gap: WireGuard has no native metrics and no HTTP endpoint to blackbox-probe, so it currently isn't scraped at all.
 
 Host-level metrics and logs are non-negotiable: every Ansible service role depends on `node-exporter` and `promtail` (via `meta/main.yml`), so any LXC or VM deployed through Ansible ships both automatically, with no per-playbook opt-in. See `ansible/README.md`.
 

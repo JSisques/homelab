@@ -1,6 +1,6 @@
 # This file is generated.
 # Do not edit manually.
-# Source: config/services.yaml
+# Source: config/services.yaml, config/hosts.yaml
 
 global:
   scrape_interval: 15s
@@ -28,6 +28,18 @@ scrape_configs:
     static_configs:
       - targets:
           - "prometheus:9090"
+  - job_name: "loki"
+    static_configs:
+      - targets:
+          - "loki:3100"
+  - job_name: "alertmanager"
+    static_configs:
+      - targets:
+          - "alertmanager:9093"
+  - job_name: "cloudflared"
+    static_configs:
+      - targets:
+          - "192.168.1.25:20241"
   - job_name: "kafka"
     static_configs:
       - targets:
@@ -44,11 +56,45 @@ scrape_configs:
     static_configs:
       - targets:
           - "gardenia:3000"
-  - job_name: "it-tools"
+  - job_name: "node-exporter"
     static_configs:
       - targets:
-          - "it-tools-exporter:8080"
-  - job_name: "n8n"
+          - "192.168.1.20:9100"
+          - "192.168.1.21:9100"
+          - "192.168.1.22:9100"
+          - "192.168.1.23:9100"
+          - "192.168.1.24:9100"
+          - "192.168.1.25:9100"
+          - "192.168.1.26:9100"
+          - "192.168.1.28:9100"
+          - "192.168.1.27:9100"
+          - "192.168.1.30:9100"
+          - "192.168.1.31:9100"
+  - job_name: "promtail"
     static_configs:
       - targets:
-          - "n8n-exporter:8080"
+          - "192.168.1.20:9080"
+          - "192.168.1.21:9080"
+          - "192.168.1.22:9080"
+          - "192.168.1.23:9080"
+          - "192.168.1.24:9080"
+          - "192.168.1.25:9080"
+          - "192.168.1.26:9080"
+          - "192.168.1.28:9080"
+          - "192.168.1.27:9080"
+          - "192.168.1.30:9080"
+          - "192.168.1.31:9080"
+  - job_name: "blackbox"
+    metrics_path: /probe
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/blackbox-targets.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - source_labels: [module]
+        target_label: __param_module
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

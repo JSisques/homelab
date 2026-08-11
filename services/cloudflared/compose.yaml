@@ -3,7 +3,12 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
-    command: tunnel --config /etc/cloudflared/config.yml run
+    command: >-
+      tunnel --config /etc/cloudflared/config.yml
+      --metrics 0.0.0.0:20241 run
+
+    ports:
+      - "20241:20241"
 
     volumes:
       - ./config.yml:/etc/cloudflared/config.yml:ro

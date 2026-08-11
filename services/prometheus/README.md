@@ -1,8 +1,8 @@
 # Prometheus
 
-Prometheus is the metrics collection and storage engine for the homelab.
+Prometheus is the metrics collection and storage engine for the homelab. Every service in the homelab ends up scraped one of three ways — see [Coverage](#coverage) below.
 
-It scrapes the targets defined in `prometheus.yml` and stores time-series data used by Grafana dashboards.
+It scrapes the targets defined in `prometheus.yml` and stores time-series data used by Grafana dashboards. Alerts are evaluated against `alerts.yml` and routed to Alertmanager.
 
 ## Directory Structure
 
@@ -10,15 +10,17 @@ It scrapes the targets defined in `prometheus.yml` and stores time-series data u
 services/prometheus/
 ├── README.md
 ├── compose.yaml
-└── prometheus.yml
+├── prometheus.yml          # generated — do not edit
+├── alerts.yml              # hand-authored
+└── blackbox-targets.yml    # hand-authored
 ```
 
 ## Configuration
 
-`prometheus.yml` is **generated** from the central service catalog and must not be edited by hand:
+`prometheus.yml` is **generated** from the central service and host catalogs and must not be edited by hand:
 
 ```text
-config/services.yaml
+config/services.yaml, config/hosts.yaml
         │
         ▼
 scripts/generation/generate-prometheus.sh
@@ -27,11 +29,17 @@ scripts/generation/generate-prometheus.sh
 services/prometheus/prometheus.yml
 ```
 
-Any service with `monitoring.enabled: true` and `monitoring.type: prometheus` in `config/services.yaml` gets a scrape job automatically.
+## Coverage
+
+Every service and host in the homelab is scraped one of three ways:
+
+1. **Native `/metrics`** — any service with `monitoring.enabled: true` and `monitoring.type: prometheus` in `config/services.yaml` gets a scrape job automatically.
+2. **Host-level agents** — every `type: lxc`/`type: vm` host in `config/hosts.yaml` gets `node-exporter` (`:9100`) and `promtail` (`:9080`) scrape targets automatically, since both are a mandatory Ansible baseline on every host (see [`ansible/README.md`](../../ansible/README.md)) regardless of which application is deployed there.
+3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (e.g. IT-Tools, n8n, AdGuard Home) are probed for up/down + latency instead. Targets live in `blackbox-targets.yml`, see [`../blackbox-exporter/README.md`](../blackbox-exporter/README.md).
 
 ## Deployment
 
-Prometheus is deployed by Ansible onto the shared `monitoring` LXC (see `ansible/roles/monitoring/`), alongside Grafana.
+Prometheus is deployed by Ansible onto the shared `monitoring` LXC (see `ansible/roles/monitoring/`), alongside Grafana, Loki, Alertmanager, and blackbox_exporter.
 
 ## Local Development
 

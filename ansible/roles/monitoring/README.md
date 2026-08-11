@@ -1,18 +1,19 @@
 # Monitoring Ansible Role
 
-Deploys the homelab's full observability stack — Prometheus, Grafana, Loki, and Alertmanager — onto the shared `monitoring` LXC container, using Docker Compose.
+Deploys the homelab's full observability stack — Prometheus, Grafana, Loki, Alertmanager, and blackbox_exporter — onto the shared `monitoring` LXC container, using Docker Compose.
 
-Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). This role installs Docker (via the `docker` role) and deploys all four applications side by side, each in its own directory (`/opt/prometheus`, `/opt/grafana`, `/opt/loki`, `/opt/alertmanager`).
+Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). This role installs Docker (via the `docker` role) and deploys all five applications side by side, each in its own directory (`/opt/prometheus`, `/opt/grafana`, `/opt/loki`, `/opt/alertmanager`, `/opt/blackbox-exporter`).
 
 ## Responsibilities
 
-- Create a shared external Docker network (`{{ monitoring_docker_network }}`, default `monitoring`) that all four stacks attach to — each is still its own Compose project, but without this they'd land on separate per-project networks and couldn't resolve each other by container name (`http://prometheus:9090`, `http://loki:3100`, `http://alertmanager:9093`).
-- Deploy `services/prometheus/{compose.yaml,prometheus.yml,alerts.yml}` and start it.
+- Create a shared external Docker network (`{{ monitoring_docker_network }}`, default `monitoring`) that all stacks attach to — each is still its own Compose project, but without this they'd land on separate per-project networks and couldn't resolve each other by container name (`http://prometheus:9090`, `http://loki:3100`, `http://alertmanager:9093`, `http://blackbox-exporter:9115`).
+- Deploy `services/prometheus/{compose.yaml,prometheus.yml,alerts.yml,blackbox-targets.yml}` and start it.
 - Deploy `services/grafana/{compose.yaml,config/}` and start it. Its datasources (`services/grafana/config/provisioning/datasources/`) point at Prometheus and Loki over that shared network.
 - Deploy `services/loki/{compose.yaml,config.yml}` and start it.
 - **Render** (not copy) `services/alertmanager/alertmanager.yml.j2` with the Telegram secrets below, then start Alertmanager.
+- Deploy `services/blackbox-exporter/{compose.yaml,config.yml}` and start it — probes HTTP(S) services that have no native `/metrics` endpoint, see [`services/blackbox-exporter/README.md`](../../../services/blackbox-exporter/README.md).
 
-`services/prometheus/prometheus.yml` is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh` and should not be edited by hand. `services/prometheus/alerts.yml` is hand-authored and IS meant to be edited directly.
+`services/prometheus/prometheus.yml` is generated from `config/services.yaml` and `config/hosts.yaml` by `scripts/generation/generate-prometheus.sh` and should not be edited by hand. `services/prometheus/alerts.yml` and `services/prometheus/blackbox-targets.yml` are hand-authored and ARE meant to be edited directly.
 
 ## Alertmanager → Telegram
 
@@ -32,4 +33,4 @@ ansible-playbook -i inventory/hosts.yml playbooks/monitoring.yaml \
   -e "monitoring_alertmanager_telegram_chat_id=${TELEGRAM_CHAT_ID}"
 ```
 
-Service documentation: [`services/prometheus/README.md`](../../../services/prometheus/README.md), [`services/grafana/README.md`](../../../services/grafana/README.md), [`services/loki/README.md`](../../../services/loki/README.md), [`services/alertmanager/README.md`](../../../services/alertmanager/README.md).
+Service documentation: [`services/prometheus/README.md`](../../../services/prometheus/README.md), [`services/grafana/README.md`](../../../services/grafana/README.md), [`services/loki/README.md`](../../../services/loki/README.md), [`services/alertmanager/README.md`](../../../services/alertmanager/README.md), [`services/blackbox-exporter/README.md`](../../../services/blackbox-exporter/README.md).
