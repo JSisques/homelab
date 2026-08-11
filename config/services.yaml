@@ -289,6 +289,32 @@ services:
     uptime:
       enabled: true  # TCP monitor on :4000, HTTP 2xx isn't reliable here
 
+  jellyfin:
+    name: Jellyfin
+    category: Media
+    tier: internal  # LAN via Traefik; also reachable remotely at jellyfin.jsisques.net via Cloudflare Tunnel, see services/cloudflared/config.yml
+    url: https://jellyfin.home.arpa
+    icon: jellyfin.png
+
+    homepage:
+      enabled: true
+      description: Media streaming server
+
+    traefik:
+      enabled: true
+      port: 8096
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — Jellyfin has no built-in Prometheus support.
+    # Probed by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8096
+      scheme: http
+      module: http_2xx
+
   pbs:
     name: Proxmox Backup Server
     category: Infrastructure

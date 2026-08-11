@@ -17,6 +17,11 @@ Infrastructure:
     href: https://kafka.home.arpa
     icon: kafka.png
     description: Event streaming platform
+Media:
+  Jellyfin:
+    href: https://jellyfin.home.arpa
+    icon: jellyfin.png
+    description: Media streaming server
 Monitoring:
   Grafana:
     href: https://grafana.home.arpa

@@ -1,0 +1,18 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+
+    ports:
+      - "8096:8096"
+
+    volumes:
+      - jellyfin-config:/config
+      - jellyfin-cache:/cache
+      - /mnt/nas/multimedia/peliculas:/media/peliculas:ro
+      - /mnt/nas/multimedia/series:/media/series:ro
+
+volumes:
+  jellyfin-config:
+  jellyfin-cache:

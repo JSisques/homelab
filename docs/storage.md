@@ -61,6 +61,7 @@ Backups should cover:
 - Terraform state and its remote backend, if used.
 - Proxmox VM and LXC backups — via Proxmox Backup Server (`ansible/roles/pbs/`), datastore on the NAS over NFS, not on the Proxmox host's own disk.
 - The Obsidian vault (`ansible/roles/obsidian/`) — mounted from an NFS export on the NAS (`192.168.0.111:/export/obsidian`) at `/mnt/nas/obsidian`, bind-mounted into the container. This is the only copy of the vault's Markdown notes; the `obsidian-config` Docker volume alongside it holds only regenerable app state.
+- Jellyfin's `jellyfin-config` Docker volume (`ansible/roles/jellyfin/`) — library setup, user accounts, and playback history. The media files themselves, mounted read-only from NFS exports on the NAS (`192.168.0.111:/export/Multimedia/{peliculas,series}`) at `/mnt/nas/multimedia`, are **not** in this repo's backup scope — they are bulk content, not produced by this homelab, and are expected to be re-acquirable or backed up separately at the NAS level rather than through Proxmox/Docker-volume backups.
 - Kubernetes resource definitions and persistent volume data.
 - The Prometheus and Loki Docker volumes.
 - Grafana provisioning and dashboards.

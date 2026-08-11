@@ -13,6 +13,7 @@
     - "http://192.168.1.26:3000"  # adguard-home
     - "http://192.168.1.23:8080"  # it-tools
     - "http://192.168.1.24:5678"  # n8n
+    - "http://192.168.1.32:8096"  # jellyfin
   labels:
     module: http_2xx
 - targets:
