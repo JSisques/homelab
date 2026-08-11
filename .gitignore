@@ -34,3 +34,8 @@ crash.*.log
 
 # Ansible temporary files
 *.retry
+
+# Environment variable files
+**/.env
+**/.env.*
+!**/.env.example
