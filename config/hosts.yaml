@@ -1,4 +1,132 @@
 hosts:
+  proxmox:
+    type: server
+    platform: proxmox
+    address: TBD  # LAN IP not confirmed yet
+    role:
+      - hypervisor
+
+  nas:
+    type: physical
+    platform: nas
+    address: 192.168.0.111
+    role:
+      - storage
+
+  monitoring:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.20
+    cpu: 4
+    memory: 6144
+    disk: 48
+    role:
+      - prometheus
+      - grafana
+      - loki
+      - alertmanager
+
+  homepage:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.21
+    cpu: 2
+    memory: 1024
+    disk: 8
+    role:
+      - homepage
+
+  uptime-kuma:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.22
+    cpu: 2
+    memory: 1024
+    disk: 8
+    role:
+      - uptime-kuma
+
+  it-tools:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.23
+    cpu: 2
+    memory: 1024
+    disk: 8
+    role:
+      - it-tools
+
+  n8n:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.24
+    cpu: 2
+    memory: 4096
+    disk: 32
+    role:
+      - n8n
+
+  cloudflared:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.25
+    cpu: 1
+    memory: 512
+    disk: 8
+    role:
+      - cloudflared
+
+  adguard-home:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.26
+    cpu: 1
+    memory: 512
+    disk: 8
+    role:
+      - adguard-home
+
+  traefik:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.28
+    cpu: 1
+    memory: 512
+    disk: 8
+    role:
+      - traefik
+
+  wireguard:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.27
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - wireguard
+
+  pbs:
+    type: vm
+    platform: proxmox
+    address: 192.168.1.30
+    cpu: 2
+    memory: 2048
+    disk: 32
+    role:
+      - pbs
+
+  k3s-server:
+    type: vm
+    platform: proxmox
+    address: 192.168.1.31
+    cpu: 4
+    memory: 8192
+    disk: 50
+    role:
+      - k3s
+      - server
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

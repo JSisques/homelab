@@ -1,0 +1,7 @@
+---
+n8n_app_dir: /opt/n8n
+
+n8n_postgres_db: n8n
+n8n_postgres_user: n8n
+# Must be overridden via Ansible Vault or CI secrets. Never commit a real value.
+n8n_postgres_password: changeme

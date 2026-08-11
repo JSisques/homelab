@@ -135,7 +135,7 @@ Running:
 ```bash id="z2xj8a"
 ansible-playbook \
   -i inventory/hosts.yml \
-  playbooks/site.yml
+  playbooks/site.yaml
 ```
 
 multiple times should not produce unnecessary changes.
@@ -147,7 +147,7 @@ An already configured host should remain unchanged unless its desired configurat
 The role is normally applied to all managed hosts through:
 
 ```text id="5slq3e"
-ansible/playbooks/site.yml
+ansible/playbooks/site.yaml
 ```
 
 Example:

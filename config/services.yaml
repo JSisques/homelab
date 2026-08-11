@@ -2,6 +2,7 @@ services:
   proxmox:
     name: Proxmox
     category: Infrastructure
+    tier: internal
     url: https://proxmox.home.arpa
     icon: proxmox.png
 
@@ -17,12 +18,17 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
+    tier: internal
     url: https://grafana.home.arpa
     icon: grafana.png
 
     homepage:
       enabled: true
       description: Monitoring dashboards
+
+    traefik:
+      enabled: true
+      port: 3000
 
     monitoring:
       enabled: true
@@ -32,6 +38,7 @@ services:
   prometheus:
     name: Prometheus
     category: Monitoring
+    tier: internal
     url: https://prometheus.home.arpa
     icon: prometheus.png
 
@@ -39,14 +46,58 @@ services:
       enabled: true
       description: Metrics and monitoring
 
+    traefik:
+      enabled: true
+      port: 9090
+
     monitoring:
       enabled: true
       type: prometheus
       endpoint: http://prometheus:9090/metrics
 
+  loki:
+    name: Loki
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no standalone UI, browsed through Grafana
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://loki:3100/metrics
+
+  alertmanager:
+    name: Alertmanager
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # not routed through Traefik yet, no *.home.arpa URL
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://alertmanager:9093/metrics
+
+  cloudflared:
+    name: Cloudflared
+    category: Networking
+    tier: internal
+
+    homepage:
+      enabled: false  # background tunnel daemon, no web UI
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.1.25:20241/metrics
+
   kafka:
     name: Kafka
     category: Infrastructure
+    tier: internal
     url: https://kafka.home.arpa
     icon: kafka.png
 
@@ -62,6 +113,7 @@ services:
   uptime-kuma:
     name: Uptime Kuma
     category: Monitoring
+    tier: internal
     url: https://uptime.home.arpa
     icon: uptime-kuma.png
 
@@ -69,15 +121,91 @@ services:
       enabled: true
       description: Service monitoring
 
+    traefik:
+      enabled: true
+      port: 3001
+
     monitoring:
       enabled: true
       type: prometheus
       endpoint: http://uptime-kuma:3001/metrics
 
+  homepage:
+    name: Homepage
+    category: Infrastructure
+    tier: internal
+    url: https://home.home.arpa
+    icon: homepage.png
+
+    homepage:
+      enabled: false  # Homepage does not need to link to itself
+      description: Central dashboard for homelab services
+
+    traefik:
+      enabled: true
+      port: 3000
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — Homepage is a static dashboard. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
+
+  adguard-home:
+    name: AdGuard Home
+    category: Networking
+    tier: internal
+    url: https://adguard.home.arpa
+    icon: adguard-home.png
+
+    homepage:
+      enabled: true
+      description: DNS and network-wide ad blocking
+
+    traefik:
+      enabled: true
+      port: 3000
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — AdGuard Home has no Prometheus support. Probed
+    # by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
+
+  traefik:
+    name: Traefik
+    category: Networking
+    tier: internal
+    url: https://traefik.home.arpa
+    icon: traefik.png
+
+    homepage:
+      enabled: true
+      description: Internal reverse proxy for *.home.arpa
+
+    uptime:
+      enabled: true
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.1.28:8082/metrics
+
   gardenia:
     name: Gardenia
     category: Applications
-    url: https://gardenia.home.arpa
+    tier: public  # deployed on Kubernetes, exposed via Cloudflare Tunnel
+    url: https://gardenia.sisqueslabs.com
     icon: mdi-sprout
 
     homepage:
@@ -92,6 +220,7 @@ services:
   it-tools:
     name: IT-Tools
     category: Utilities
+    tier: internal
     url: https://it-tools.home.arpa
     icon: it-tools.png
 
@@ -99,18 +228,25 @@ services:
       enabled: true
       description: Collection of useful developer tools
 
+    traefik:
+      enabled: true
+      port: 8080
+
     uptime:
       enabled: true
 
-    monitoring:
+    # No native /metrics — it's a static tools page. Covered by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
       enabled: true
-      type: prometheus
-      target: it-tools-exporter:8080
-      path: /metrics
+      port: 8080
+      scheme: http
+      module: http_2xx
 
   n8n:
     name: n8n
     category: Automation
+    tier: internal  # exposed only via VPN/reverse proxy, see services/n8n
     url: https://n8n.home.arpa
     icon: n8n.png
 
@@ -118,11 +254,55 @@ services:
       enabled: true
       description: Workflow automation platform
 
+    traefik:
+      enabled: true
+      port: 5678
+
     uptime:
       enabled: true
 
-    monitoring:
+    # No native Prometheus endpoint wired up here (n8n has an optional
+    # N8N_METRICS flag worth checking against current docs — not enabled
+    # in services/n8n/compose.yml). Covered by blackbox_exporter for now,
+    # see services/blackbox-exporter/README.md.
+    blackbox:
       enabled: true
-      type: prometheus
-      target: n8n-exporter:8080
-      path: /metrics
+      port: 5678
+      scheme: http
+      module: http_2xx
+
+  pbs:
+    name: Proxmox Backup Server
+    category: Infrastructure
+    tier: internal
+    # Not yet in Homepage/Traefik/Uptime Kuma — this is a minimal catalog
+    # entry that exists only so pbs can opt into blackbox_exporter probing.
+    # The host itself (address, sizing) lives in config/hosts.yaml; the
+    # "pbs" key here matches that host key directly, no role fallback
+    # needed. Self-signed TLS, hence the *_insecure module.
+
+    # No native /metrics — PBS has no Prometheus support. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8007
+      scheme: https
+      module: http_2xx_insecure
+
+  k3s-server:
+    name: K3s API Server
+    category: Infrastructure
+    tier: internal
+    # Same rationale as pbs above: minimal catalog entry only for
+    # blackbox_exporter, matching the "k3s-server" host key in
+    # config/hosts.yaml directly. The apiserver returns 401/403
+    # unauthenticated, which the *_insecure module still counts as "up".
+
+    # No native /metrics scraped here — the K3s apiserver isn't covered by
+    # a `monitoring:` block yet. Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 6443
+      scheme: https
+      module: http_2xx_insecure

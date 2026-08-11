@@ -18,3 +18,8 @@ services:
 
 volumes:
   grafana-data:
+
+networks:
+  default:
+    name: monitoring
+    external: true

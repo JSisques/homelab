@@ -16,7 +16,12 @@ permissions:
 jobs:
   terraform:
     name: Terraform Plan
-    runs-on: ubuntu-latest
+    # Proxmox only listens on the LAN, so this needs a runner that can
+    # actually reach it — same runner as deploy.yaml.
+    runs-on:
+      - self-hosted
+      - linux
+      - homelab
 
     defaults:
       run:
@@ -25,6 +30,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Generate Terraform variables from config/hosts.yaml
+        working-directory: .
+        run: |
+          chmod +x scripts/generation/generate-terraform-vars.sh
+          ./scripts/generation/generate-terraform-vars.sh
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

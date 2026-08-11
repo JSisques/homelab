@@ -1,0 +1,23 @@
+{# Rendered by ansible/roles/monitoring — not deployed as a static copy,
+   because the Telegram receiver needs monitoring_alertmanager_telegram_bot_token
+   / monitoring_alertmanager_telegram_chat_id (see ansible/roles/monitoring/README.md).
+   Without them, alerts still fire but land nowhere (the "null" receiver). #}
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "{{ 'telegram' if monitoring_alertmanager_telegram_bot_token else 'null' }}"
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: "null"
+{% if monitoring_alertmanager_telegram_bot_token %}
+  - name: "telegram"
+    telegram_configs:
+      - bot_token: "{{ monitoring_alertmanager_telegram_bot_token }}"
+        chat_id: {{ monitoring_alertmanager_telegram_chat_id }}
+        parse_mode: "HTML"
+{% endif %}

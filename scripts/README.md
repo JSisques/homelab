@@ -13,20 +13,21 @@ scripts/
 ├── README.md
 │
 ├── bootstrap/
-│   └── bootstrap.sh
+│   └── bootstrap.sh        # not implemented yet
 │
 ├── validation/
 │   └── validate.sh
 │
-├── generation/
-│   ├── generate-homepage.ts
-│   ├── generate-uptime-kuma.ts
-│   └── generate-prometheus.ts
-│
-└── utils/
-    ├── wait-for-service.sh
-    └── health-check.sh
+└── generation/
+    ├── README.md
+    ├── generate-homepage.sh
+    ├── generate-prometheus.sh
+    ├── generate-traefik.sh
+    ├── generate-inventory.sh
+    └── generate-terraform-vars.sh
 ```
+
+`utils/` (a `wait-for-service.sh` / `health-check.sh` pair) doesn't exist yet — it's a placeholder for future deploy tooling, not a current gap.
 
 ## Bootstrap
 

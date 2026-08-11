@@ -1,0 +1,7 @@
+---
+cloudflared_app_dir: /opt/cloudflared
+
+# Contents of the tunnel credentials JSON file created by
+# `cloudflared tunnel create` (see services/cloudflared/README.md).
+# Must be provided via Ansible Vault or CI secrets. Never commit a real value.
+cloudflared_credentials_json: ""

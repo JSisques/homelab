@@ -1,0 +1,140 @@
+---
+title: Cómo desplegarlo
+description: La secuencia exacta de comandos para llevar el homelab de "está en Git" a "está corriendo", entero o servicio a servicio.
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+:::caution[Estado actual]
+Nada de esto se ha ejecutado todavía contra el Proxmox real. Todo está listo para desplegar, no desplegado — el primer `make apply` será, literalmente, el primero.
+:::
+
+Antes de seguir, conviene tener claro el [flujo de datos](/homelab/guides/flujo-de-datos/): `config/hosts.yaml` es la fuente de verdad, todo lo demás se genera.
+
+## 0. Antes de tocar nada
+
+- Proxmox instalado y accesible en la red, con un **API token** creado (*Datacenter → Permissions → API Tokens*).
+- [`yq`](https://github.com/kislyuk/yq) instalado — el de **kislyuk** (Python), no el de mikefarah. `pip install yq`. Si tienes el otro instalado, los generadores fallan con errores de `jq` que no tienen mucho sentido a simple vista.
+- Terraform y Ansible instalados (`ansible-core` + `ansible-galaxy`).
+- Una plantilla de LXC Debian ya subida a Proxmox (para `debian_template`), y la clave pública SSH a mano.
+
+## 1. Desplegar de cero
+
+<Steps>
+
+1. **Rellena lo que hoy es un placeholder.** Dos cosas no tienen todavía un valor real:
+
+   | Fichero | Qué falta |
+   | --- | --- |
+   | `config/hosts.yaml` | `proxmox: address: TBD` → la IP real del hipervisor |
+   | `terraform/proxmox/terraform.tfvars` | no existe (está en `.gitignore` a propósito) — cópialo de `terraform.tfvars.example` y rellena `proxmox_node`, `lxc_storage`, `vm_storage`, `gateway`, `ssh_public_key`, `debian_template` |
+
+   ```bash
+   cp terraform/proxmox/terraform.tfvars.example terraform/proxmox/terraform.tfvars
+   # edítalo con tus valores reales
+
+   export TF_VAR_proxmox_endpoint="https://<ip-proxmox>:8006/"
+   export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
+   ```
+
+2. **Genera y provisiona la infraestructura.**
+
+   ```bash
+   make generate   # hosts.auto.tfvars.json, inventario, Homepage y Prometheus al día
+   make init
+   make plan       # deberías ver 6 LXC nuevas: monitoring, homepage, uptime-kuma, it-tools, n8n, cloudflared
+   make apply
+   ```
+
+3. **Configura los servicios dentro de esas LXC**, uno a uno la primera vez:
+
+   ```bash
+   cd ansible && ansible-galaxy collection install -r requirements.yml && cd ..
+   make ping   # confirma que Ansible llega por SSH a las 6 LXC
+
+   export N8N_POSTGRES_PASSWORD="algo-fuerte-de-verdad"
+
+   make deploy-monitoring
+   make deploy-homepage
+   make deploy-uptime-kuma
+   make deploy-it-tools
+   make deploy-n8n
+   ```
+
+   `cloudflared` se deja para el final — necesita su [configuración manual de una sola vez](#cloudflare-tunnel) antes de poder desplegarse.
+
+</Steps>
+
+:::note[¿Por qué no `make deploy` directamente?]
+`make deploy` despliega *todo* de una sentada, incluido `cloudflared`. La primera vez es más seguro ir servicio a servicio como arriba — así un fallo queda acotado a un único rol.
+:::
+
+## Día a día
+
+### Cambiar la configuración de un servicio que ya existe
+
+```bash
+# ejemplo: subir la RAM de n8n
+# 1. edita config/hosts.yaml -> n8n: memory: 8192
+make plan          # confirma que solo toca la LXC de n8n
+make apply
+make deploy-n8n     # por si el compose también cambió
+```
+
+### Añadir un servicio nuevo por completo
+
+<Steps>
+
+1. Entrada nueva en `config/hosts.yaml` (dirección, `cpu`/`memory`/`disk`, `role`) y en `config/services.yaml` (tier, url, si aparece en Homepage/Prometheus).
+2. `services/<nombre>/compose.yaml` — el Compose real.
+3. `ansible/roles/<nombre>/` — `defaults`, `tasks` (copiar el compose y arrancarlo, mismo patrón que `it-tools`) y `meta/main.yml` con la dependencia obligatoria de `common` + `node-exporter` + `docker`.
+4. `ansible/playbooks/<nombre>.yaml` de una línea (`roles: [<nombre>]`), añadido a `ansible/playbooks/site.yaml`.
+5. `make generate && make plan && make apply && make deploy-<nombre>`.
+
+</Steps>
+
+### Desplegar solo un servicio concreto
+
+```bash
+make services          # lista los nombres válidos
+make deploy-cloudflared # it-tools · n8n · monitoring · homepage · uptime-kuma · cloudflared
+```
+
+## Secretos
+
+Nada de esto está commiteado ni lo estará. Dos servicios los necesitan:
+
+| Variable | Para qué | Si falta |
+| --- | --- | --- |
+| `N8N_POSTGRES_PASSWORD` | Contraseña de la Postgres interna de n8n | Se despliega igual, con `changeme` por defecto — riesgo silencioso |
+| `CLOUDFLARED_CREDS_JSON` | Contenido completo del `credentials.json` del túnel | El rol hace `assert` y para antes de arrancar nada |
+
+En local se pasan como variables de entorno antes de `make deploy` / `make deploy-n8n` / `make deploy-cloudflared`. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*: `N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
+
+## Cloudflare Tunnel
+
+Crear el túnel exige estar autenticado contra la cuenta de Cloudflare — no hay forma de scriptearlo desde CI. Es un paso manual, **una vez**:
+
+<Steps>
+
+1. `cloudflared tunnel login` — autoriza la CLI contra la cuenta.
+2. `cloudflared tunnel create homelab` — anota el **tunnel ID** y guarda el `credentials.json` que genera (ese es el valor de `CLOUDFLARED_CREDS_JSON`).
+3. Sustituye `REPLACE_WITH_TUNNEL_ID` por el ID real en `services/cloudflared/config.yml` — ese fichero sí se commitea, no lleva secretos, solo las reglas de enrutado.
+4. Por cada hostname del `config.yml` (hoy: `gardenia.sisqueslabs.com`), un registro DNS CNAME apuntando a `<tunnel-id>.cfargotunnel.com`, en las zonas de `sisqueslabs.com` y `jsisques.net`.
+5. `make deploy-cloudflared` con `CLOUDFLARED_CREDS_JSON` ya exportado.
+
+</Steps>
+
+:::caution[Nunca en el túnel]
+Los servicios `tier: internal` (`*.home.arpa`) no llevan entrada en `config.yml`. Si aparecen ahí es una fuga de un servicio interno a internet, no un despliegue normal.
+:::
+
+## Lo que falta o hay que confirmar
+
+- **IP real de Proxmox** — sigue como `TBD` en `config/hosts.yaml`.
+- **`terraform.tfvars` local** — no existe todavía.
+- **Usuario SSH que usa Ansible** — no está fijado explícitamente en el inventario; confirma que la clave de `ssh_public_key` corresponde a la cuenta con la que Ansible se conecta (normalmente `root` en plantillas Debian sin cloud-init).
+- **K3s / VMs** — `config/hosts.yaml` no tiene todavía ninguna entrada `type: vm`, así que `k3s_nodes` sigue vacío y Kafka/Argo CD no tienen dónde correr.
+- **Cloudflare Tunnel** — el `config.yml` tiene un tunnel ID de mentira hasta hacer el setup manual de arriba.
+
+Ver también: [comandos de referencia](/homelab/reference/comandos/).

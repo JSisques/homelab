@@ -84,17 +84,16 @@ defaults/main.yml
 Example:
 
 ```yaml
-n8n_install_dir: /opt/n8n
+n8n_app_dir: /opt/n8n
 
-n8n_domain: n8n.home.arpa
-
-n8n_timezone: Europe/Madrid
-
-n8n_postgres_database: n8n
+n8n_postgres_db: n8n
 n8n_postgres_user: n8n
+n8n_postgres_password: changeme # override via Vault/CI secrets
 ```
 
-Secrets should not be stored directly in `defaults/main.yml`.
+The hostname, protocol, and timezone used by n8n are defined directly in `services/n8n/compose.yml` (the single source of truth for the application configuration) rather than templated, since they don't vary between environments.
+
+Secrets should not be stored directly in `defaults/main.yaml`.
 
 Sensitive values should be supplied through Ansible Vault or another secret management mechanism.
 

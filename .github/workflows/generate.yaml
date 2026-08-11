@@ -6,6 +6,9 @@ on:
       - "config/**"
       - "scripts/generation/**"
       - "services/homepage/config/**"
+      - "services/prometheus/prometheus.yml"
+      - "ansible/inventory/hosts.yml"
+      - "terraform/proxmox/hosts.auto.tfvars.json"
   push:
     branches:
       - main
@@ -13,6 +16,9 @@ on:
       - "config/**"
       - "scripts/generation/**"
       - "services/homepage/config/**"
+      - "services/prometheus/prometheus.yml"
+      - "ansible/inventory/hosts.yml"
+      - "terraform/proxmox/hosts.auto.tfvars.json"
 
 permissions:
   contents: read
@@ -26,6 +32,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install yq
+        run: pip install yq
+
       - name: Make scripts executable
         run: chmod +x scripts/generation/*.sh
 
@@ -37,5 +46,80 @@ jobs:
           if ! git diff --exit-code; then
             echo "::error::Generated Homepage files are out of date."
             echo "Run generate-homepage.sh locally and commit the changes."
+            exit 1
+          fi
+
+  prometheus:
+    name: Validate Prometheus Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Prometheus configuration
+        run: ./scripts/generation/generate-prometheus.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Prometheus configuration is out of date."
+            echo "Run generate-prometheus.sh locally and commit the changes."
+            exit 1
+          fi
+
+  inventory:
+    name: Validate Ansible Inventory Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Ansible inventory
+        run: ./scripts/generation/generate-inventory.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Ansible inventory is out of date."
+            echo "Run generate-inventory.sh locally and commit the changes."
+            exit 1
+          fi
+
+  terraform-vars:
+    name: Validate Terraform Variables Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Terraform variables
+        run: ./scripts/generation/generate-terraform-vars.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Terraform variables are out of date."
+            echo "Run generate-terraform-vars.sh locally and commit the diff."
             exit 1
           fi

@@ -1,0 +1,23 @@
+---
+- name: Create n8n application directory
+  ansible.builtin.file:
+    path: "{{ n8n_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy n8n environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ n8n_app_dir }}/.env"
+    mode: "0600"
+
+- name: Deploy n8n Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/n8n/compose.yml"
+    dest: "{{ n8n_app_dir }}/compose.yml"
+    mode: "0644"
+
+- name: Start n8n
+  community.docker.docker_compose_v2:
+    project_src: "{{ n8n_app_dir }}"
+    state: present

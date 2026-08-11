@@ -29,11 +29,20 @@ dist/
 *.tfvars
 *.tfvars.json
 !*.tfvars.example
+!terraform/proxmox/hosts.auto.tfvars.json
 crash.log
 crash.*.log
 
 # Ansible temporary files
 *.retry
+*.vault_pass
+
+# Cloudflare Tunnel credentials (never commit)
+**/credentials.json
+
+# Kubeconfigs fetched from K3s (never commit)
+.kube/
+*kubeconfig*.yaml
 
 # Environment variable files
 **/.env

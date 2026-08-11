@@ -1,0 +1,33 @@
+---
+- name: Deploy IT-Tools
+  ansible.builtin.import_playbook: it-tools.yaml
+
+- name: Deploy n8n
+  ansible.builtin.import_playbook: n8n.yaml
+
+- name: Deploy monitoring stack (Prometheus + Grafana + Loki + Alertmanager)
+  ansible.builtin.import_playbook: monitoring.yaml
+
+- name: Deploy Homepage
+  ansible.builtin.import_playbook: homepage.yaml
+
+- name: Deploy Uptime Kuma
+  ansible.builtin.import_playbook: uptime-kuma.yaml
+
+- name: Deploy Cloudflare Tunnel
+  ansible.builtin.import_playbook: cloudflared.yaml
+
+- name: Deploy AdGuard Home
+  ansible.builtin.import_playbook: adguard-home.yaml
+
+- name: Deploy Traefik
+  ansible.builtin.import_playbook: traefik.yaml
+
+- name: Deploy WireGuard
+  ansible.builtin.import_playbook: wireguard.yaml
+
+- name: Deploy Proxmox Backup Server
+  ansible.builtin.import_playbook: pbs.yaml
+
+- name: Deploy K3s (single-node server) and bootstrap Argo CD
+  ansible.builtin.import_playbook: k3s-server.yaml

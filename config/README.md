@@ -49,6 +49,7 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
+    tier: internal
     url: https://grafana.home.arpa
     icon: grafana.png
 
@@ -59,8 +60,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      target: grafana:3000
-      path: /metrics
+      endpoint: http://grafana:3000/metrics
 
     uptime:
       enabled: true
@@ -73,6 +73,7 @@ Common fields include:
 ```yaml
 name:
 category:
+tier:
 url:
 icon:
 ```
@@ -80,6 +81,24 @@ icon:
 These fields describe the service itself.
 
 They can be consumed by multiple systems.
+
+### Tier
+
+`tier` declares which access tier the service belongs to. It determines the domain used in `url` and whether the service is expected to be reachable outside the LAN.
+
+```yaml
+tier: internal
+```
+
+Valid values:
+
+* `internal` — LAN/VPN only, served under `*.home.arpa`, never given a public DNS record or Cloudflare route.
+* `personal` — personal-facing service, served under `*.jsisques.net`, exposed through Cloudflare Tunnel.
+* `public` — public homelab app, served under `*.sisqueslabs.com`, exposed through Cloudflare Tunnel.
+
+Both `personal` and `public` services must get a matching `ingress` entry in `services/cloudflared/config.yml`; `internal` services must not.
+
+Default to `internal` unless a service has a deliberate reason to be reachable from outside the home network.
 
 ### Homepage
 
@@ -99,8 +118,7 @@ The `monitoring` section describes how the service should be monitored by Promet
 monitoring:
   enabled: true
   type: prometheus
-  target: grafana:3000
-  path: /metrics
+  endpoint: http://grafana:3000/metrics
 ```
 
 This information is consumed by:
@@ -134,21 +152,27 @@ hosts:
     address: 192.168.1.10
     platform: proxmox
 
+  monitoring:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.20
+    cpu: 4
+    memory: 4096
+    disk: 32
+    role:
+      - prometheus
+      - grafana
+
   k3s-01:
     type: vm
     address: 192.168.1.30
     platform: linux
+    cpu: 4
+    memory: 8192
+    disk: 50
     role:
       - k3s
       - control-plane
-
-  k3s-02:
-    type: vm
-    address: 192.168.1.31
-    platform: linux
-    role:
-      - k3s
-      - worker
 
   raspberrypi-01:
     type: physical
@@ -159,13 +183,15 @@ hosts:
       - worker
 ```
 
-This information can be used to generate or configure:
+`cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
 
-* Ansible inventory
-* Monitoring targets
-* Node Exporter configuration
-* K3s nodes
-* Infrastructure documentation
+This information is used to generate:
+
+* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `k3s_nodes`), which Terraform loads automatically. **Addresses and sizing are only ever set here, never duplicated in `terraform.tfvars`.**
+* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`.
+* Monitoring targets, Node Exporter configuration, and infrastructure documentation, as those pieces are built out.
+
+A host with `address: TBD` is skipped by both generators (with a warning) instead of producing a broken IP.
 
 ## Configuration vs Infrastructure
 

@@ -49,7 +49,7 @@ The intended inventory and service catalog live in `config/hosts.yaml` and `conf
 
 ### Kubernetes
 
-K3s runs on virtual machines and can be extended with Raspberry Pi nodes. Argo CD watches the repository and reconciles Kubernetes resources from Git.
+K3s runs as a single-node server on the `k3s-server` VM (`ansible/roles/k3s/`) and can be extended with worker VMs and/or the Raspberry Pi nodes already tagged `role: [k3s, worker]` in `config/hosts.yaml` — joining them as agents isn't built yet. Argo CD watches the repository and reconciles Kubernetes resources from Git; it's installed and empty until `Application` resources are applied.
 
 The Kubernetes tree is split into:
 
@@ -59,7 +59,7 @@ The Kubernetes tree is split into:
 
 ### Services Outside Kubernetes
 
-Some services run directly on VMs or LXC containers. Prometheus is currently described by `services/prometheus/compose.yaml`, with its data stored in the Docker volume `prometheus-data`. Grafana and Homepage are provisioned from the `services/` directory.
+Most services run directly on dedicated LXC containers (or, for Proxmox Backup Server, a VM) rather than Kubernetes: Prometheus, Grafana, Loki, and Alertmanager (all on the shared `monitoring` LXC), Homepage, IT-Tools, n8n, Uptime Kuma, `cloudflared`, AdGuard Home, and WireGuard. Each has a matching directory under `services/` (the Compose source of truth) and an Ansible role under `ansible/roles/` that deploys it unmodified. Proxmox Backup Server and Promtail are the exceptions — native packages installed by Ansible, no Docker involved. Prometheus stores its data in the Docker volume `prometheus-data`.
 
 ## Data and Control Flow
 
@@ -81,7 +81,7 @@ Git repository
 - Ansible should configure hosts and standalone services, not replace Argo CD for Kubernetes workloads.
 - Kubernetes stateful workloads must declare storage explicitly.
 - Secrets must be injected through the selected secret-management process and never committed in plaintext.
-- Public access should terminate at the reverse proxy or Cloudflare boundary; internal services should remain private.
+- Public access terminates at the Cloudflare Tunnel (`services/cloudflared/`, deployed on its own LXC). It is the only ingress path for `tier: public` (`sisqueslabs.com`) and `tier: personal` (`jsisques.net`) services; `tier: internal` (`*.home.arpa`) services must never get an entry in its ingress config and stay reachable only over the LAN/VPN.
 
 ## Source of Truth
 

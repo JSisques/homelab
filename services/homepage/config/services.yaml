@@ -1,1 +1,46 @@
-
+Applications:
+  Gardenia:
+    href: https://gardenia.sisqueslabs.com
+    icon: mdi-sprout
+    description: Garden management platform
+Automation:
+  n8n:
+    href: https://n8n.home.arpa
+    icon: n8n.png
+    description: Workflow automation platform
+Infrastructure:
+  Proxmox:
+    href: https://proxmox.home.arpa
+    icon: proxmox.png
+    description: Virtualization platform
+  Kafka:
+    href: https://kafka.home.arpa
+    icon: kafka.png
+    description: Event streaming platform
+Monitoring:
+  Grafana:
+    href: https://grafana.home.arpa
+    icon: grafana.png
+    description: Monitoring dashboards
+  Prometheus:
+    href: https://prometheus.home.arpa
+    icon: prometheus.png
+    description: Metrics and monitoring
+  Uptime Kuma:
+    href: https://uptime.home.arpa
+    icon: uptime-kuma.png
+    description: Service monitoring
+Networking:
+  AdGuard Home:
+    href: https://adguard.home.arpa
+    icon: adguard-home.png
+    description: DNS and network-wide ad blocking
+  Traefik:
+    href: https://traefik.home.arpa
+    icon: traefik.png
+    description: Internal reverse proxy for *.home.arpa
+Utilities:
+  IT-Tools:
+    href: https://it-tools.home.arpa
+    icon: it-tools.png
+    description: Collection of useful developer tools

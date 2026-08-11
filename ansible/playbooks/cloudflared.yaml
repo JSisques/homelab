@@ -1,0 +1,7 @@
+---
+- name: Deploy Cloudflare Tunnel
+  hosts: cloudflared
+  become: true
+
+  roles:
+    - cloudflared

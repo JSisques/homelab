@@ -1,0 +1,54 @@
+---
+- name: Check supported operating system
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == 'Debian'
+    fail_msg: This role currently supports Debian-family operating systems only.
+
+- name: Install APT prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create APT keyring directory
+  ansible.builtin.file:
+    path: "{{ promtail_apt_keyring | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Install Grafana APT repository key
+  ansible.builtin.get_url:
+    url: "{{ promtail_apt_key_url }}"
+    dest: "{{ promtail_apt_keyring }}"
+    mode: "0644"
+    force: true
+
+- name: Configure Grafana APT repository
+  ansible.builtin.apt_repository:
+    repo: "{{ promtail_apt_repository }}"
+    filename: grafana
+    state: present
+    update_cache: true
+
+- name: Install Promtail
+  ansible.builtin.apt:
+    name: promtail
+    state: present
+
+- name: Deploy Promtail configuration
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ promtail_config_path }}"
+    mode: "0644"
+  notify: Restart Promtail
+
+- name: Enable and start Promtail
+  ansible.builtin.service:
+    name: promtail
+    enabled: true
+    state: started

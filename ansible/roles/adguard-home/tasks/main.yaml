@@ -1,0 +1,17 @@
+---
+- name: Create AdGuard Home application directory
+  ansible.builtin.file:
+    path: "{{ adguard_home_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy AdGuard Home Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/adguard-home/compose.yaml"
+    dest: "{{ adguard_home_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start AdGuard Home
+  community.docker.docker_compose_v2:
+    project_src: "{{ adguard_home_app_dir }}"
+    state: present
