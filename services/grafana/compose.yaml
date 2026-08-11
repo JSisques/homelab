@@ -1,0 +1,20 @@
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/provisioning:/etc/grafana/provisioning:ro
+
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.home.arpa
+      GF_SERVER_DOMAIN: grafana.home.arpa
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+volumes:
+  grafana-data:
