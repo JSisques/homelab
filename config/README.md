@@ -49,6 +49,7 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
+    tier: internal
     url: https://grafana.home.arpa
     icon: grafana.png
 
@@ -73,6 +74,7 @@ Common fields include:
 ```yaml
 name:
 category:
+tier:
 url:
 icon:
 ```
@@ -80,6 +82,22 @@ icon:
 These fields describe the service itself.
 
 They can be consumed by multiple systems.
+
+### Tier
+
+`tier` declares which access tier the service belongs to. It determines the domain used in `url` and whether the service is expected to be reachable outside the LAN.
+
+```yaml
+tier: internal
+```
+
+Valid values:
+
+* `internal` — LAN/VPN only, served under `*.home.arpa`, never given a public DNS record or Cloudflare route.
+* `personal` — personal-facing service, served under `*.jsisques.net`.
+* `public` — public homelab app, served under `*.sisqueslabs.com` and exposed through Cloudflare Tunnel.
+
+Default to `internal` unless a service has a deliberate reason to be reachable from outside the home network.
 
 ### Homepage
 

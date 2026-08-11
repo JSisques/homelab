@@ -1,4 +1,54 @@
 hosts:
+  proxmox:
+    type: server
+    platform: proxmox
+    address: TBD # LAN IP not confirmed yet
+    role:
+      - hypervisor
+
+  nas:
+    type: physical
+    platform: nas
+    address: 192.168.0.111
+    role:
+      - storage
+
+  monitoring:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.20
+    role:
+      - prometheus
+      - grafana
+
+  homepage:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.21
+    role:
+      - homepage
+
+  uptime-kuma:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.22
+    role:
+      - uptime-kuma
+
+  it-tools:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.23
+    role:
+      - it-tools
+
+  n8n:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.24
+    role:
+      - n8n
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

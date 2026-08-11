@@ -15,7 +15,8 @@ What exists so far:
 * Terraform configuration for Proxmox (`terraform/proxmox/`) — not yet applied to a running cluster.
 * Ansible roles and playbooks for a handful of services (`n8n`, `it-tools`) plus base host setup (`common`, `docker`, `node-exporter`).
 * Standalone Docker Compose definitions for `prometheus`, `grafana`, `homepage`, `it-tools`, and `n8n` under `services/`.
-* Kubernetes/Argo CD manifests for Kafka (via Strimzi) under `kubernetes/` — the K3s cluster itself is not yet provisioned; `config/hosts.yaml` currently only lists two Raspberry Pi nodes.
+* Kubernetes/Argo CD manifests for Kafka (via Strimzi) under `kubernetes/` — the K3s cluster itself is not yet provisioned. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`.
+* A NAS already exists on the local network (`config/hosts.yaml`) and is the intended backing store for shared/persistent data once a storage layer is built on top of it.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
 
 As pieces go from "defined in Git" to "actually running," this README and `docs/` should be updated to reflect it.
@@ -91,9 +92,11 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus |
+| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n |
 | Personal | `jsisques.net` | Personal-facing services and projects | Personal apps/site |
-| Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Public-facing apps and demos |
+| Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia (Kubernetes) |
+
+Each service's tier is declared explicitly via the `tier` field in `config/services.yaml` (see [`config/README.md`](config/README.md#tier)) — nothing is public by default.
 
 `home.arpa` is the [RFC 8375](https://datatracker.ietf.org/doc/html/rfc8375) reserved name for home networks and is used for anything that should stay LAN/VPN-only — it never gets a public DNS record or a Cloudflare route. `jsisques.net` and `sisqueslabs.com` are real domains routed through Cloudflare Tunnel for services that are meant to be reachable from outside the home network.
 
@@ -264,10 +267,16 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Beyond what's already scaffolded (monitoring, n8n, it-tools, Kafka), the next areas of focus are:
+Beyond what's already scaffolded (monitoring, n8n, it-tools, Kafka, Gardenia on Kubernetes), the next two priorities are:
 
-* **Security / Network** — VPN (WireGuard/Tailscale) for internal-only access to services like Grafana, Pi-hole/AdGuard for DNS, Vaultwarden as a password manager, Authelia/Authentik for SSO in front of exposed apps.
-* **Backups / Storage** — a NAS-backed storage layer (S3-compatible, likely rustfs), plus Restic/Borg for backups and Syncthing for sync. Anything that needs real persistence should end up on the NAS rather than node-local disk.
+* **VPN (WireGuard/Tailscale)** — internal-only access to services like Grafana without exposing them publicly. This becomes the standard way to reach anything tagged `tier: internal`.
+* **NAS-backed storage** — a NAS already exists on the local network (`nas`, see `config/hosts.yaml`); next up is an S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) plus Restic/Borg for backups. Anything that needs real persistence should live on the NAS rather than node-local disk.
+
+Further out, once those land:
+
+* **Pi-hole / AdGuard Home** — network-wide DNS and ad-blocking.
+* **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
+* **Authelia / Authentik** — SSO in front of exposed apps.
 
 This list will grow as needs are identified — the intent is that any new service gets an entry in `config/services.yaml`, a home in `terraform/`/`ansible/`/`services/`/`kubernetes/` depending on how it's deployed, and a tier from the [Domains](#domains-and-network-access) table above.
 
