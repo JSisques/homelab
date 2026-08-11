@@ -4,7 +4,4 @@
   become: true
 
   roles:
-    - common
-    - node-exporter
-    - docker
     - uptime-kuma

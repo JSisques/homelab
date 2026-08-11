@@ -6,8 +6,8 @@ Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). T
 
 ## Responsibilities
 
-- Deploy `services/prometheus/compose.yaml` and `services/prometheus/prometheus.yml` to `{{ prometheus_app_dir }}` (default `/opt/prometheus`) and start it.
-- Deploy `services/grafana/compose.yaml` and `services/grafana/config/` (dashboard/datasource provisioning) to `{{ grafana_app_dir }}` (default `/opt/grafana`) and start it.
+- Deploy `services/prometheus/compose.yaml` and `services/prometheus/prometheus.yml` to `{{ monitoring_prometheus_app_dir }}` (default `/opt/prometheus`) and start it.
+- Deploy `services/grafana/compose.yaml` and `services/grafana/config/` (dashboard/datasource provisioning) to `{{ monitoring_grafana_app_dir }}` (default `/opt/grafana`) and start it.
 
 `services/prometheus/prometheus.yml` is generated from `config/services.yaml` by `scripts/generation/generate-prometheus.sh` and should not be edited by hand.
 

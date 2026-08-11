@@ -1,7 +1,18 @@
 ---
-- ansible.builtin.import_playbook: it-tools.yaml
-- ansible.builtin.import_playbook: n8n.yaml
-- ansible.builtin.import_playbook: monitoring.yaml
-- ansible.builtin.import_playbook: homepage.yaml
-- ansible.builtin.import_playbook: uptime-kuma.yaml
-- ansible.builtin.import_playbook: cloudflared.yaml
+- name: Deploy IT-Tools
+  ansible.builtin.import_playbook: it-tools.yaml
+
+- name: Deploy n8n
+  ansible.builtin.import_playbook: n8n.yaml
+
+- name: Deploy monitoring stack (Prometheus + Grafana)
+  ansible.builtin.import_playbook: monitoring.yaml
+
+- name: Deploy Homepage
+  ansible.builtin.import_playbook: homepage.yaml
+
+- name: Deploy Uptime Kuma
+  ansible.builtin.import_playbook: uptime-kuma.yaml
+
+- name: Deploy Cloudflare Tunnel
+  ansible.builtin.import_playbook: cloudflared.yaml

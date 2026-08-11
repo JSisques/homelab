@@ -1,3 +1,3 @@
 ---
-prometheus_app_dir: /opt/prometheus
-grafana_app_dir: /opt/grafana
+monitoring_prometheus_app_dir: /opt/prometheus
+monitoring_grafana_app_dir: /opt/grafana
