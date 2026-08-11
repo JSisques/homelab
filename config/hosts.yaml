@@ -76,6 +76,16 @@ hosts:
     role:
       - obsidian
 
+  jellyfin:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.32
+    cpu: 4
+    memory: 4096
+    disk: 16
+    role:
+      - jellyfin
+
   cloudflared:
     type: lxc
     platform: proxmox

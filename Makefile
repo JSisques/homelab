@@ -5,7 +5,7 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n obsidian monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
+SERVICES := it-tools n8n obsidian jellyfin monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
