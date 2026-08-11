@@ -1,4 +1,3 @@
-```bash
 #!/usr/bin/env bash
 
 set -euo pipefail
@@ -49,4 +48,3 @@ yq -r '
 echo ""
 echo "Prometheus configuration generated:"
 echo "  ${OUTPUT}"
-```
