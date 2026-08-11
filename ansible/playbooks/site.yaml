@@ -20,6 +20,9 @@
 - name: Deploy AdGuard Home
   ansible.builtin.import_playbook: adguard-home.yaml
 
+- name: Deploy Traefik
+  ansible.builtin.import_playbook: traefik.yaml
+
 - name: Deploy WireGuard
   ansible.builtin.import_playbook: wireguard.yaml
 

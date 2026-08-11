@@ -35,6 +35,10 @@ Networking:
     href: https://adguard.home.arpa
     icon: adguard-home.png
     description: DNS and network-wide ad blocking
+  Traefik:
+    href: https://traefik.home.arpa
+    icon: traefik.png
+    description: Internal reverse proxy for *.home.arpa
 Utilities:
   IT-Tools:
     href: https://it-tools.home.arpa

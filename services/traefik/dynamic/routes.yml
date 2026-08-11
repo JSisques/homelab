@@ -1,0 +1,90 @@
+# Hand-authored, not generated. config/services.yaml declares the
+# https://<name>.home.arpa URLs; this file is what actually makes them
+# resolve to something once AdGuard Home points *.home.arpa at Traefik
+# (see README.md). Add a router+service pair here whenever a new
+# tier: internal service needs one.
+http:
+  routers:
+    grafana:
+      rule: "Host(`grafana.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: grafana
+      tls: {}
+
+    prometheus:
+      rule: "Host(`prometheus.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: prometheus
+      tls: {}
+
+    homepage:
+      rule: "Host(`home.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: homepage
+      tls: {}
+
+    uptime-kuma:
+      rule: "Host(`uptime.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: uptime-kuma
+      tls: {}
+
+    it-tools:
+      rule: "Host(`it-tools.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: it-tools
+      tls: {}
+
+    n8n:
+      rule: "Host(`n8n.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: n8n
+      tls: {}
+
+    adguard-home:
+      rule: "Host(`adguard.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: adguard-home
+      tls: {}
+
+    traefik-dashboard:
+      rule: "Host(`traefik.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: api@internal
+      tls: {}
+
+  services:
+    grafana:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.20:3000"
+
+    prometheus:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.20:9090"
+
+    homepage:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.21:3000"
+
+    uptime-kuma:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.22:3001"
+
+    it-tools:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.23:8080"
+
+    n8n:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.24:5678"
+
+    adguard-home:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.26:3000"

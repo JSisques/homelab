@@ -86,6 +86,16 @@ hosts:
     role:
       - adguard-home
 
+  traefik:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.28
+    cpu: 1
+    memory: 512
+    disk: 8
+    role:
+      - traefik
+
   wireguard:
     type: lxc
     platform: proxmox

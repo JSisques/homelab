@@ -36,6 +36,10 @@ scrape_configs:
     static_configs:
       - targets:
           - "uptime-kuma:3001"
+  - job_name: "traefik"
+    static_configs:
+      - targets:
+          - "192.168.1.28:8082"
   - job_name: "gardenia"
     static_configs:
       - targets:
