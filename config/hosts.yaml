@@ -1,1 +1,16 @@
+hosts:
+  raspberrypi-01:
+    type: physical
+    platform: raspberry-pi
+    address: 192.168.1.40
+    role:
+      - k3s
+      - worker
 
+  raspberrypi-02:
+    type: physical
+    platform: raspberry-pi
+    address: 192.168.1.41
+    role:
+      - k3s
+      - worker
