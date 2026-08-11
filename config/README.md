@@ -1,0 +1,422 @@
+# Configuration
+
+This directory contains the central configuration and metadata used by the homelab.
+
+The files in this directory describe the desired state of the homelab at a high level and are consumed by infrastructure, automation, and configuration-generation tools.
+
+## Structure
+
+```text
+config/
+├── README.md
+├── services.yaml
+└── hosts.yaml
+```
+
+Additional configuration files can be added as the homelab grows.
+
+## Source of Truth
+
+The configuration directory acts as the central source of truth for shared homelab metadata.
+
+```text
+                     config/
+                        │
+             ┌──────────┴──────────┐
+             │                     │
+        services.yaml          hosts.yaml
+             │                     │
+     ┌───────┼────────┐            │
+     │       │        │            │
+     ▼       ▼        ▼            ▼
+ Homepage  Prometheus  Uptime   Ansible
+                       Kuma
+```
+
+The goal is to avoid defining the same information multiple times across different tools.
+
+## `services.yaml`
+
+`services.yaml` contains the service catalog for the homelab.
+
+It describes services independently from how they are deployed.
+
+Example:
+
+```yaml
+services:
+
+  grafana:
+    name: Grafana
+    category: Monitoring
+    url: https://grafana.home.arpa
+    icon: grafana.png
+
+    homepage:
+      enabled: true
+      description: Monitoring dashboards
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      target: grafana:3000
+      path: /metrics
+
+    uptime:
+      enabled: true
+```
+
+### Service Metadata
+
+Common fields include:
+
+```yaml
+name:
+category:
+url:
+icon:
+```
+
+These fields describe the service itself.
+
+They can be consumed by multiple systems.
+
+### Homepage
+
+The `homepage` section controls whether the service appears in Homepage.
+
+```yaml
+homepage:
+  enabled: true
+  description: Monitoring dashboards
+```
+
+### Monitoring
+
+The `monitoring` section describes how the service should be monitored by Prometheus.
+
+```yaml
+monitoring:
+  enabled: true
+  type: prometheus
+  target: grafana:3000
+  path: /metrics
+```
+
+This information is consumed by:
+
+```text
+scripts/generation/generate-prometheus.sh
+```
+
+### Uptime Monitoring
+
+The `uptime` section defines whether the service should be monitored by Uptime Kuma.
+
+```yaml
+uptime:
+  enabled: true
+```
+
+Additional Uptime Kuma configuration can be added as required.
+
+## `hosts.yaml`
+
+`hosts.yaml` describes the physical and virtual machines that make up the homelab.
+
+Example:
+
+```yaml
+hosts:
+
+  proxmox:
+    type: server
+    address: 192.168.1.10
+    platform: proxmox
+
+  k3s-01:
+    type: vm
+    address: 192.168.1.30
+    platform: linux
+    role:
+      - k3s
+      - control-plane
+
+  k3s-02:
+    type: vm
+    address: 192.168.1.31
+    platform: linux
+    role:
+      - k3s
+      - worker
+
+  raspberrypi-01:
+    type: physical
+    address: 192.168.1.40
+    platform: raspberry-pi
+    role:
+      - k3s
+      - worker
+```
+
+This information can be used to generate or configure:
+
+* Ansible inventory
+* Monitoring targets
+* Node Exporter configuration
+* K3s nodes
+* Infrastructure documentation
+
+## Configuration vs Infrastructure
+
+The `config/` directory describes **what exists and how it should be represented**.
+
+It does not directly create infrastructure.
+
+The different layers have separate responsibilities:
+
+```text
+config/
+   │
+   ├── services.yaml
+   └── hosts.yaml
+          │
+          ▼
+      Automation
+          │
+    ┌─────┼─────┐
+    │     │     │
+    ▼     ▼     ▼
+Terraform Ansible Generation
+    │     │     │
+    ▼     ▼     ▼
+Proxmox Hosts  Service configs
+                │
+                ▼
+             Services
+```
+
+### Terraform
+
+Terraform manages infrastructure resources.
+
+```text
+terraform/
+```
+
+Examples:
+
+* VMs
+* LXCs
+* Networks
+* Storage
+
+### Ansible
+
+Ansible configures operating systems and hosts.
+
+```text
+ansible/
+```
+
+Examples:
+
+* Packages
+* Docker
+* Node Exporter
+* System configuration
+* K3s prerequisites
+
+### Kubernetes / Argo CD
+
+Kubernetes and Argo CD manage Kubernetes workloads.
+
+```text
+kubernetes/
+```
+
+Examples:
+
+* Kafka
+* Monitoring
+* Applications
+* Ingress
+* Certificates
+
+### Scripts
+
+Scripts consume configuration when a transformation or helper operation is required.
+
+```text
+scripts/
+```
+
+For example:
+
+```text
+config/services.yaml
+        │
+        ▼
+generate-homepage.sh
+        │
+        ▼
+services/homepage/config/services.yaml
+```
+
+## Secrets
+
+Sensitive information must not be stored directly in this directory.
+
+Do not commit:
+
+* Passwords
+* API tokens
+* Private keys
+* SSH private keys
+* Database credentials
+* Cloud credentials
+
+Instead, use the homelab's secret management solution.
+
+References to secrets are acceptable:
+
+```yaml
+credentials:
+  secretRef: grafana-admin
+```
+
+but the actual secret value must be stored outside the repository or in an encrypted secret format.
+
+## Naming Conventions
+
+Use lowercase names with hyphens for service identifiers:
+
+```yaml
+uptime-kuma:
+prometheus:
+kafka-exporter:
+gardenia-api:
+```
+
+Use descriptive categories:
+
+```text
+Infrastructure
+Monitoring
+Networking
+Applications
+Storage
+Security
+```
+
+Keep service identifiers stable because they may be referenced by generated configuration.
+
+## Validation
+
+Configuration should be validated before deployment.
+
+For example:
+
+```bash
+./scripts/validation/validate.sh
+```
+
+Validation should check:
+
+* YAML syntax
+* Required fields
+* Invalid references
+* Duplicate service identifiers
+* Invalid configuration values
+* Secret leaks
+
+## Git Workflow
+
+Configuration changes should follow the normal Git workflow:
+
+```text
+Edit configuration
+       │
+       ▼
+Validate
+       │
+       ▼
+Review diff
+       │
+       ▼
+Commit
+       │
+       ▼
+Push
+       │
+       ▼
+CI/CD
+```
+
+Example:
+
+```bash
+git diff config/
+
+./scripts/validation/validate.sh
+
+git add config/
+git commit -m "config: add kafka monitoring"
+git push
+```
+
+## Design Principles
+
+### Single Source of Truth
+
+Avoid duplicating service metadata across different configuration files.
+
+### Tool Agnostic
+
+The central configuration should describe the homelab rather than being tightly coupled to a particular tool whenever possible.
+
+### Declarative
+
+Configuration should describe the desired state rather than a sequence of commands.
+
+### Reproducible
+
+A fresh homelab should be able to reconstruct its configuration from the repository.
+
+### Version Controlled
+
+All non-secret configuration should live in Git.
+
+### Explicit
+
+Prefer explicit configuration over automatic discovery when reliability matters.
+
+## Relationship With The Repository
+
+```text
+homelab/
+│
+├── config/                 # Central configuration
+│   ├── services.yaml
+│   └── hosts.yaml
+│
+├── terraform/              # Infrastructure
+│   └── proxmox/
+│
+├── ansible/                # Host configuration
+│
+├── kubernetes/             # Kubernetes workloads
+│   ├── argocd/
+│   ├── infrastructure/
+│   └── applications/
+│
+├── services/               # Non-Kubernetes services
+│
+└── scripts/                # Automation and generators
+    ├── generation/
+    └── validation/
+```
+
+The `config/` directory is intentionally kept independent from the implementation details of the infrastructure.
+
+It defines the homelab at a high level; the other layers determine how that desired state is implemented.
