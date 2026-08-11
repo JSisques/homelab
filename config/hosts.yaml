@@ -18,11 +18,13 @@ hosts:
     platform: proxmox
     address: 192.168.1.20
     cpu: 4
-    memory: 4096
-    disk: 32
+    memory: 6144
+    disk: 48
     role:
       - prometheus
       - grafana
+      - loki
+      - alertmanager
 
   homepage:
     type: lxc
@@ -73,6 +75,36 @@ hosts:
     disk: 8
     role:
       - cloudflared
+
+  adguard-home:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.26
+    cpu: 1
+    memory: 512
+    disk: 8
+    role:
+      - adguard-home
+
+  wireguard:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.27
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - wireguard
+
+  pbs:
+    type: vm
+    platform: proxmox
+    address: 192.168.1.30
+    cpu: 2
+    memory: 2048
+    disk: 32
+    role:
+      - pbs
 
   raspberrypi-01:
     type: physical

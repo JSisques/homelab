@@ -30,6 +30,11 @@ Monitoring:
     href: https://uptime.home.arpa
     icon: uptime-kuma.png
     description: Service monitoring
+Networking:
+  AdGuard Home:
+    href: https://adguard.home.arpa
+    icon: adguard-home.png
+    description: DNS and network-wide ad blocking
 Utilities:
   IT-Tools:
     href: https://it-tools.home.arpa

@@ -93,6 +93,20 @@ services:
     uptime:
       enabled: true
 
+  adguard-home:
+    name: AdGuard Home
+    category: Networking
+    tier: internal
+    url: https://adguard.home.arpa
+    icon: adguard-home.png
+
+    homepage:
+      enabled: true
+      description: DNS and network-wide ad blocking
+
+    uptime:
+      enabled: true
+
   gardenia:
     name: Gardenia
     category: Applications
