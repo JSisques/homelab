@@ -89,3 +89,22 @@ services:
       enabled: true
       type: prometheus
       endpoint: http://gardenia:3000/metrics
+  
+  it-tools:
+    name: IT-Tools
+    category: Utilities
+    url: https://it-tools.home.arpa
+    icon: it-tools.png
+
+    homepage:
+      enabled: true
+      description: Collection of useful developer tools
+
+    uptime:
+      enabled: true
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      target: it-tools-exporter:8080
+      path: /metrics
