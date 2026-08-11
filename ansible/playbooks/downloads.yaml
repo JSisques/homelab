@@ -1,0 +1,7 @@
+---
+- name: Deploy Downloads stack
+  hosts: downloads
+  become: true
+
+  roles:
+    - downloads

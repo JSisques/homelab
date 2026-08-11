@@ -8,6 +8,31 @@ Automation:
     href: https://n8n.home.arpa
     icon: n8n.png
     description: Workflow automation platform
+Downloads:
+  qBittorrent:
+    href: https://qbittorrent.home.arpa
+    icon: qbittorrent.png
+    description: Torrent client (via VPN)
+  Prowlarr:
+    href: https://prowlarr.home.arpa
+    icon: prowlarr.png
+    description: Indexer manager for Sonarr/Radarr
+  Sonarr:
+    href: https://sonarr.home.arpa
+    icon: sonarr.png
+    description: TV series automation
+  Radarr:
+    href: https://radarr.home.arpa
+    icon: radarr.png
+    description: Movie automation
+  pyLoad:
+    href: https://pyload.home.arpa
+    icon: pyload.png
+    description: Direct HTTP/FTP link downloader
+  MeTube:
+    href: https://metube.home.arpa
+    icon: metube.png
+    description: YouTube/video downloader (yt-dlp)
 Infrastructure:
   Proxmox:
     href: https://proxmox.home.arpa

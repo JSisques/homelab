@@ -318,6 +318,160 @@ services:
       scheme: http
       module: http_2xx
 
+  qbittorrent:
+    name: qBittorrent
+    category: Downloads
+    # Torrent client, network_mode: service:gluetun in compose.yaml so all
+    # its traffic (not the WebUI, just torrent traffic) routes through the
+    # VPN. WebUI itself is published on the host like any other service.
+    tier: internal
+    url: https://qbittorrent.home.arpa
+    icon: qbittorrent.png
+
+    homepage:
+      enabled: true
+      description: Torrent client (via VPN)
+
+    traefik:
+      enabled: true
+      port: 8080
+
+    uptime:
+      enabled: true
+
+    # No native /metrics. Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
+  prowlarr:
+    name: Prowlarr
+    category: Downloads
+    tier: internal
+    url: https://prowlarr.home.arpa
+    icon: prowlarr.png
+
+    homepage:
+      enabled: true
+      description: Indexer manager for Sonarr/Radarr
+
+    traefik:
+      enabled: true
+      port: 9696
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 9696
+      scheme: http
+      module: http_2xx
+
+  sonarr:
+    name: Sonarr
+    category: Downloads
+    tier: internal
+    url: https://sonarr.home.arpa
+    icon: sonarr.png
+
+    homepage:
+      enabled: true
+      description: TV series automation
+
+    traefik:
+      enabled: true
+      port: 8989
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8989
+      scheme: http
+      module: http_2xx
+
+  radarr:
+    name: Radarr
+    category: Downloads
+    tier: internal
+    url: https://radarr.home.arpa
+    icon: radarr.png
+
+    homepage:
+      enabled: true
+      description: Movie automation
+
+    traefik:
+      enabled: true
+      port: 7878
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 7878
+      scheme: http
+      module: http_2xx
+
+  pyload:
+    name: pyLoad
+    category: Downloads
+    # Paste a direct HTTP/FTP link, it downloads straight to the NAS —
+    # the generic "give it a URL" downloader that isn't a torrent or a
+    # video site.
+    tier: internal
+    url: https://pyload.home.arpa
+    icon: pyload.png
+
+    homepage:
+      enabled: true
+      description: Direct HTTP/FTP link downloader
+
+    traefik:
+      enabled: true
+      port: 8000
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8000
+      scheme: http
+      module: http_2xx
+
+  metube:
+    name: MeTube
+    category: Downloads
+    # yt-dlp web UI: paste a YouTube (or any yt-dlp-supported site) URL,
+    # it downloads the video/audio straight to the NAS.
+    tier: internal
+    url: https://metube.home.arpa
+    icon: metube.png
+
+    homepage:
+      enabled: true
+      description: YouTube/video downloader (yt-dlp)
+
+    traefik:
+      enabled: true
+      port: 8081
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8081
+      scheme: http
+      module: http_2xx
+
   pbs:
     name: Proxmox Backup Server
     category: Infrastructure

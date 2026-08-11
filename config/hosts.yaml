@@ -93,6 +93,26 @@ hosts:
     role:
       - jellyfin
 
+  downloads:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.33
+    # gluetun + qBittorrent (torrents, routed through VPN) + Prowlarr +
+    # Sonarr/Radarr (indexing/organizing into Jellyfin's library) + pyLoad
+    # (direct HTTP/FTP links) + MeTube (yt-dlp web UI). All app state is
+    # local; actual downloaded files live on the NAS (see
+    # services/downloads/README.md).
+    cpu: 4
+    memory: 4096
+    disk: 24
+    role:
+      - qbittorrent
+      - prowlarr
+      - sonarr
+      - radarr
+      - pyload
+      - metube
+
   cloudflared:
     type: lxc
     platform: proxmox

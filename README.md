@@ -13,13 +13,14 @@ The homelab should be recoverable from scratch by deploying the desired state de
 What exists so far:
 
 * Terraform configuration for Proxmox (`terraform/proxmox/`) that provisions every LXC and VM declaratively from `config/hosts.yaml` (`lxc_network` / `vm_nodes`, both generated) — not yet applied to a running cluster.
-* Ansible roles and playbooks for every LXC/VM service (`it-tools`, `n8n`, `obsidian`, `jellyfin`, `monitoring` [Prometheus + Grafana + Loki + Alertmanager], `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`) plus a mandatory base (`common`, `node-exporter`, `promtail`, `docker`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
-* Standalone Docker Compose definitions for `prometheus`, `grafana`, `loki`, `alertmanager`, `homepage`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `uptime-kuma`, `cloudflared`, `adguard-home`, and `wireguard` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config. `pbs` and `promtail` are native packages instead (no Docker involved).
+* Ansible roles and playbooks for every LXC/VM service (`it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` [Prometheus + Grafana + Loki + Alertmanager], `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `wireguard`, `pbs`) plus a mandatory base (`common`, `node-exporter`, `promtail`, `docker`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
+* Standalone Docker Compose definitions for `prometheus`, `grafana`, `loki`, `alertmanager`, `homepage`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `uptime-kuma`, `cloudflared`, `adguard-home`, and `wireguard` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config. `pbs` and `promtail` are native packages instead (no Docker involved).
 * A Cloudflare Tunnel (`services/cloudflared/`) scaffolded to route `sisqueslabs.com` and `jsisques.net` to internal services — the ingress rules are in Git, but the tunnel itself still needs a one-time manual setup (see `services/cloudflared/README.md`) before it can run for real.
 * A WireGuard VPN gateway (`services/wireguard/`) for internal-only remote access, AdGuard Home for network-wide DNS/ad-blocking, and Traefik (`services/traefik/`) as the internal reverse proxy that makes every `*.home.arpa` URL in `config/services.yaml` actually resolve to something. All three still need a one-time manual step outside Git (router port-forward + Dynamic DNS for WireGuard; AdGuard's first-run wizard plus one DNS rewrite pointing `*.home.arpa` at Traefik).
 * Proxmox Backup Server (`ansible/roles/pbs/`), backing up onto the NAS over NFS — installed as a native package (not Docker), on its own VM. The Proxmox VE side (registering PBS as a storage backend, the actual backup job) is still a manual one-time step; see `ansible/roles/pbs/README.md`.
 * Obsidian (`services/obsidian/`), a headless, MCP-only "second brain" vault — no browser GUI, just an MCP endpoint (`https://obsidian.home.arpa`) that AI agents use to read/write notes. Its Markdown files live on the NAS over NFS, same pattern as PBS; see `services/obsidian/README.md`.
 * Jellyfin (`services/jellyfin/`), a media server whose libraries are mounted read-only from NFS exports on the NAS, same pattern as Obsidian. Reachable on the LAN at `https://jellyfin.home.arpa` and remotely at `https://jellyfin.jsisques.net` via the existing Cloudflare Tunnel; see `services/jellyfin/README.md`.
+* A downloads stack (`services/downloads/`) — qBittorrent (behind a gluetun VPN gateway), Prowlarr, Sonarr, Radarr, pyLoad, and MeTube, all on one LXC. Paste a torrent/magnet link, a direct HTTP/FTP link, or a video-site link and it lands on the NAS; Sonarr/Radarr additionally organize finished TV/movie downloads straight into Jellyfin's library. LAN-only (`*.home.arpa`), never routed through the Cloudflare Tunnel; see `services/downloads/README.md`.
 * A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it.
 * A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
@@ -99,7 +100,7 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home |
+| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
 | Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site, Jellyfin (also reachable on `*.home.arpa` for LAN) |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia (Kubernetes) |
 
@@ -129,7 +130,7 @@ homelab/
 │   ├── playbooks/
 │   └── roles/
 │       ├── common/  docker/  node-exporter/  promtail/
-│       ├── it-tools/  n8n/  obsidian/  jellyfin/  monitoring/  homepage/  uptime-kuma/
+│       ├── it-tools/  n8n/  obsidian/  jellyfin/  downloads/  monitoring/  homepage/  uptime-kuma/
 │       └── cloudflared/  adguard-home/  traefik/  wireguard/  pbs/  k3s/
 │
 ├── kubernetes/
@@ -139,7 +140,7 @@ homelab/
 │
 ├── services/
 │   ├── prometheus/  grafana/  loki/  alertmanager/
-│   ├── homepage/  it-tools/  n8n/  obsidian/  jellyfin/  uptime-kuma/
+│   ├── homepage/  it-tools/  n8n/  obsidian/  jellyfin/  downloads/  uptime-kuma/
 │   └── cloudflared/  adguard-home/  traefik/  wireguard/
 │
 ├── scripts/
@@ -175,7 +176,7 @@ make validate              # Terraform + Ansible + YAML + shell + Compose checks
 make status                # show current Terraform-managed infrastructure
 ```
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `obsidian`, `jellyfin`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `traefik`, `wireguard`, `pbs`, `k3s-server`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, and `monitoring` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`); see the matching role's README.
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `traefik`, `wireguard`, `pbs`, `k3s-server`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, and `downloads` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`); see the matching role's README.
 
 ## Configuration
 
@@ -183,7 +184,7 @@ The `config/` directory contains the high-level desired state of the homelab. Se
 
 ### Hosts
 
-`config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `cloudflared`), and the two Raspberry Pi K3s workers.
+`config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `cloudflared`), and the two Raspberry Pi K3s workers.
 
 ```yaml
 hosts:
@@ -292,7 +293,7 @@ Every service and host in the homelab is scraped one of three ways, and Promethe
 
 1. **Native `/metrics`** — most services (Grafana, Prometheus itself, Kafka, Uptime Kuma, Traefik, Gardenia, Loki, Alertmanager, Cloudflared) export Prometheus metrics directly; `config/services.yaml`'s `monitoring:` block for each declares the endpoint.
 2. **Host-level agents** — every `type: lxc`/`type: vm` host in `config/hosts.yaml` automatically gets `node-exporter` (`:9100`) and `promtail` (`:9080`) scrape targets, since both are a mandatory Ansible baseline on every host (see `ansible/README.md`) regardless of which application is deployed there — no per-service opt-in needed.
-3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (IT-Tools, n8n, Jellyfin, AdGuard Home, Homepage, plus the self-signed PBS and K3s apiserver endpoints) are probed for up/down + latency instead. Targets live in `services/prometheus/blackbox-targets.yml`, see `services/blackbox-exporter/README.md`.
+3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (IT-Tools, n8n, Jellyfin, AdGuard Home, Homepage, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube, plus the self-signed PBS and K3s apiserver endpoints) are probed for up/down + latency instead. Targets live in `services/prometheus/blackbox-targets.yml`, see `services/blackbox-exporter/README.md`.
 
 The one known gap: WireGuard has no native metrics and no HTTP endpoint to blackbox-probe, so it currently isn't scraped at all.
 
@@ -326,7 +327,7 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD. The next priorities:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD. The next priorities:
 
 * **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
 * **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.

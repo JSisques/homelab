@@ -1,0 +1,179 @@
+# Downloads
+
+The homelab's "give it a URL and it lands on the NAS" stack. It covers the three shapes a download request takes — a torrent/magnet link, a direct HTTP/FTP link, or a video-site link — and, for TV/movies, automates moving the finished file into Jellyfin's library.
+
+## Responsibilities
+
+- **qBittorrent** — torrent client. Its traffic (only its traffic) is routed through a VPN via **gluetun**, so the homelab's real IP is never exposed to other peers.
+- **Prowlarr** — indexer manager, feeds search results to Sonarr/Radarr.
+- **Sonarr** / **Radarr** — watch for wanted TV episodes/movies, send them to qBittorrent, then rename and move the finished files into the same NFS exports Jellyfin reads from (`/mnt/nas/multimedia/series`, `/mnt/nas/multimedia/peliculas`).
+- **pyLoad** — paste a direct HTTP/FTP link, it downloads straight to the NAS. The generic case: no indexer, no torrent, no video site — just a file behind a URL.
+- **MeTube** — paste a YouTube (or any [yt-dlp](https://github.com/yt-dlp/yt-dlp)-supported site) link, it downloads the video/audio straight to the NAS.
+
+All seven containers are deployed together as one Docker Compose application inside a dedicated LXC (`downloads`), same pattern as `jellyfin`, `n8n`, and the `monitoring` stack (multiple related containers, one LXC).
+
+## Directory Structure
+
+```text
+services/downloads/
+├── README.md
+├── compose.yaml
+└── .env.example
+```
+
+## Architecture
+
+```text
+                              downloads LXC
+                                    │
+                             Docker Compose
+                                    │
+      ┌───────────┬───────────┬────┴────┬───────────┬───────────┐
+      │           │           │         │           │           │
+  gluetun     prowlarr     sonarr    radarr      pyload      metube
+      │        :9696       :8989    :7878        :8000       :8081
+      │
+  qbittorrent
+     :8080
+  (shares gluetun's
+   network namespace)
+      │
+      ├── /downloads ──────────────────────┐
+      │                                    │
+      ▼                                    ▼
+/mnt/nas/downloads/torrents      sonarr/radarr also read this path,
+                                  then move the finished file to:
+                                        │
+                        ┌───────────────┴───────────────┐
+                        ▼                                ▼
+              /mnt/nas/multimedia/series      /mnt/nas/multimedia/peliculas
+             (same exports Jellyfin reads)     (same exports Jellyfin reads)
+
+pyload   → /mnt/nas/downloads/direct
+metube   → /mnt/nas/downloads/youtube
+```
+
+```text
+192.168.0.111:/export/Downloads              → /mnt/nas/downloads      (rw)
+192.168.0.111:/export/Multimedia/peliculas    → /mnt/nas/multimedia/peliculas (rw)
+192.168.0.111:/export/Multimedia/series       → /mnt/nas/multimedia/series    (rw)
+```
+
+## Persistence
+
+| Path                            | Backing                              | Contents                                             |
+| -------------------------------- | ------------------------------------- | ----------------------------------------------------- |
+| `/mnt/nas/downloads/torrents`    | NFS export on the NAS (rw)             | qBittorrent's active + finished torrent data           |
+| `/mnt/nas/downloads/direct`      | NFS export on the NAS (rw)             | pyLoad's finished downloads                            |
+| `/mnt/nas/downloads/youtube`     | NFS export on the NAS (rw)             | MeTube's finished downloads                            |
+| `/mnt/nas/multimedia/peliculas`  | NFS export on the NAS (rw)             | Radarr's organized movie library — same path Jellyfin reads (read-only there) |
+| `/mnt/nas/multimedia/series`     | NFS export on the NAS (rw)             | Sonarr's organized TV library — same path Jellyfin reads (read-only there) |
+| `gluetun-config`, `*-config`     | Docker named volumes                   | App state: VPN state, WebUI settings, indexer/download-client wiring, watch lists, history |
+
+Every `*-config` volume is worth backing up (indexer config, download-client wiring, watch/wanted lists); the NAS paths are the actual media, backed up (or not) as part of whatever NAS-level backup policy applies to `/export`.
+
+### Why Sonarr/Radarr copy instead of hardlink
+
+Sonarr/Radarr can do an instant, zero-extra-space "hardlink" import instead of a copy, but only when the download folder and the final library folder are on the **same filesystem**. Here they're two separate NFS exports, so imports are a copy-then-delete-source instead — slower and briefly doubles disk usage for the file being moved, but correct. If this becomes a real bottleneck, the fix is putting `/downloads/torrents` and the library folders under one shared NAS export instead of three separate ones.
+
+### NAS prerequisite
+
+Before deploying, the following must exist on the NAS:
+
+```text
+192.168.0.111:/export/Downloads          (new export, read-write to the downloads LXC)
+192.168.0.111:/export/Multimedia/peliculas  (existing Jellyfin export — add read-write access for the downloads LXC's IP; Jellyfin itself keeps mounting it read-only)
+192.168.0.111:/export/Multimedia/series     (same as above)
+```
+
+Adjust `ansible/roles/downloads/defaults/main.yaml` if the real export paths differ. The Ansible role mounts them at `/mnt/nas/downloads` and `/mnt/nas/multimedia/{peliculas,series}` on the LXC.
+
+## VPN (gluetun)
+
+Only qBittorrent's traffic goes through the VPN — `network_mode: service:gluetun` in `compose.yaml` makes it share gluetun's network namespace, so it has no IP/ports of its own; every request the container makes leaves through the tunnel. Prowlarr, Sonarr, Radarr, pyLoad, and MeTube are unaffected and reach the internet directly, same as any other service in this homelab.
+
+gluetun needs a WireGuard-capable VPN provider (Mullvad, ProtonVPN, AirVPN, etc. — see the [provider list](https://github.com/qdm12/gluetun/wiki)) and three secrets that must **never** be committed:
+
+```text
+VPN_SERVICE_PROVIDER
+WIREGUARD_PRIVATE_KEY
+WIREGUARD_ADDRESSES
+```
+
+These are passed in the same way `n8n_postgres_password` is today — as environment variables consumed by the Makefile's `ANSIBLE_EXTRA_VARS` at deploy time (see `ansible/roles/downloads/README.md`).
+
+### LXC prerequisite: `/dev/net/tun`
+
+gluetun needs `/dev/net/tun` and `NET_ADMIN` to bring up the WireGuard interface *inside* the container, which in turn needs the **Proxmox host** to expose `/dev/net/tun` into the (unprivileged) `downloads` LXC. This is a manual, one-time Proxmox-side step the same way the Cloudflare Tunnel credentials and AdGuard's first-run wizard are — it isn't expressed in `terraform/proxmox/lxc.tf` today. If gluetun fails to create the WireGuard interface after deploying, this is the first thing to check.
+
+## Networking
+
+Every service in this stack is `tier: internal` — `*.home.arpa` through Traefik, LAN/VPN only. None of it is routed through the Cloudflare Tunnel: a torrent client and download automation have no business being reachable from the public internet.
+
+| Service     | URL                          | Port  |
+| ----------- | ----------------------------- | ----- |
+| qBittorrent | `qbittorrent.home.arpa`       | 8080  |
+| Prowlarr    | `prowlarr.home.arpa`          | 9696  |
+| Sonarr      | `sonarr.home.arpa`            | 8989  |
+| Radarr      | `radarr.home.arpa`            | 7878  |
+| pyLoad      | `pyload.home.arpa`            | 8000  |
+| MeTube      | `metube.home.arpa`            | 8081  |
+
+## Resource sizing
+
+4 vCPU / 4GB RAM, 24GB disk (image layers + `*-config` volumes only — all downloaded/media data is on the NAS). Seven containers share this budget; Sonarr/Radarr/Prowlarr are the heavier ones (.NET, moderate idle memory). Revisit (`config/hosts.yaml`) if imports start queueing up or the WebUIs feel sluggish under load.
+
+## Deployment
+
+Terraform creates the LXC:
+
+```text
+terraform/proxmox/lxc.tf
+```
+
+The LXC is configured by Ansible:
+
+```text
+ansible/
+├── playbooks/
+│   └── downloads.yaml
+└── roles/
+    └── downloads/
+```
+
+```bash
+export DOWNLOADS_VPN_SERVICE_PROVIDER=...
+export DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY=...
+export DOWNLOADS_VPN_WIREGUARD_ADDRESSES=...
+make deploy-downloads
+```
+
+## First-run configuration (manual, one-time)
+
+Docker Compose brings up the containers; wiring them together is still a manual first-run step, same as Jellyfin's setup wizard:
+
+1. **qBittorrent** — log in (default `admin`/`adminadmin`, linuxserver.io prints the real generated password to the container log on first start — change it immediately), set the default save path to `/downloads`.
+2. **Prowlarr** — add indexers, then add qBittorrent, Sonarr, and Radarr as connected apps (`Settings → Apps`), using each container's Docker Compose service name as the host (e.g. `http://qbittorrent:8080` won't resolve since qBittorrent has no network of its own — use the `gluetun` service name instead: `http://gluetun:8080`).
+3. **Sonarr/Radarr** — add qBittorrent as a download client (host `gluetun`, port `8080`), set root folders to `/tv` and `/movies` respectively, and sync indexers from Prowlarr.
+4. **pyLoad/MeTube** — no wiring needed; open the WebUI and paste a link.
+
+## Local Development
+
+```bash
+cd services/downloads
+
+cp .env.example .env
+mkdir -p /tmp/downloads-nas/{torrents,direct,youtube,multimedia/peliculas,multimedia/series}   # stand-in for the NAS mounts
+
+docker compose up -d
+```
+
+Note: `compose.yaml`'s bind mounts point at `/mnt/nas/...` (what the Ansible role sets up on the real LXC). For local development, either create those exact paths locally or edit the bind mounts to point at `/tmp/downloads-nas/...` before running.
+
+## Monitoring
+
+None of these have a native Prometheus `/metrics` endpoint, so each WebUI is probed by `blackbox_exporter` for up/down + latency instead (see `config/services.yaml`, `services/blackbox-exporter/README.md`) and added to Uptime Kuma as an HTTP monitor on its port.
+
+## Source of Truth
+
+Terraform manages the LXC (existence, CPU, memory, disk, network). Ansible manages host configuration, the NFS mounts, secrets templating, and Docker Compose deployment. This directory manages the Compose definition and application configuration.
