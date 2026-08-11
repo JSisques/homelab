@@ -271,6 +271,24 @@ services:
       scheme: http
       module: http_2xx
 
+  obsidian:
+    name: Obsidian
+    category: Productivity
+    tier: internal  # second-brain vault, AI-agent access only, see services/obsidian
+    url: https://obsidian.home.arpa
+    icon: obsidian.png
+
+    homepage:
+      enabled: false  # MCP/API only, no web UI to browse to (see services/obsidian/README.md)
+      description: Second-brain vault exposed to AI agents via MCP
+
+    traefik:
+      enabled: true
+      port: 4000
+
+    uptime:
+      enabled: true  # TCP monitor on :4000, an HTTP 2xx check isn't reliable for a bare MCP endpoint
+
   pbs:
     name: Proxmox Backup Server
     category: Infrastructure

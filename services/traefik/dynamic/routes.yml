@@ -49,6 +49,11 @@ http:
       entryPoints: ["websecure"]
       service: n8n
       tls: {}
+    obsidian:
+      rule: "Host(`obsidian.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: obsidian
+      tls: {}
   services:
     grafana:
       loadBalancer:
@@ -78,3 +83,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.24:5678"
+    obsidian:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.29:4000"

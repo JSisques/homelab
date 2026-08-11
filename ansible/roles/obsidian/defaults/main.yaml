@@ -1,0 +1,8 @@
+---
+obsidian_app_dir: /opt/obsidian
+
+# Adjust to the NAS's real NFS export before running this role. The IP is
+# the "nas" host in config/hosts.yaml — update this if that host's
+# address ever changes.
+obsidian_nas_export: "192.168.0.111:/export/obsidian"
+obsidian_vault_mount_path: /mnt/nas/obsidian

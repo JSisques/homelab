@@ -66,6 +66,16 @@ hosts:
     role:
       - n8n
 
+  obsidian:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.29
+    cpu: 2
+    memory: 2048
+    disk: 20
+    role:
+      - obsidian
+
   cloudflared:
     type: lxc
     platform: proxmox

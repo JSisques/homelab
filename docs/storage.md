@@ -60,6 +60,7 @@ Backups should cover:
 - This Git repository and its history.
 - Terraform state and its remote backend, if used.
 - Proxmox VM and LXC backups — via Proxmox Backup Server (`ansible/roles/pbs/`), datastore on the NAS over NFS, not on the Proxmox host's own disk.
+- The Obsidian vault (`ansible/roles/obsidian/`) — mounted from an NFS export on the NAS (`192.168.0.111:/export/obsidian`) at `/mnt/nas/obsidian`, bind-mounted into the container. This is the only copy of the vault's Markdown notes; the `obsidian-config` Docker volume alongside it holds only regenerable app state.
 - Kubernetes resource definitions and persistent volume data.
 - The Prometheus and Loki Docker volumes.
 - Grafana provisioning and dashboards.
