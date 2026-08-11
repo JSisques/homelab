@@ -26,6 +26,10 @@ services:
       enabled: true
       description: Monitoring dashboards
 
+    traefik:
+      enabled: true
+      port: 3000
+
     monitoring:
       enabled: true
       type: prometheus
@@ -41,6 +45,10 @@ services:
     homepage:
       enabled: true
       description: Metrics and monitoring
+
+    traefik:
+      enabled: true
+      port: 9090
 
     monitoring:
       enabled: true
@@ -113,6 +121,10 @@ services:
       enabled: true
       description: Service monitoring
 
+    traefik:
+      enabled: true
+      port: 3001
+
     monitoring:
       enabled: true
       type: prometheus
@@ -129,6 +141,10 @@ services:
       enabled: false  # Homepage does not need to link to itself
       description: Central dashboard for homelab services
 
+    traefik:
+      enabled: true
+      port: 3000
+
     uptime:
       enabled: true
 
@@ -142,6 +158,10 @@ services:
     homepage:
       enabled: true
       description: DNS and network-wide ad blocking
+
+    traefik:
+      enabled: true
+      port: 3000
 
     uptime:
       enabled: true
@@ -192,6 +212,10 @@ services:
       enabled: true
       description: Collection of useful developer tools
 
+    traefik:
+      enabled: true
+      port: 8080
+
     uptime:
       enabled: true
 
@@ -208,6 +232,10 @@ services:
     homepage:
       enabled: true
       description: Workflow automation platform
+
+    traefik:
+      enabled: true
+      port: 5678
 
     uptime:
       enabled: true

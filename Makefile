@@ -32,9 +32,10 @@ services: ## List services that can be deployed individually (make deploy-<servi
 
 ## --- Configuration generation (config/ -> everything else) --------------
 
-generate: ## Regenerate Homepage, Prometheus, Terraform vars, and Ansible inventory from config/
+generate: ## Regenerate Homepage, Prometheus, Traefik, Terraform vars, and Ansible inventory from config/
 	./scripts/generation/generate-homepage.sh
 	./scripts/generation/generate-prometheus.sh
+	./scripts/generation/generate-traefik.sh
 	./scripts/generation/generate-terraform-vars.sh
 	./scripts/generation/generate-inventory.sh
 

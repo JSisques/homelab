@@ -16,8 +16,24 @@ services/traefik/
 ├── compose.yaml
 ├── traefik.yml          # static config
 └── dynamic/
-    └── routes.yml         # routers + backend addresses, hand-authored
+    └── routes.yml        # routers + backend addresses — generated
 ```
+
+## Configuration
+
+`dynamic/routes.yml` is **generated** from the central service and host catalogs and must not be edited by hand:
+
+```text
+config/services.yaml, config/hosts.yaml
+        │
+        ▼
+scripts/generation/generate-traefik.sh
+        │
+        ▼
+services/traefik/dynamic/routes.yml
+```
+
+A service gets a router + backend automatically once it declares a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml` (see grafana, prometheus, homepage, uptime-kuma, it-tools, n8n, adguard-home for examples). The router's hostname comes from that service's own `url:`; the backend address comes from `config/hosts.yaml` — a host whose key matches the service name directly, or (for services like Grafana/Prometheus that share the `monitoring` host rather than getting one of their own) whose `role` list includes the service name.
 
 ## One-time setup: point `*.home.arpa` at Traefik
 
@@ -35,9 +51,10 @@ Routers request TLS with an empty `tls: {}`, which makes Traefik hand out its ow
 
 ## Adding a new internal service
 
-1. Add a `routers.<name>` + `services.<name>` pair to `dynamic/routes.yml` — the backend URL is that service's LXC IP and published port from `config/hosts.yaml` / its `compose.yaml`.
-2. Traefik picks it up automatically (`providers.file.watch: true` in `traefik.yml` — no restart needed).
-3. Make sure the hostname is covered by the `*.home.arpa` AdGuard rewrite above (it already is, for anything under `.home.arpa`).
+1. Add a `traefik: {enabled: true, port: <n>}` block to that service's entry in `config/services.yaml` (its `url:` and the matching entry/role in `config/hosts.yaml` must already exist).
+2. Run `./scripts/generation/generate-traefik.sh` (or `make generate`) and commit the regenerated `dynamic/routes.yml`.
+3. Deploy — Traefik picks up the new file automatically (`providers.file.watch: true` in `traefik.yml`, no restart needed).
+4. Make sure the hostname is covered by the `*.home.arpa` AdGuard rewrite above (it already is, for anything under `.home.arpa`).
 
 ## Deployment
 
