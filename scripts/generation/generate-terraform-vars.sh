@@ -47,13 +47,12 @@ yq '
           })
         | (if length == 0 then {} else add end)
       ),
-      k3s_nodes: (
+      vm_nodes: (
         $hosts
         | to_entries
         | map(select(.value.type == "vm" and .value.address != "TBD"))
         | map({
             (.key): {
-              name: .key,
               proxmox_node: (.value.proxmox_node // "pve"),
               cpu: .value.cpu,
               memory: .value.memory,

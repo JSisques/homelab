@@ -118,23 +118,20 @@ Ansible
 
 ## Virtual Machines
 
-Virtual machines are defined in:
+Virtual machines are defined generically in `vms.tf`, the same way LXCs are: one `resource "proxmox_virtual_environment_vm" "vm"` with `for_each = var.vm_nodes`, generated from every `type: vm` host in `config/hosts.yaml` via `generate-terraform-vars.sh`.
 
-```text
-vms.tf
-```
+Every VM is **cloned** from an existing Proxmox template (`clone { vm_id = var.vm_template_id }`) — Terraform doesn't install an OS, it clones one. Create that template once (a cloud-init-ready Debian/Ubuntu image converted to a template VM) and set its VM ID as `vm_template_id`.
 
-K3s nodes can be provisioned as virtual machines:
+`vm_nodes` currently provisions:
 
 ```text
 Proxmox
 │
-├── k3s-01
-├── k3s-02
-└── k3s-03
+├── pbs               (Proxmox Backup Server)
+└── (K3s nodes, once config/hosts.yaml gets type: vm entries for them)
 ```
 
-The VMs are subsequently configured using Ansible and become part of the Kubernetes cluster.
+K3s nodes and PBS share the same generic VM mechanism — what differs is the Ansible role that configures each one afterwards.
 
 ## Variables
 

@@ -12,7 +12,12 @@ ssh_public_key  = "ssh-ed25519 AAAA... user@host"
 debian_template = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
 vm_user         = "ansible"
 
-# lxc_network and k3s_nodes are NOT set here. They are generated from
+# VM ID of a cloud-init-ready template (Debian/Ubuntu cloud image, converted
+# to a Proxmox template once) that every managed VM is cloned from. Create it
+# manually — Terraform only clones existing templates, it doesn't build them.
+vm_template_id = 9000
+
+# lxc_network and vm_nodes are NOT set here. They are generated from
 # config/hosts.yaml (the single source of truth for host addresses and
 # resource sizing) by scripts/generation/generate-terraform-vars.sh, which
 # writes terraform/proxmox/hosts.auto.tfvars.json. Terraform loads that

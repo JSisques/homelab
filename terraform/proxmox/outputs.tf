@@ -6,10 +6,10 @@ output "lxc_ips" {
   }
 }
 
-output "k3s_ips" {
-  description = "IP addresses of the K3s virtual machines managed by Terraform"
+output "vm_ips" {
+  description = "IP addresses of the virtual machines managed by Terraform"
 
   value = {
-    for name, node in var.k3s_nodes : name => node.ip
+    for name, node in var.vm_nodes : name => node.ip
   }
 }

@@ -57,11 +57,15 @@ variable "vm_user" {
   default     = "ansible"
 }
 
-variable "k3s_nodes" {
-  description = "K3s virtual machines to provision. Empty by default until the K3s cluster is ready to be built."
+variable "vm_template_id" {
+  description = "Proxmox VM ID of the cloud-init-ready template that every managed VM is cloned from"
+  type        = number
+}
+
+variable "vm_nodes" {
+  description = "Virtual machines to provision (K3s nodes, Proxmox Backup Server, ...), keyed by hostname. Empty by default."
 
   type = map(object({
-    name         = string
     proxmox_node = string
     cpu          = number
     memory       = number

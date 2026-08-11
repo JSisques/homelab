@@ -1,8 +1,13 @@
-resource "proxmox_virtual_environment_vm" "k3s" {
-  for_each = var.k3s_nodes
+resource "proxmox_virtual_environment_vm" "vm" {
+  for_each = var.vm_nodes
 
-  name      = each.value.name
+  name      = each.key
   node_name = each.value.proxmox_node
+
+  clone {
+    vm_id = var.vm_template_id
+    full  = true
+  }
 
   cpu {
     cores = each.value.cpu
@@ -22,10 +27,6 @@ resource "proxmox_virtual_environment_vm" "k3s" {
     bridge = var.network_bridge
   }
 
-  operating_system {
-    type = "l26"
-  }
-
   initialization {
     ip_config {
       ipv4 {
@@ -39,4 +40,6 @@ resource "proxmox_virtual_environment_vm" "k3s" {
       keys     = [var.ssh_public_key]
     }
   }
+
+  started = true
 }
