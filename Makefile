@@ -5,13 +5,16 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n obsidian jellyfin monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
+SERVICES := it-tools n8n obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
 	-e "cloudflared_credentials_json=$${CLOUDFLARED_CREDS_JSON}" \
 	-e "monitoring_alertmanager_telegram_bot_token=$${TELEGRAM_BOT_TOKEN}" \
-	-e "monitoring_alertmanager_telegram_chat_id=$${TELEGRAM_CHAT_ID}"
+	-e "monitoring_alertmanager_telegram_chat_id=$${TELEGRAM_CHAT_ID}" \
+	-e "downloads_vpn_service_provider=$${DOWNLOADS_VPN_SERVICE_PROVIDER}" \
+	-e "downloads_vpn_wireguard_private_key=$${DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY}" \
+	-e "downloads_vpn_wireguard_addresses=$${DOWNLOADS_VPN_WIREGUARD_ADDRESSES}"
 
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \

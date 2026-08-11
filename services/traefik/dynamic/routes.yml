@@ -59,6 +59,36 @@ http:
       entryPoints: ["websecure"]
       service: jellyfin
       tls: {}
+    qbittorrent:
+      rule: "Host(`qbittorrent.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: qbittorrent
+      tls: {}
+    prowlarr:
+      rule: "Host(`prowlarr.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: prowlarr
+      tls: {}
+    sonarr:
+      rule: "Host(`sonarr.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: sonarr
+      tls: {}
+    radarr:
+      rule: "Host(`radarr.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: radarr
+      tls: {}
+    pyload:
+      rule: "Host(`pyload.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: pyload
+      tls: {}
+    metube:
+      rule: "Host(`metube.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: metube
+      tls: {}
   services:
     grafana:
       loadBalancer:
@@ -96,3 +126,27 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.32:8096"
+    qbittorrent:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:8080"
+    prowlarr:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:9696"
+    sonarr:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:8989"
+    radarr:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:7878"
+    pyload:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:8000"
+    metube:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.33:8081"

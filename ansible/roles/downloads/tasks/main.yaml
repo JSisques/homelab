@@ -1,0 +1,76 @@
+---
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount points
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ downloads_mount_path }}"
+    - "{{ downloads_media_mount_path }}/peliculas"
+    - "{{ downloads_media_mount_path }}/series"
+
+- name: Mount the NAS NFS export (downloads, rw)
+  ansible.posix.mount:
+    path: "{{ downloads_mount_path }}"
+    src: "{{ downloads_nas_export_downloads }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Mount the NAS NFS export (peliculas, rw)
+  ansible.posix.mount:
+    path: "{{ downloads_media_mount_path }}/peliculas"
+    src: "{{ downloads_nas_export_peliculas }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Mount the NAS NFS export (series, rw)
+  ansible.posix.mount:
+    path: "{{ downloads_media_mount_path }}/series"
+    src: "{{ downloads_nas_export_series }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Create download library subdirectories
+  ansible.builtin.file:
+    path: "{{ downloads_mount_path }}/{{ item }}"
+    state: directory
+    mode: "0775"
+    owner: "{{ downloads_puid }}"
+    group: "{{ downloads_pgid }}"
+  loop:
+    - torrents
+    - direct
+    - youtube
+
+- name: Create downloads application directory
+  ansible.builtin.file:
+    path: "{{ downloads_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy downloads environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ downloads_app_dir }}/.env"
+    mode: "0600"
+
+- name: Deploy downloads Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/downloads/compose.yaml"
+    dest: "{{ downloads_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start the downloads stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ downloads_app_dir }}"
+    state: present

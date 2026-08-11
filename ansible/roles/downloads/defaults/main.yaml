@@ -1,0 +1,33 @@
+---
+downloads_app_dir: /opt/downloads
+
+# Adjust to the NAS's real NFS exports before running this role. The IP is
+# the "nas" host in config/hosts.yaml — update these if that host's
+# address or export layout ever changes.
+#
+# Unlike Jellyfin's read-only media mounts, these must be writable: Sonarr/
+# Radarr import into the two Multimedia exports, and everything downloads
+# into the Downloads export.
+downloads_nas_export_downloads: "192.168.0.111:/export/Downloads"
+downloads_nas_export_peliculas: "192.168.0.111:/export/Multimedia/peliculas"
+downloads_nas_export_series: "192.168.0.111:/export/Multimedia/series"
+
+downloads_mount_path: /mnt/nas/downloads
+downloads_media_mount_path: /mnt/nas/multimedia
+
+# linuxserver.io images run as this UID/GID and chown their volumes
+# accordingly — must match a user that can write to the NAS exports above.
+downloads_puid: 1000
+downloads_pgid: 1000
+downloads_timezone: Europe/Madrid
+
+# VPN (gluetun, in front of qBittorrent only). Must be overridden via
+# Ansible Vault or CI secrets (see Makefile's ANSIBLE_EXTRA_VARS). Never
+# commit real values.
+# Provider identifiers: https://github.com/qdm12/gluetun/wiki
+downloads_vpn_service_provider: changeme
+downloads_vpn_wireguard_private_key: changeme
+downloads_vpn_wireguard_addresses: changeme
+# Optional: narrow the VPN server selection, e.g. "Netherlands,Sweden".
+# Leave empty to let gluetun pick.
+downloads_vpn_server_countries: ""
