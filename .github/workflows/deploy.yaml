@@ -1,0 +1,70 @@
+name: Deploy Homelab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homelab-deployment
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: Terraform Apply
+    runs-on:
+      - self-hosted
+      - linux
+      - homelab
+
+    defaults:
+      run:
+        working-directory: terraform/proxmox
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+
+  ansible:
+    name: Ansible Deploy
+    needs: terraform
+
+    runs-on:
+      - self-hosted
+      - linux
+      - homelab
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible dependencies
+        working-directory: ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Generate inventory
+        run: ./scripts/generation/generate-inventory.sh
+
+      - name: Run Ansible
+        working-directory: ansible
+        run: |
+          ansible-playbook \
+            -i inventory/hosts.yml \
+            playbooks/site.yml

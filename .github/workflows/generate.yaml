@@ -1,0 +1,41 @@
+name: Generate
+
+on:
+  pull_request:
+    paths:
+      - "config/**"
+      - "scripts/generation/**"
+      - "services/homepage/config/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "config/**"
+      - "scripts/generation/**"
+      - "services/homepage/config/**"
+
+permissions:
+  contents: read
+
+jobs:
+  homepage:
+    name: Validate Homepage Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Homepage configuration
+        run: ./scripts/generation/generate-homepage.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Homepage files are out of date."
+            echo "Run generate-homepage.sh locally and commit the changes."
+            exit 1
+          fi

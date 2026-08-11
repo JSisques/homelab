@@ -1,0 +1,51 @@
+name: Ansible
+
+on:
+  pull_request:
+    paths:
+      - "ansible/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "ansible/**"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Ansible Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: pip install ansible ansible-lint
+
+      - name: Check Ansible version
+        run: ansible --version
+
+      - name: Ansible Lint
+        run: ansible-lint ansible/
+
+  syntax:
+    name: Ansible Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Syntax check
+        working-directory: ansible
+        run: |
+          for playbook in playbooks/*.yml; do
+            echo "Checking $playbook"
+            ansible-playbook "$playbook" --syntax-check
+          done
