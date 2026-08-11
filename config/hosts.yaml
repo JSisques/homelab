@@ -17,8 +17,8 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.20
-    cpu: 4
-    memory: 6144
+    cpu: 2
+    memory: 2560
     disk: 48
     role:
       - prometheus
@@ -30,8 +30,8 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.21
-    cpu: 2
-    memory: 1024
+    cpu: 1
+    memory: 256
     disk: 8
     role:
       - homepage
@@ -40,8 +40,8 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.22
-    cpu: 2
-    memory: 1024
+    cpu: 1
+    memory: 512
     disk: 8
     role:
       - uptime-kuma
@@ -50,8 +50,8 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.23
-    cpu: 2
-    memory: 1024
+    cpu: 1
+    memory: 256
     disk: 8
     role:
       - it-tools
@@ -61,7 +61,7 @@ hosts:
     platform: proxmox
     address: 192.168.1.24
     cpu: 2
-    memory: 4096
+    memory: 2560
     disk: 32
     role:
       - n8n
@@ -70,7 +70,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.29
-    cpu: 2
+    cpu: 1
+    # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
+    # so this can't be trimmed as far as the other LXCs.
     memory: 2048
     disk: 20
     role:
@@ -80,8 +82,11 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.32
-    cpu: 4
-    memory: 4096
+    # Not in use yet. Direct play barely needs any CPU; bump this (or pass
+    # through the iGPU for hardware transcoding) if software transcoding
+    # becomes the common case.
+    cpu: 2
+    memory: 1536
     disk: 16
     role:
       - jellyfin
@@ -91,7 +96,7 @@ hosts:
     platform: proxmox
     address: 192.168.1.25
     cpu: 1
-    memory: 512
+    memory: 128
     disk: 8
     role:
       - cloudflared
@@ -101,7 +106,7 @@ hosts:
     platform: proxmox
     address: 192.168.1.26
     cpu: 1
-    memory: 512
+    memory: 256
     disk: 8
     role:
       - adguard-home
@@ -111,7 +116,7 @@ hosts:
     platform: proxmox
     address: 192.168.1.28
     cpu: 1
-    memory: 512
+    memory: 256
     disk: 8
     role:
       - traefik
@@ -131,7 +136,9 @@ hosts:
     platform: proxmox
     address: 192.168.1.30
     cpu: 2
-    memory: 2048
+    # Was undersized, not oversized: PBS wants ~4GB baseline for its
+    # dedup chunk index, even with under 1TB of backup data.
+    memory: 4096
     disk: 32
     role:
       - pbs
@@ -140,8 +147,11 @@ hosts:
     type: vm
     platform: proxmox
     address: 192.168.1.31
-    cpu: 4
-    memory: 8192
+    # Runs real pods today (no worker nodes yet), so this keeps headroom
+    # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
+    # as workers and take workload off this node.
+    cpu: 2
+    memory: 3072
     disk: 50
     role:
       - k3s
