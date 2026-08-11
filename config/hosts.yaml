@@ -17,6 +17,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.20
+    cpu: 4
+    memory: 4096
+    disk: 32
     role:
       - prometheus
       - grafana
@@ -25,6 +28,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.21
+    cpu: 2
+    memory: 1024
+    disk: 8
     role:
       - homepage
 
@@ -32,6 +38,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.22
+    cpu: 2
+    memory: 1024
+    disk: 8
     role:
       - uptime-kuma
 
@@ -39,6 +48,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.23
+    cpu: 2
+    memory: 1024
+    disk: 8
     role:
       - it-tools
 
@@ -46,6 +58,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.24
+    cpu: 2
+    memory: 4096
+    disk: 32
     role:
       - n8n
 
@@ -53,6 +68,9 @@ hosts:
     type: lxc
     platform: proxmox
     address: 192.168.1.25
+    cpu: 1
+    memory: 512
+    disk: 8
     role:
       - cloudflared
 

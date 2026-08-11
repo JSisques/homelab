@@ -59,18 +59,27 @@ terraform/proxmox/
 ├── vms.tf
 ├── lxc.tf
 ├── outputs.tf
-└── terraform.tfvars.example
+├── terraform.tfvars.example
+└── hosts.auto.tfvars.json   # generated, see below — do not edit manually
 ```
 
 ## LXC Containers
 
-LXC containers are defined in:
+LXC containers are defined generically in:
 
 ```text
 lxc.tf
 ```
 
-Examples of services that may run in dedicated LXC containers include:
+A single `resource "proxmox_virtual_environment_container" "lxc"` with `for_each = var.lxc_network` provisions every entry in that map — there's no per-service HCL to write or forget. `lxc_network` (and `k3s_nodes`, for VMs) come from `hosts.auto.tfvars.json`, which is **generated from `config/hosts.yaml`**:
+
+```bash
+./scripts/generation/generate-terraform-vars.sh
+```
+
+Addresses, CPU, memory, and disk size are only ever set in `config/hosts.yaml` — never duplicated by hand in a `.tfvars` file. To add or resize an LXC/VM, edit `config/hosts.yaml` and re-run the generator; `hosts.auto.tfvars.json` is picked up by Terraform automatically (the `*.auto.tfvars.json` naming convention) with no `-var-file` flag needed. It's committed to Git like the repo's other generated artifacts (`ansible/inventory/hosts.yml`, `services/homepage/config/services.yaml`) — CI fails if it's out of date.
+
+Examples of services that already run in dedicated LXC containers include:
 
 - Monitoring
 - Homepage

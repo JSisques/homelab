@@ -12,59 +12,12 @@ ssh_public_key  = "ssh-ed25519 AAAA... user@host"
 debian_template = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
 vm_user         = "ansible"
 
-lxc_network = {
-  monitoring = {
-    ip     = "192.168.1.20"
-    cores  = 4
-    memory = 4096
-    disk   = 32
-  }
-
-  homepage = {
-    ip     = "192.168.1.21"
-    cores  = 2
-    memory = 1024
-    disk   = 8
-  }
-
-  uptime-kuma = {
-    ip     = "192.168.1.22"
-    cores  = 2
-    memory = 1024
-    disk   = 8
-  }
-
-  it-tools = {
-    ip     = "192.168.1.23"
-    cores  = 2
-    memory = 1024
-    disk   = 8
-  }
-
-  n8n = {
-    ip     = "192.168.1.24"
-    cores  = 2
-    memory = 4096
-    disk   = 32
-  }
-
-  cloudflared = {
-    ip     = "192.168.1.25"
-    cores  = 1
-    memory = 512
-    disk   = 8
-  }
-}
-
-# K3s nodes are not provisioned yet. Uncomment and adjust once the cluster
-# is ready to be built.
-# k3s_nodes = {
-#   k3s-01 = {
-#     name         = "k3s-01"
-#     proxmox_node = "pve"
-#     cpu          = 4
-#     memory       = 8192
-#     disk         = 50
-#     ip           = "192.168.1.30"
-#   }
-# }
+# lxc_network and k3s_nodes are NOT set here. They are generated from
+# config/hosts.yaml (the single source of truth for host addresses and
+# resource sizing) by scripts/generation/generate-terraform-vars.sh, which
+# writes terraform/proxmox/hosts.auto.tfvars.json. Terraform loads that
+# file automatically (the *.auto.tfvars.json naming convention) — no
+# -var-file flag needed, and no need to duplicate IPs/sizing here.
+#
+# To add or resize an LXC/VM, edit config/hosts.yaml and re-run:
+#   ./scripts/generation/generate-terraform-vars.sh

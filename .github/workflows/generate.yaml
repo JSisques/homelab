@@ -8,6 +8,7 @@ on:
       - "services/homepage/config/**"
       - "services/prometheus/prometheus.yml"
       - "ansible/inventory/hosts.yml"
+      - "terraform/proxmox/hosts.auto.tfvars.json"
   push:
     branches:
       - main
@@ -17,6 +18,7 @@ on:
       - "services/homepage/config/**"
       - "services/prometheus/prometheus.yml"
       - "ansible/inventory/hosts.yml"
+      - "terraform/proxmox/hosts.auto.tfvars.json"
 
 permissions:
   contents: read
@@ -94,5 +96,30 @@ jobs:
           if ! git diff --exit-code; then
             echo "::error::Generated Ansible inventory is out of date."
             echo "Run generate-inventory.sh locally and commit the changes."
+            exit 1
+          fi
+
+  terraform-vars:
+    name: Validate Terraform Variables Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Terraform variables
+        run: ./scripts/generation/generate-terraform-vars.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Terraform variables are out of date."
+            echo "Run generate-terraform-vars.sh locally and commit the diff."
             exit 1
           fi

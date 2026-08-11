@@ -10,9 +10,12 @@ The goal is to maintain a single source of truth for service metadata while avoi
 generation/
 ├── README.md
 ├── generate-homepage.sh
-├── generate-uptime-kuma.sh
-└── generate-prometheus.sh
+├── generate-prometheus.sh
+├── generate-inventory.sh
+└── generate-terraform-vars.sh
 ```
+
+`generate-uptime-kuma.sh` doesn't exist yet — Uptime Kuma has no config-as-code format to generate into, see `services/uptime-kuma/README.md`.
 
 ## Source of Truth
 
@@ -120,14 +123,6 @@ Output:
 services/homepage/config/services.yaml
 ```
 
-### Uptime Kuma
-
-```bash
-./scripts/generation/generate-uptime-kuma.sh
-```
-
-Generates the configuration required to monitor services through Uptime Kuma.
-
 ### Prometheus
 
 ```bash
@@ -135,6 +130,30 @@ Generates the configuration required to monitor services through Uptime Kuma.
 ```
 
 Generates Prometheus configuration based on the services that expose metrics.
+
+Source: `config/services.yaml`. Output: `services/prometheus/prometheus.yml`.
+
+### Ansible Inventory
+
+```bash
+./scripts/generation/generate-inventory.sh
+```
+
+Generates the Ansible inventory: one group per host and one per `role` value (e.g. `k3s` groups every Raspberry Pi together).
+
+Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
+
+### Terraform Variables
+
+```bash
+./scripts/generation/generate-terraform-vars.sh
+```
+
+Generates the `lxc_network` and `k3s_nodes` Terraform variables from every `type: lxc` / `type: vm` host — addresses and sizing (`cpu`/`memory`/`disk`) live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
+
+Source: `config/hosts.yaml`. Output: `terraform/proxmox/hosts.auto.tfvars.json` (auto-loaded by Terraform, no `-var-file` needed).
+
+Hosts with `address: TBD` are skipped (with a warning) by both the inventory and Terraform variable generators.
 
 ## Requirements
 

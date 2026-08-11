@@ -29,6 +29,7 @@ dist/
 *.tfvars
 *.tfvars.json
 !*.tfvars.example
+!terraform/proxmox/hosts.auto.tfvars.json
 crash.log
 crash.*.log
 
