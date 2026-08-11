@@ -106,6 +106,17 @@ hosts:
     role:
       - pbs
 
+  k3s-server:
+    type: vm
+    platform: proxmox
+    address: 192.168.1.31
+    cpu: 4
+    memory: 8192
+    disk: 50
+    role:
+      - k3s
+      - server
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
