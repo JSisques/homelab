@@ -1,22 +1,24 @@
-resource "proxmox_virtual_environment_container" "monitoring" {
+resource "proxmox_virtual_environment_container" "lxc" {
+  for_each = var.lxc_network
+
   node_name = var.proxmox_node
 
-  description = "Homelab monitoring stack"
-  hostname    = "monitoring"
+  description = "Homelab ${each.key} service"
+  hostname    = each.key
 
   unprivileged = true
 
   cpu {
-    cores = 4
+    cores = each.value.cores
   }
 
   memory {
-    dedicated = 4096
+    dedicated = each.value.memory
   }
 
   disk {
     datastore_id = var.lxc_storage
-    size         = 32
+    size         = each.value.disk
   }
 
   network_interface {
@@ -25,11 +27,11 @@ resource "proxmox_virtual_environment_container" "monitoring" {
   }
 
   initialization {
-    hostname = "monitoring"
+    hostname = each.key
 
     ip_config {
       ipv4 {
-        address = "192.168.1.20/24"
+        address = "${each.value.ip}/24"
         gateway = var.gateway
       }
     }
@@ -41,109 +43,12 @@ resource "proxmox_virtual_environment_container" "monitoring" {
 
   operating_system {
     template_file_id = var.debian_template
-    type              = "debian"
+    type             = "debian"
   }
 
   features {
+    # Required to run Docker inside the container.
     nesting = true
-  }
-
-  started = true
-}
-
-resource "proxmox_virtual_environment_container" "homepage" {
-  node_name = var.proxmox_node
-
-  description = "Homelab Homepage dashboard"
-  hostname    = "homepage"
-
-  unprivileged = true
-
-  cpu {
-    cores = 2
-  }
-
-  memory {
-    dedicated = 1024
-  }
-
-  disk {
-    datastore_id = var.lxc_storage
-    size         = 8
-  }
-
-  network_interface {
-    name   = "eth0"
-    bridge = var.network_bridge
-  }
-
-  initialization {
-    hostname = "homepage"
-
-    ip_config {
-      ipv4 {
-        address = "192.168.1.21/24"
-        gateway = var.gateway
-      }
-    }
-
-    user_account {
-      keys = [var.ssh_public_key]
-    }
-  }
-
-  operating_system {
-    template_file_id = var.debian_template
-    type              = "debian"
-  }
-
-  started = true
-}
-
-resource "proxmox_virtual_environment_container" "uptime_kuma" {
-  node_name = var.proxmox_node
-
-  description = "Homelab uptime monitoring"
-  hostname    = "uptime-kuma"
-
-  unprivileged = true
-
-  cpu {
-    cores = 2
-  }
-
-  memory {
-    dedicated = 1024
-  }
-
-  disk {
-    datastore_id = var.lxc_storage
-    size         = 8
-  }
-
-  network_interface {
-    name   = "eth0"
-    bridge = var.network_bridge
-  }
-
-  initialization {
-    hostname = "uptime-kuma"
-
-    ip_config {
-      ipv4 {
-        address = "192.168.1.22/24"
-        gateway = var.gateway
-      }
-    }
-
-    user_account {
-      keys = [var.ssh_public_key]
-    }
-  }
-
-  operating_system {
-    template_file_id = var.debian_template
-    type              = "debian"
   }
 
   started = true
