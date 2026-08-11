@@ -1,1 +1,61 @@
+services:
 
+  proxmox:
+    name: Proxmox
+    category: Infrastructure
+    url: https://proxmox.home.arpa
+    icon: proxmox.png
+
+    homepage:
+      enabled: true
+      description: Virtualization platform
+
+  grafana:
+    name: Grafana
+    category: Monitoring
+    url: https://grafana.home.arpa
+    icon: grafana.png
+
+    homepage:
+      enabled: true
+      description: Monitoring dashboards
+
+  prometheus:
+    name: Prometheus
+    category: Monitoring
+    url: https://prometheus.home.arpa
+    icon: prometheus.png
+
+    homepage:
+      enabled: true
+      description: Metrics and monitoring
+
+  kafka:
+    name: Kafka
+    category: Infrastructure
+    url: https://kafka.home.arpa
+    icon: kafka.png
+
+    homepage:
+      enabled: true
+      description: Event streaming platform
+
+  uptime-kuma:
+    name: Uptime Kuma
+    category: Monitoring
+    url: https://uptime.home.arpa
+    icon: uptime-kuma.png
+
+    homepage:
+      enabled: true
+      description: Service monitoring
+
+  gardenia:
+    name: Gardenia
+    category: Applications
+    url: https://gardenia.home.arpa
+    icon: mdi-sprout
+
+    homepage:
+      enabled: true
+      description: Garden management platform
