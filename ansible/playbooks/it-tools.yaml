@@ -4,4 +4,7 @@
   become: true
 
   roles:
+    - common
+    - node-exporter
+    - docker
     - it-tools

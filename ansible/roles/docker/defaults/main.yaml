@@ -1,0 +1,19 @@
+---
+docker_apt_repository: "https://download.docker.com/linux/{{ ansible_facts.distribution | lower }}"
+docker_apt_channel: stable
+docker_apt_key_url: "{{ docker_apt_repository }}/gpg"
+docker_apt_keyring: /etc/apt/keyrings/docker.asc
+docker_apt_architecture: >-
+  {{ 'amd64' if ansible_facts.architecture == 'x86_64'
+     else 'arm64' if ansible_facts.architecture == 'aarch64'
+     else 'armhf' if ansible_facts.architecture == 'armv7l'
+     else ansible_facts.architecture }}
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_service_name: docker
