@@ -1,0 +1,30 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: homelab
+  namespace: kafka
+spec:
+  kafka:
+    version: 4.1.0
+
+    metadataVersion: "4.1"
+
+    listeners:
+      - name: internal
+        port: 9092
+        type: internal
+        tls: false
+
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+
+      default.replication.factor: 3
+      min.insync.replicas: 2
+
+      auto.create.topics.enable: false
+
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

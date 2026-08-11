@@ -1,0 +1,31 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: homelab
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: homelab
+spec:
+  replicas: 3
+
+  roles:
+    - controller
+    - broker
+
+  storage:
+    type: persistent-claim
+    size: 50Gi
+    deleteClaim: false
+    class: local-path
+
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+  template:
+    pod:
+      terminationGracePeriodSeconds: 120

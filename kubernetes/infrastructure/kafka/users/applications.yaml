@@ -1,0 +1,29 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaUser
+metadata:
+  name: applications
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: homelab
+spec:
+  authentication:
+    type: scram-sha-512
+
+  authorization:
+    type: simple
+    acls:
+      - resource:
+          type: topic
+          name: events
+          patternType: literal
+        operations:
+          - Read
+          - Write
+
+      - resource:
+          type: topic
+          name: commands
+          patternType: literal
+        operations:
+          - Read
+          - Write

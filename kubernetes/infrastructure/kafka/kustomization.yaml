@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kafka
+
+resources:
+  - namespace.yaml
+  - cluster.yaml
+  - node-pool.yaml
+  - topics/events.yaml
+  - topics/commands.yaml
+  - topics/audit-events.yaml
+  - users/applications.yaml
