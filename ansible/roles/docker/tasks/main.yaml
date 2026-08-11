@@ -18,13 +18,13 @@
   ansible.builtin.file:
     path: "{{ docker_apt_keyring | dirname }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Install Docker repository key
   ansible.builtin.get_url:
     url: "{{ docker_apt_key_url }}"
     dest: "{{ docker_apt_keyring }}"
-    mode: '0644'
+    mode: "0644"
     force: true
 
 - name: Configure Docker APT repository
