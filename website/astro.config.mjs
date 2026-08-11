@@ -8,24 +8,25 @@ export default defineConfig({
   base: "/homelab",
   integrations: [
     starlight({
-      title: "My Docs",
+      title: "Homelab",
+      description: "Documentación del homelab as code de jsisques.",
       social: [
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/withastro/starlight",
+          href: "https://github.com/JSisques/homelab",
         },
       ],
       sidebar: [
         {
-          label: "Guides",
+          label: "Guías",
           items: [
-            // Each item here is one entry in the navigation menu.
-            { label: "Example Guide", slug: "guides/example" },
+            { label: "Cómo funciona (flujo de datos)", slug: "guides/flujo-de-datos" },
+            { label: "Cómo desplegarlo", slug: "guides/desplegar" },
           ],
         },
         {
-          label: "Reference",
+          label: "Referencia",
           items: [{ autogenerate: { directory: "reference" } }],
         },
       ],

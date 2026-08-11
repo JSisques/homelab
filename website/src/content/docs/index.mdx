@@ -1,40 +1,36 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: Homelab
+description: Documentación del homelab as code de jsisques.
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
+  tagline: Proxmox, Terraform, Ansible y Docker Compose gestionados desde Git — reproducible desde cero.
   image:
     file: ../../assets/houston.webp
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Cómo funciona
+      link: /homelab/guides/flujo-de-datos/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
+    - text: Cómo desplegarlo
+      link: /homelab/guides/desplegar/
+      icon: right-arrow
       variant: minimal
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Next steps
+## Empieza por aquí
 
 <CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
+	<Card title="Cómo funciona" icon="rocket">
+		`config/hosts.yaml` y `config/services.yaml` son la única fuente de verdad. Todo lo demás — variables de Terraform, inventario de Ansible, Prometheus, Homepage — se genera a partir de ahí.
 	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
+	<Card title="Cómo desplegarlo" icon="setting">
+		La secuencia completa, desde cero: qué rellenar antes de `make apply`, cómo desplegar un servicio suelto, y qué secretos hacen falta.
 	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
+	<Card title="Node Exporter obligatorio" icon="approve-check">
+		Cada rol de Ansible depende de `node-exporter` — no hay forma de desplegar un servicio sin monitorización de host.
 	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
+	<Card title="Repositorio" icon="github">
+		El código fuente y el resto de READMEs por carpeta viven en [github.com/JSisques/homelab](https://github.com/JSisques/homelab).
 	</Card>
 </CardGrid>
