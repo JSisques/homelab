@@ -58,6 +58,10 @@ Infrastructure:
     href: https://kafka.home.arpa
     icon: kafka.png
     description: Event streaming platform
+  RustFS:
+    href: https://rustfs.home.arpa
+    icon: mdi-database
+    description: S3-compatible object storage
   Rancher:
     href: https://rancher.home.arpa
     icon: rancher.png

@@ -1,0 +1,15 @@
+---
+rustfs_app_dir: /opt/rustfs
+
+# Adjust to the NAS's real NFS export before running this role. The IP is
+# the "nas" host in config/hosts.yaml — update this if that host's
+# address ever changes.
+rustfs_nas_export: "192.168.0.111:/export/rustfs"
+rustfs_data_mount_path: /mnt/nas/rustfs
+
+# Root credentials for the S3 API / console. Must be provided via Ansible
+# Vault or CI secrets — never commit real values. The role refuses to run
+# without them (see tasks/main.yaml). Never fall back to RustFS's own
+# defaults (rustfsadmin/rustfsadmin) — they're public.
+rustfs_access_key: ""
+rustfs_secret_key: ""

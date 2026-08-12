@@ -1,0 +1,64 @@
+---
+- name: Assert RustFS credentials are provided
+  ansible.builtin.assert:
+    that:
+      - rustfs_access_key | length > 0
+      - rustfs_secret_key | length > 0
+    fail_msg: >-
+      rustfs_access_key / rustfs_secret_key are not set. Provide real
+      credentials via Ansible Vault or CI secrets before running this
+      role (see services/rustfs/README.md) — never deploy with RustFS's
+      default rustfsadmin/rustfsadmin credentials.
+
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount point for object data
+  ansible.builtin.file:
+    path: "{{ rustfs_data_mount_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount the NAS NFS export
+  ansible.posix.mount:
+    path: "{{ rustfs_data_mount_path }}"
+    src: "{{ rustfs_nas_export }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Ensure the mount is writable by the RustFS container user
+  ansible.builtin.file:
+    path: "{{ rustfs_data_mount_path }}"
+    state: directory
+    owner: "10001"
+    group: "10001"
+    mode: "0755"
+
+- name: Create RustFS application directory
+  ansible.builtin.file:
+    path: "{{ rustfs_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy RustFS environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ rustfs_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy RustFS Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/rustfs/compose.yaml"
+    dest: "{{ rustfs_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start RustFS
+  community.docker.docker_compose_v2:
+    project_src: "{{ rustfs_app_dir }}"
+    state: present

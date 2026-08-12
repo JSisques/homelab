@@ -222,6 +222,20 @@ hosts:
     role:
       - cookidoo-mcp
 
+  rustfs:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.36
+    # S3-compatible object storage (https://rustfs.com/, see
+    # services/rustfs/README.md). Object data lives on the NAS over NFS
+    # (ansible/roles/rustfs/), not on this LXC's own disk — disk here
+    # only needs to hold the OS and the container image.
+    cpu: 2
+    memory: 1024
+    disk: 8
+    role:
+      - rustfs
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

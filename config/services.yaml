@@ -643,6 +643,38 @@ services:
       enabled: true
       port: 6443
 
+  rustfs:
+    name: RustFS
+    category: Infrastructure
+    # S3-compatible object storage (https://rustfs.com/), data on the
+    # NAS over NFS (ansible/roles/rustfs/). Only the console (port 9001)
+    # is routed here; the S3 API (port 9000) is reached directly by
+    # other services over the LAN IP in config/hosts.yaml — same pattern
+    # as Prometheus scrape targets / Promtail→Loki, no *.home.arpa route
+    # for it.
+    tier: internal
+    url: https://rustfs.home.arpa
+    icon: mdi-database
+
+    homepage:
+      enabled: true
+      description: S3-compatible object storage
+
+    traefik:
+      enabled: true
+      port: 9001
+
+    uptime:
+      enabled: true
+
+    # No native /metrics wired up yet. Probed by blackbox_exporter
+    # instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9001
+      scheme: http
+      module: http_2xx
+
   rancher:
     name: Rancher
     category: Infrastructure
