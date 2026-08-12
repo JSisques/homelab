@@ -642,6 +642,8 @@ services:
     blackbox:
       enabled: true
       port: 6443
+      scheme: https
+      module: http_2xx_insecure
 
   rustfs:
     name: RustFS
@@ -708,5 +710,3 @@ services:
       port: 30082
       scheme: http
       module: http_2xx
-      scheme: https
-      module: http_2xx_insecure
