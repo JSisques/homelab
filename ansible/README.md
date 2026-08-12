@@ -76,6 +76,7 @@ No secret is ever committed. Roles that need one read it from a variable with an
 | Role | Variable | Behavior if unset |
 | --- | --- | --- |
 | `n8n` | `n8n_postgres_password` | Deploys anyway with `changeme` |
+| `cookidoo-mcp` | `cookidoo_mcp_email` / `cookidoo_mcp_password` | Refuses to run (`assert`) |
 | `cloudflared` | `cloudflared_credentials_json` | Refuses to run (`assert`) |
 | `monitoring` | `monitoring_alertmanager_telegram_bot_token` / `_chat_id` | Deploys anyway; alerts fire into a `null` receiver |
 
@@ -91,6 +92,8 @@ ansible-galaxy collection install -r requirements.yml   # once
 
 ansible-playbook -i inventory/hosts.yml playbooks/site.yaml \
   -e "n8n_postgres_password=${N8N_POSTGRES_PASSWORD}" \
+  -e "cookidoo_mcp_email=${COOKIDOO_MCP_EMAIL}" \
+  -e "cookidoo_mcp_password=${COOKIDOO_MCP_PASSWORD}" \
   -e "cloudflared_credentials_json=${CLOUDFLARED_CREDS_JSON}" \
   -e "monitoring_alertmanager_telegram_bot_token=${TELEGRAM_BOT_TOKEN}" \
   -e "monitoring_alertmanager_telegram_chat_id=${TELEGRAM_CHAT_ID}"

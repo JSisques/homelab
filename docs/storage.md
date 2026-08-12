@@ -65,6 +65,9 @@ Backups should cover:
 - Kubernetes resource definitions and persistent volume data.
 - The Prometheus and Loki Docker volumes.
 - Grafana provisioning and dashboards.
+- `cookidoo-mcp`'s `cookidoo-mcp-data` Docker volume (`ansible/roles/cookidoo-mcp/`) — holds the persisted Cookidoo session cookie file (`COOKIDOO_COOKIE_FILE`); treat it like a credential.
 - Secret material in an encrypted backup format.
+
+Tempo's `tempo-data` Docker volume (`services/tempo/`) is deliberately **excluded**: traces are short-retention (48h) operational data, not a system of record.
 
 Configuration backups are not sufficient when a service contains important state outside Git.

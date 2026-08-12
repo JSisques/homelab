@@ -1,0 +1,19 @@
+services:
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    restart: unless-stopped
+
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+
+    volumes:
+      - ./tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+networks:
+  default:
+    name: monitoring
+    external: true
+
+volumes:
+  tempo-data:

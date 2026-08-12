@@ -5,6 +5,9 @@
 - name: Deploy n8n
   ansible.builtin.import_playbook: n8n.yaml
 
+- name: Deploy cookidoo-mcp
+  ansible.builtin.import_playbook: cookidoo-mcp.yaml
+
 - name: Deploy Obsidian
   ansible.builtin.import_playbook: obsidian.yaml
 

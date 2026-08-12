@@ -12,6 +12,10 @@ Automation:
     href: https://n8n.home.arpa
     icon: n8n.png
     description: Workflow automation platform
+  Cookidoo MCP:
+    href: https://cookidoo-mcp.home.arpa
+    icon: mdi-chef-hat
+    description: MCP server exposing a Cookidoo account to AI agents
 Downloads:
   qBittorrent:
     href: https://qbittorrent.home.arpa

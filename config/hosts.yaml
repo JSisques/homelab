@@ -18,15 +18,20 @@ hosts:
     platform: proxmox
     address: 192.168.1.20
     cpu: 2
-    memory: 2560
+    # Bumped from 2560 to fit the OTel Collector + Tempo alongside
+    # Prometheus/Grafana/Loki/Alertmanager on the same LXC.
+    memory: 3584
     # OS + Docker images + retained Prometheus/Loki data (~15GB at
-    # typical retention settings, see prometheus.yml/config.yml).
-    disk: 20
+    # typical retention settings, see prometheus.yml/config.yml) + Tempo
+    # trace storage (48h retention, services/tempo/tempo.yaml).
+    disk: 24
     role:
       - prometheus
       - grafana
       - loki
       - alertmanager
+      - otel-collector
+      - tempo
 
   homepage:
     type: lxc
@@ -188,6 +193,17 @@ hosts:
     disk: 4
     role:
       - portfolio-web
+
+  cookidoo-mcp:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.35
+    # Single Node/NestJS container, no database — same profile as it-tools.
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - cookidoo-mcp
 
   raspberrypi-01:
     type: physical
