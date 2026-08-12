@@ -272,6 +272,65 @@ services:
       scheme: http
       module: http_2xx
 
+  sisqueslabs-landing:
+    name: Sisques Labs Landing
+    category: Applications
+    # Static Astro site (source: github.com/sisques-labs/sisques-labs-landing),
+    # deployed on Kubernetes via Argo CD (kubernetes/applications/
+    # sisqueslabs-landing/), same pattern as Gardenia — no LXC, no Traefik
+    # LAN route, exposed publicly only via the Cloudflare Tunnel at
+    # landing.sisqueslabs.com (NodePort 30080 on k3s-server, see
+    # services/cloudflared/config.yml).
+    tier: public
+    url: https://landing.sisqueslabs.com
+    icon: mdi-web
+
+    homepage:
+      enabled: true
+      description: Sisques Labs public landing page
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "sisqueslabs-landing" role on the
+    # k3s-server host in config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 30080
+      scheme: http
+      module: http_2xx
+
+  daysoff:
+    name: Days Off
+    category: Applications
+    # Static Astro site (source: github.com/sisques-labs/daysoff), deployed
+    # on Kubernetes via Argo CD (kubernetes/applications/daysoff/), same
+    # pattern as sisqueslabs-landing — exposed publicly only via the
+    # Cloudflare Tunnel at daysoff.sisqueslabs.com (NodePort 30081 on
+    # k3s-server, see services/cloudflared/config.yml).
+    tier: public
+    url: https://daysoff.sisqueslabs.com
+    icon: mdi-beach
+
+    homepage:
+      enabled: true
+      description: Vacation bridge calculator
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "daysoff" role on the k3s-server host in
+    # config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 30081
+      scheme: http
+      module: http_2xx
+
   it-tools:
     name: IT-Tools
     category: Utilities
