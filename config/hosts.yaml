@@ -177,12 +177,22 @@ hosts:
     # Runs real pods today (no worker nodes yet), so this keeps headroom
     # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
     # as workers and take workload off this node.
+    #
+    # sisqueslabs-landing/daysoff carry no LXC/VM of their own — they're
+    # Kubernetes workloads (see kubernetes/applications/), deployed via
+    # Argo CD, not Ansible. These roles exist only so
+    # generate-blackbox.sh can resolve a LAN address for their
+    # config/services.yaml blackbox target (this node's NodePort), same
+    # trick as grafana/prometheus/loki/alertmanager sharing the
+    # "monitoring" host below.
     cpu: 2
     memory: 3072
     disk: 30
     role:
       - k3s
       - server
+      - sisqueslabs-landing
+      - daysoff
 
   portfolio-web:
     type: lxc

@@ -7,6 +7,14 @@ Applications:
     href: https://portfolio-web.home.arpa
     icon: mdi-account-box
     description: Personal developer portfolio
+  Sisques Labs Landing:
+    href: https://landing.sisqueslabs.com
+    icon: mdi-web
+    description: Sisques Labs public landing page
+  Days Off:
+    href: https://daysoff.sisqueslabs.com
+    icon: mdi-beach
+    description: Vacation bridge calculator
 Automation:
   n8n:
     href: https://n8n.home.arpa
