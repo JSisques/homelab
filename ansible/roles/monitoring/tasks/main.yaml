@@ -116,6 +116,52 @@
     project_src: "{{ monitoring_alertmanager_app_dir }}"
     state: present
 
+- name: Create Tempo application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_tempo_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Tempo Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/tempo/compose.yaml"
+    dest: "{{ monitoring_tempo_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Tempo configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/tempo/tempo.yaml"
+    dest: "{{ monitoring_tempo_app_dir }}/tempo.yaml"
+    mode: "0644"
+
+- name: Start Tempo
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_tempo_app_dir }}"
+    state: present
+
+- name: Create OTel Collector application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_otel_collector_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy OTel Collector Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/otel-collector/compose.yaml"
+    dest: "{{ monitoring_otel_collector_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy OTel Collector configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/otel-collector/config.yaml"
+    dest: "{{ monitoring_otel_collector_app_dir }}/config.yaml"
+    mode: "0644"
+
+- name: Start OTel Collector
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_otel_collector_app_dir }}"
+    state: present
+
 - name: Create blackbox_exporter application directory
   ansible.builtin.file:
     path: "{{ monitoring_blackbox_app_dir }}"

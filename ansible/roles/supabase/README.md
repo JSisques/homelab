@@ -185,7 +185,7 @@ services/supabase/
 supabase:
   hosts:
     supabase:
-      ansible_host: 192.168.1.35
+      ansible_host: 192.168.1.36
 ```
 
 Generated from `config/hosts.yaml` by `scripts/generation/generate-inventory.sh`.

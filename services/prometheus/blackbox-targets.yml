@@ -29,6 +29,6 @@
   labels:
     module: http_2xx_insecure
 - targets:
-    - "http://192.168.1.35:8000"  # supabase
+    - "http://192.168.1.36:8000"  # supabase
   labels:
     module: tcp_connect

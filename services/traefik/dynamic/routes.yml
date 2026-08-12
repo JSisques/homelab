@@ -54,6 +54,11 @@ http:
       entryPoints: ["websecure"]
       service: n8n
       tls: {}
+    cookidoo-mcp:
+      rule: "Host(`cookidoo-mcp.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: cookidoo-mcp
+      tls: {}
     obsidian:
       rule: "Host(`obsidian.home.arpa`)"
       entryPoints: ["websecure"]
@@ -132,6 +137,10 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.24:5678"
+    cookidoo-mcp:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.35:3000"
     obsidian:
       loadBalancer:
         servers:
@@ -167,4 +176,4 @@ http:
     supabase:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.35:8000"
+          - url: "http://192.168.1.36:8000"
