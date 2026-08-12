@@ -43,3 +43,6 @@
 
 - name: Deploy Portfolio Web
   ansible.builtin.import_playbook: portfolio-web.yaml
+
+- name: Deploy Supabase
+  ansible.builtin.import_playbook: supabase.yaml

@@ -1,0 +1,116 @@
+---
+supabase_app_dir: /opt/supabase
+
+# Adjust to the NAS's real NFS export before running this role. The IP is
+# the "nas" host in config/hosts.yaml - update this if that host's
+# address ever changes. Subdirectories db/, db-config/, and storage/ are
+# created under the mount by this role; the export itself must already
+# exist on the NAS.
+supabase_nas_export: "192.168.0.111:/export/supabase"
+supabase_nas_mount_path: /mnt/nas/supabase
+
+############################################################################
+# Secrets - every value below must be overridden via Ansible Vault or CI
+# secrets. Never commit real values. Generate all of them at once with:
+#   cd services/supabase && sh utils/generate-keys.sh
+# See services/supabase/README.md "Secrets" for details.
+############################################################################
+
+supabase_postgres_password: "changeme"
+
+# Legacy symmetric HS256 key + the API keys signed with it.
+supabase_jwt_secret: "changeme"
+supabase_anon_key: "changeme"
+supabase_service_role_key: "changeme"
+
+# Newer opaque/asymmetric key scheme - left empty (legacy-only mode), see
+# services/supabase/README.md "Secrets".
+supabase_supabase_publishable_key: ""
+supabase_supabase_secret_key: ""
+supabase_jwt_keys: ""
+supabase_jwt_jwks: ""
+supabase_anon_key_asymmetric: ""
+supabase_service_role_key_asymmetric: ""
+
+supabase_dashboard_username: "supabase"
+supabase_dashboard_password: "changeme"
+
+supabase_secret_key_base: "changeme"
+supabase_realtime_db_enc_key: "changeme"
+supabase_vault_enc_key: "changeme"
+supabase_pg_meta_crypto_key: "changeme"
+supabase_logflare_public_access_token: "changeme"
+supabase_logflare_private_access_token: "changeme"
+supabase_s3_protocol_access_key_id: "changeme"
+supabase_s3_protocol_access_key_secret: "changeme"
+
+############################################################################
+# Application configuration - stable, not secret. Override per environment
+# if needed, but these shouldn't normally go through Vault.
+############################################################################
+
+# URLs
+supabase_supabase_public_url: "https://supabase.home.arpa"
+supabase_api_external_url: "https://supabase.home.arpa/auth/v1"
+supabase_site_url: "https://supabase.home.arpa"
+supabase_additional_redirect_urls: ""
+
+# Database
+supabase_postgres_host: "db"
+supabase_postgres_db: "postgres"
+supabase_postgres_port: "5432"
+
+# Supavisor (connection pooler)
+supabase_pooler_proxy_port_transaction: "6543"
+supabase_pooler_default_pool_size: "20"
+supabase_pooler_max_client_conn: "100"
+supabase_pooler_tenant_id: "homelab"
+supabase_pooler_db_pool_size: "5"
+
+# Studio
+supabase_studio_default_organization: "Homelab"
+supabase_studio_default_project: "Default Project"
+supabase_openai_api_key: ""
+
+# Auth (GoTrue)
+supabase_jwt_expiry: "3600"
+supabase_disable_signup: "false"
+supabase_mailer_urlpaths_confirmation: "/auth/v1/verify"
+supabase_mailer_urlpaths_invite: "/auth/v1/verify"
+supabase_mailer_urlpaths_recovery: "/auth/v1/verify"
+supabase_mailer_urlpaths_email_change: "/auth/v1/verify"
+supabase_enable_email_signup: "true"
+# No SMTP provider configured yet - see services/supabase/README.md "Email
+# (Auth)". Flip to "false" once supabase_smtp_host below is real.
+supabase_enable_email_autoconfirm: "true"
+supabase_smtp_admin_email: "admin@example.com"
+supabase_smtp_host: ""
+supabase_smtp_port: "2500"
+supabase_smtp_user: ""
+supabase_smtp_pass: ""
+supabase_smtp_sender_name: "Supabase"
+supabase_enable_anonymous_users: "false"
+supabase_enable_phone_signup: "false"
+supabase_enable_phone_autoconfirm: "false"
+
+# Storage
+supabase_global_s3_bucket: "stub"
+supabase_region: "stub"
+supabase_storage_tenant_id: "homelab"
+
+# Functions
+supabase_functions_verify_jwt: "false"
+
+# API (PostgREST)
+supabase_pgrst_db_schemas: "public,graphql_public"
+supabase_pgrst_db_max_rows: "1000"
+supabase_pgrst_db_extra_search_path: "public"
+
+# Logs and Analytics
+supabase_docker_socket_location: "/var/run/docker.sock"
+
+# API gateway (Kong)
+supabase_kong_http_port: "8000"
+
+# imgproxy
+supabase_imgproxy_auto_webp: "true"

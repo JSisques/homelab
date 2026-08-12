@@ -12,6 +12,11 @@ Automation:
     href: https://n8n.home.arpa
     icon: n8n.png
     description: Workflow automation platform
+Database:
+  Supabase:
+    href: https://supabase.home.arpa
+    icon: supabase.png
+    description: Self-hosted Postgres, Auth, REST, Realtime, Storage
 Downloads:
   qBittorrent:
     href: https://qbittorrent.home.arpa

@@ -1,0 +1,65 @@
+---
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount point
+  ansible.builtin.file:
+    path: "{{ supabase_nas_mount_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount the NAS NFS export
+  ansible.posix.mount:
+    path: "{{ supabase_nas_mount_path }}"
+    src: "{{ supabase_nas_export }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Create Postgres data, db-config, and Storage directories on the NFS export
+  ansible.builtin.file:
+    path: "{{ supabase_nas_mount_path }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - db
+    - db-config
+    - storage
+
+- name: Create Supabase application directory
+  ansible.builtin.file:
+    path: "{{ supabase_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Supabase environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ supabase_app_dir }}/.env"
+    mode: "0600"
+
+- name: Deploy Supabase Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/supabase/compose.yaml"
+    dest: "{{ supabase_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Supabase vendored configuration (volumes/)
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/supabase/volumes/"
+    dest: "{{ supabase_app_dir }}/volumes/"
+    mode: "0644"
+
+- name: Make the Kong entrypoint script executable
+  ansible.builtin.file:
+    path: "{{ supabase_app_dir }}/volumes/api/kong-entrypoint.sh"
+    mode: "0755"
+
+- name: Start Supabase
+  community.docker.docker_compose_v2:
+    project_src: "{{ supabase_app_dir }}"
+    state: present

@@ -536,3 +536,34 @@ services:
       port: 6443
       scheme: https
       module: http_2xx_insecure
+
+  supabase:
+    name: Supabase
+    category: Database
+    # Self-hosted Postgres + Auth/REST/Realtime/Storage/Edge Functions,
+    # fronted by Kong on :8000. See services/supabase/README.md.
+    tier: internal
+    url: https://supabase.home.arpa
+    icon: supabase.png
+
+    homepage:
+      enabled: true
+      description: Self-hosted Postgres, Auth, REST, Realtime, Storage
+
+    traefik:
+      enabled: true
+      port: 8000
+
+    uptime:
+      enabled: true
+
+    # Every route behind Kong requires either an apikey/JWT or basic auth
+    # (see services/supabase/volumes/api/kong.yml) — a plain unauthenticated
+    # GET on "/" always comes back 401, so http_2xx would misreport a
+    # healthy Kong as down. tcp_connect only checks that :8000 is accepting
+    # connections, which is what "up" actually means here.
+    blackbox:
+      enabled: true
+      port: 8000
+      scheme: http
+      module: tcp_connect

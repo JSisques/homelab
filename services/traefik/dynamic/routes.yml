@@ -94,6 +94,11 @@ http:
       entryPoints: ["websecure"]
       service: metube
       tls: {}
+    supabase:
+      rule: "Host(`supabase.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: supabase
+      tls: {}
   services:
     grafana:
       loadBalancer:
@@ -159,3 +164,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.33:8081"
+    supabase:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.35:8000"

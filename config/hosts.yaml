@@ -189,6 +189,22 @@ hosts:
     role:
       - portfolio-web
 
+  supabase:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.35
+    # Full self-hosted stack: Postgres, Kong, GoTrue, PostgREST, Realtime,
+    # Storage, imgproxy, postgres-meta, Edge Functions, Supavisor, Studio,
+    # plus Logflare + Vector for the log explorer (12 containers). Postgres
+    # data and Storage buckets live on the NAS over NFS (see
+    # services/supabase/README.md), not on this disk - sizing below only
+    # needs to cover the OS, Docker images, and container-local state.
+    cpu: 4
+    memory: 6144
+    disk: 24
+    role:
+      - supabase
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
