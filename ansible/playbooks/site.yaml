@@ -44,5 +44,8 @@
 - name: Deploy K3s (single-node server) and bootstrap Argo CD
   ansible.builtin.import_playbook: k3s-server.yaml
 
+- name: Prepare k3s-server for Gardenia (NFS-backed Postgres storage)
+  ansible.builtin.import_playbook: gardenia.yaml
+
 - name: Deploy Portfolio Web
   ansible.builtin.import_playbook: portfolio-web.yaml

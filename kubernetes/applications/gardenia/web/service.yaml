@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gardenia-web
+  namespace: gardenia
+spec:
+  selector:
+    app: gardenia-web
+  ports:
+    - port: 3000
+      targetPort: 3000

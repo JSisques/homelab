@@ -1,0 +1,29 @@
+---
+# Gardenia itself is deployed to k3s by Argo CD, from
+# kubernetes/applications/gardenia/ — this role does not touch the
+# application. Its only job is the one host-level prerequisite Argo CD
+# can't provide: a real directory on the k3s-server node, backed by NFS
+# on the NAS, for postgres/pv.yaml's hostPath to point at. Same
+# "nfs-common + mount" pattern as ansible/roles/obsidian and
+# ansible/roles/jellyfin, just consumed by a Kubernetes hostPath PV
+# instead of a Compose bind mount.
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create NFS mount point for Postgres data
+  ansible.builtin.file:
+    path: "{{ gardenia_postgres_mount_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount the NAS NFS export
+  ansible.posix.mount:
+    path: "{{ gardenia_postgres_mount_path }}"
+    src: "{{ gardenia_postgres_nas_export }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted

@@ -3,8 +3,12 @@ credentials-file: /etc/cloudflared/credentials.json
 
 ingress:
   # sisqueslabs.com — public homelab apps
+  # Port 80, not gardenia's own app port: k3s's built-in Traefik ingress
+  # (kubernetes/applications/gardenia/ingress.yaml) fronts both
+  # gardenia-web and gardenia-api on the same origin via path routing, so
+  # this points at Traefik's web entrypoint, not a container port directly.
   - hostname: gardenia.sisqueslabs.com
-    service: http://gardenia.home.arpa:3000
+    service: http://gardenia.home.arpa:80
 
   # jsisques.net — personal apps (add entries here as they're deployed)
   - hostname: portfolio.jsisques.net

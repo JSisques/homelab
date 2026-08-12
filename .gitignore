@@ -44,6 +44,10 @@ crash.*.log
 .kube/
 *kubeconfig*.yaml
 
+# Real Kubernetes Secret manifests filled in from *.secret.example.yaml
+# templates (kubernetes/applications/*/) — never commit actual values.
+secret.yaml
+
 # Environment variable files
 **/.env
 **/.env.*

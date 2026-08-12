@@ -1,0 +1,46 @@
+# NEXT_PUBLIC_API_URL / NEXT_PUBLIC_GRAPHQL_URL are baked into the client
+# bundle at *build time* (Dockerfile ARG), not read at runtime — no env
+# vars to set here. The gardenia-web image's build defaults are already
+# the relative paths /api and /graphql (see gardenia-web/Dockerfile and
+# .env.example), which is exactly what same-origin path routing in
+# ingress.yaml needs: no custom image build required.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gardenia-web
+  namespace: gardenia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gardenia-web
+  template:
+    metadata:
+      labels:
+        app: gardenia-web
+    spec:
+      containers:
+        - name: gardenia-web
+          image: ghcr.io/sisques-labs/gardenia-web:0.31.5
+          ports:
+            - containerPort: 3000
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

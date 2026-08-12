@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gardenia-postgres-pvc
+  namespace: gardenia
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gardenia-postgres
+  volumeName: gardenia-postgres-pv
+  resources:
+    requests:
+      storage: 10Gi

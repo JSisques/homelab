@@ -1,0 +1,48 @@
+# Non-secret gardenia-api configuration. Secrets (JWT_SECRET,
+# OAUTH_TOKEN_ENC_KEY, OAUTH_STATE_SECRET, DATABASE_USERNAME/PASSWORD,
+# PLANTNET_API_KEY) live in secret.example.yaml instead — see README.md.
+#
+# MONGO_URI from gardenia-api's .env.example is deliberately omitted: it
+# isn't read anywhere in src/, no MongoDB is deployed for it.
+#
+# OAuth (Google/GitHub/Apple) is left unconfigured — client id/secret are
+# empty, so those login strategies stay disabled. OAUTH_TOKEN_ENC_KEY and
+# OAUTH_STATE_SECRET are still required at boot regardless (see
+# src/core/config/env.validation.ts) and live in the Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gardenia-api-config
+  namespace: gardenia
+data:
+  NODE_ENV: production
+  PORT: "3000"
+
+  QR_BASE_URL: https://gardenia.sisqueslabs.com
+  FRONTEND_URL: https://gardenia.sisqueslabs.com
+  CORS_ORIGINS: https://gardenia.sisqueslabs.com
+
+  MAX_SPACES_PER_USER: "5"
+  SPACE_INVITATION_DEFAULT_EXPIRY_HOURS: "24"
+  SPACE_INVITATION_CODE_COLLISION_MAX_RETRIES: "5"
+
+  DATABASE_DRIVER: postgres
+  DATABASE_HOST: gardenia-postgres
+  DATABASE_PORT: "5432"
+  DATABASE_DATABASE: gardenia_db
+
+  JWT_EXPIRES_IN: 7d
+  REFRESH_TOKEN_TTL_DAYS: "30"
+  REFRESH_COOKIE_NAME: refresh_token
+  REFRESH_REUSE_GRACE_MS: "10000"
+
+  # Kafka isn't deployed on this cluster yet (see
+  # kubernetes/argocd/applications/kafka.yaml) — app boots without a broker.
+  KAFKA_ENABLED: "false"
+
+  FILES_STORAGE_DRIVER: database
+  FILES_MAX_SIZE_BYTES: "10485760"
+  FILES_ALLOWED_MIME_TYPES: image/jpeg,image/png,image/webp
+
+  PLANTNET_PROJECT: all
+  PLANTNET_MIN_CONFIDENCE: "0.2"

@@ -1,0 +1,46 @@
+# Single-origin path routing on k3s's built-in Traefik (ingressClassName:
+# traefik, installed by default alongside K3s itself — no separate
+# controller to deploy). /api and /graphql go to gardenia-api, everything
+# else to gardenia-web, so the browser can call NEXT_PUBLIC_API_URL=/api
+# and NEXT_PUBLIC_GRAPHQL_URL=/graphql on the same origin it's served
+# from — see web/deployment.yaml.
+#
+# Reached two ways:
+#   - LAN: gardenia.home.arpa, once AdGuard has a DNS rewrite for it
+#     pointing at the k3s-server node (192.168.1.31) — see README.md.
+#   - Public: gardenia.sisqueslabs.com, via the existing Cloudflare Tunnel
+#     entry in services/cloudflared/config.yml, which forwards to
+#     http://gardenia.home.arpa:80 (k3s's Traefik websecure/web
+#     entrypoint, exposed on the node via K3s's built-in ServiceLB).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gardenia
+  namespace: gardenia
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: gardenia.home.arpa
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: gardenia-api
+                port:
+                  number: 3000
+          - path: /graphql
+            pathType: Prefix
+            backend:
+              service:
+                name: gardenia-api
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gardenia-web
+                port:
+                  number: 3000

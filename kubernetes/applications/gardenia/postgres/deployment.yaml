@@ -1,0 +1,66 @@
+# A single-replica Deployment rather than a StatefulSet: one Postgres
+# instance, one RWO volume, same simplicity level as the rest of this
+# single-node cluster. strategy: Recreate avoids two pods ever mounting
+# the RWO volume at once during a rollout.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gardenia-postgres
+  namespace: gardenia
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gardenia-postgres
+  template:
+    metadata:
+      labels:
+        app: gardenia-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: gardenia_db
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gardenia-postgres-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gardenia-postgres-credentials
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gardenia", "-d", "gardenia_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gardenia", "-d", "gardenia_db"]
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gardenia-postgres-pvc

@@ -1,0 +1,35 @@
+# Static PersistentVolume backed by a directory mounted from the NAS over
+# NFS on the k3s-server node itself — see ansible/roles/gardenia, which
+# mounts the NAS export at /mnt/nas/gardenia-postgres before this PV is
+# usable. Same "OS-level NFS mount, no CSI driver" pattern as the
+# services/jellyfin and services/obsidian Compose deployments, just fed
+# into Kubernetes via hostPath instead of a bind mount.
+#
+# nodeAffinity pins this to the k3s-server node by hostname. Single-node
+# cluster today, so it's not load-bearing yet, but it becomes required
+# once the Raspberry Pi workers (config/hosts.yaml) join — without it the
+# Postgres pod could be scheduled onto a node that never mounted the NFS
+# export. Verify the node name matches `kubectl get nodes` output; adjust
+# if the k3s-server VM's hostname differs.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gardenia-postgres-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gardenia-postgres
+  hostPath:
+    path: /mnt/nas/gardenia-postgres
+    type: Directory
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - k3s-server

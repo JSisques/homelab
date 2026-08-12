@@ -1,0 +1,7 @@
+---
+# Adjust to the NAS's real NFS export before running this role. The IP is
+# the "nas" host in config/hosts.yaml — update this if that host's
+# address ever changes. The export must exist on the NAS first, same as
+# ansible/roles/obsidian and ansible/roles/jellyfin.
+gardenia_postgres_nas_export: "192.168.0.111:/export/gardenia-postgres"
+gardenia_postgres_mount_path: /mnt/nas/gardenia-postgres

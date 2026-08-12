@@ -1,0 +1,7 @@
+---
+- name: Prepare k3s-server for Gardenia (NFS-backed Postgres storage)
+  hosts: gardenia
+  become: true
+
+  roles:
+    - gardenia

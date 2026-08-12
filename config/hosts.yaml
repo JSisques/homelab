@@ -183,6 +183,7 @@ hosts:
     role:
       - k3s
       - server
+      - gardenia
 
   portfolio-web:
     type: lxc

@@ -1,0 +1,49 @@
+# Image pinned to a real release tag rather than :latest, per the Argo CD
+# operational principle "pin versions of important dependencies" (see
+# kubernetes/argocd/README.md). Bump this by hand (or via Renovate, same as
+# the app repos themselves) once a new gardenia-api version is released.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gardenia-api
+  namespace: gardenia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gardenia-api
+  template:
+    metadata:
+      labels:
+        app: gardenia-api
+    spec:
+      containers:
+        - name: gardenia-api
+          image: ghcr.io/sisques-labs/gardenia-api:0.28.1
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: gardenia-api-config
+            - secretRef:
+                name: gardenia-api-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
