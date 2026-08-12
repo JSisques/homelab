@@ -1,0 +1,8 @@
+services:
+  portfolio-web:
+    image: ghcr.io/jsisques/portfolio-web:latest
+    container_name: portfolio-web
+    restart: unless-stopped
+
+    ports:
+      - "8080:80"

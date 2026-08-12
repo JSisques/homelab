@@ -40,3 +40,6 @@
 
 - name: Deploy K3s (single-node server) and bootstrap Argo CD
   ansible.builtin.import_playbook: k3s-server.yaml
+
+- name: Deploy Portfolio Web
+  ansible.builtin.import_playbook: portfolio-web.yaml
