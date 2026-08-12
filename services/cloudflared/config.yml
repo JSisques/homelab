@@ -7,6 +7,8 @@ ingress:
     service: http://gardenia.home.arpa:3000
 
   # jsisques.net — personal apps (add entries here as they're deployed)
+  - hostname: portfolio.jsisques.net
+    service: http://portfolio-web.home.arpa:8080
   - hostname: jellyfin.jsisques.net
     service: http://jellyfin.home.arpa:8096
   # - hostname: <app>.jsisques.net

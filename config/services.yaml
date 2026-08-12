@@ -217,6 +217,35 @@ services:
       type: prometheus
       endpoint: http://gardenia:3000/metrics
 
+  portfolio-web:
+    name: Portfolio
+    category: Applications
+    # Static Astro site (source: github.com/JSisques/portfolio-web), served
+    # from its own LXC via Traefik on the LAN and via Cloudflare Tunnel at
+    # portfolio.jsisques.net for public access, same pattern as jellyfin.
+    tier: internal
+    url: https://portfolio-web.home.arpa
+    icon: mdi-account-box
+
+    homepage:
+      enabled: true
+      description: Personal developer portfolio
+
+    traefik:
+      enabled: true
+      port: 8080
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
   it-tools:
     name: IT-Tools
     category: Utilities

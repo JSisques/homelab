@@ -179,6 +179,16 @@ hosts:
       - k3s
       - server
 
+  portfolio-web:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.34
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - portfolio-web
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
