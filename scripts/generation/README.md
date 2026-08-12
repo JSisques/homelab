@@ -9,6 +9,7 @@ The goal is to maintain a single source of truth for service metadata while avoi
 ```text
 generation/
 ├── README.md
+├── lib.sh
 ├── generate-homepage.sh
 ├── generate-prometheus.sh
 ├── generate-blackbox.sh
@@ -161,7 +162,7 @@ Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/traefik/d
 ./scripts/generation/generate-inventory.sh
 ```
 
-Generates the Ansible inventory: one group per host and one per `role` value (e.g. `k3s` groups every Raspberry Pi together).
+Generates the Ansible inventory: one group per host and one per `role` value (e.g. `k3s` groups every Raspberry Pi together), plus an `all.vars` block (`lan_cidr`, `lan_gateway`) carrying `config/hosts.yaml`'s `network.lan` block into Ansible — roles that need the LAN subnet (e.g. `wireguard`'s `ALLOWEDIPS`) read it from there instead of hardcoding it.
 
 Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
 
@@ -171,11 +172,19 @@ Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
 ./scripts/generation/generate-terraform-vars.sh
 ```
 
-Generates the `lxc_network` and `k3s_nodes` Terraform variables from every `type: lxc` / `type: vm` host — addresses and sizing (`cpu`/`memory`/`disk`) live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
+Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
 
 Source: `config/hosts.yaml`. Output: `terraform/proxmox/hosts.auto.tfvars.json` (auto-loaded by Terraform, no `-var-file` needed).
 
-Hosts with `address: TBD` are skipped (with a warning) by both the inventory and Terraform variable generators.
+Hosts with `address: TBD` are skipped (with a warning) by every generator that resolves addresses.
+
+### Shared Address Resolution
+
+```text
+scripts/generation/lib.sh
+```
+
+Not a generator itself — a `resolve_addresses()` helper, sourced by every script above, that turns `config/hosts.yaml`'s per-host `octet`/`network`/`address` fields into a flat `{host: ip}` JSON map against the `network:` block's prefixes. This is the one place that understands the address schema; see `config/README.md` for the resolution rules and `config/hosts.yaml`'s header comment.
 
 ## Requirements
 

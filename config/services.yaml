@@ -644,3 +644,69 @@ services:
       port: 6443
       scheme: https
       module: http_2xx_insecure
+
+  rustfs:
+    name: RustFS
+    category: Infrastructure
+    # S3-compatible object storage (https://rustfs.com/), data on the
+    # NAS over NFS (ansible/roles/rustfs/). Only the console (port 9001)
+    # is routed here; the S3 API (port 9000) is reached directly by
+    # other services over the LAN IP in config/hosts.yaml — same pattern
+    # as Prometheus scrape targets / Promtail→Loki, no *.home.arpa route
+    # for it.
+    tier: internal
+    url: https://rustfs.home.arpa
+    icon: mdi-database
+
+    homepage:
+      enabled: true
+      description: S3-compatible object storage
+
+    traefik:
+      enabled: true
+      port: 9001
+
+    uptime:
+      enabled: true
+
+    # No native /metrics wired up yet. Probed by blackbox_exporter
+    # instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9001
+      scheme: http
+      module: http_2xx
+
+  rancher:
+    name: Rancher
+    category: Infrastructure
+    # Kubernetes cluster management UI, deployed on the k3s cluster
+    # itself via Argo CD as a Helm chart (kubernetes/argocd/applications/
+    # rancher.yaml) — manages the same "local" cluster it runs on. No LXC
+    # of its own; exposed via a NodePort on k3s-server, same pattern as
+    # sisqueslabs-landing/daysoff. Address resolves via the "rancher"
+    # role on the k3s-server host in config/hosts.yaml.
+    tier: internal
+    url: https://rancher.home.arpa
+    icon: rancher.png
+
+    homepage:
+      enabled: true
+      description: Kubernetes cluster management
+
+    traefik:
+      enabled: true
+      port: 30082
+
+    uptime:
+      enabled: true
+
+    # No native /metrics scraped here (would need the rancher-monitoring
+    # stack, not deployed). Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md. Traefik terminates TLS in
+    # front of it, so the NodePort itself is plain HTTP.
+    blackbox:
+      enabled: true
+      port: 30082
+      scheme: http
+      module: http_2xx

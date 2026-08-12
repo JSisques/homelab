@@ -30,7 +30,7 @@ resource "proxmox_virtual_environment_container" "lxc" {
 
     ip_config {
       ipv4 {
-        address = "${each.value.ip}/24"
+        address = "${each.value.ip}/${var.network_mask}"
         gateway = var.gateway
       }
     }

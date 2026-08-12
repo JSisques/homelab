@@ -5,7 +5,7 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
+SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server rustfs
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
@@ -16,7 +16,9 @@ ANSIBLE_EXTRA_VARS := \
 	-e "monitoring_alertmanager_telegram_chat_id=$${TELEGRAM_CHAT_ID}" \
 	-e "downloads_vpn_service_provider=$${DOWNLOADS_VPN_SERVICE_PROVIDER}" \
 	-e "downloads_vpn_wireguard_private_key=$${DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY}" \
-	-e "downloads_vpn_wireguard_addresses=$${DOWNLOADS_VPN_WIREGUARD_ADDRESSES}"
+	-e "downloads_vpn_wireguard_addresses=$${DOWNLOADS_VPN_WIREGUARD_ADDRESSES}" \
+	-e "rustfs_access_key=$${RUSTFS_ACCESS_KEY}" \
+	-e "rustfs_secret_key=$${RUSTFS_SECRET_KEY}"
 
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \

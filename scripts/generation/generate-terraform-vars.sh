@@ -20,12 +20,21 @@ if [[ ! -f "${SOURCE}" ]]; then
     exit 1
 fi
 
+source "${ROOT_DIR}/scripts/generation/lib.sh"
+
 mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating Terraform variables..."
 
+RESOLVED="$(resolve_addresses "${SOURCE}")"
+
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-SKIPPED="$(yq -r '.hosts | to_entries[] | select(.value.type == "lxc" or .value.type == "vm") | select(.value.address == "TBD") | .key' "${SOURCE}")"
+SKIPPED="$(yq -r --argjson resolved "${RESOLVED}" '
+  .hosts | to_entries[]
+  | select(.value.type == "lxc" or .value.type == "vm")
+  | select($resolved[.key] == "TBD")
+  | .key
+' "${SOURCE}")"
 if [[ -n "${SKIPPED}" ]]; then
     echo "Warning: skipping hosts without a confirmed address (address: TBD):"
     while IFS= read -r host; do
@@ -33,17 +42,21 @@ if [[ -n "${SKIPPED}" ]]; then
     done <<<"${SKIPPED}"
 fi
 
+# gateway/network_bridge/network_mask come from the network.lan block in
+# config/hosts.yaml — terraform.tfvars no longer sets gateway/
+# network_bridge by hand, see terraform/proxmox/terraform.tfvars.example.
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-yq '
+yq --argjson resolved "${RESOLVED}" '
   .hosts as $hosts
+  | .network as $net
   | {
       lxc_network: (
         $hosts
         | to_entries
-        | map(select(.value.type == "lxc" and .value.address != "TBD"))
+        | map(select(.value.type == "lxc" and $resolved[.key] != "TBD"))
         | map({
             (.key): {
-              ip: .value.address,
+              ip: $resolved[.key],
               cores: .value.cpu,
               memory: .value.memory,
               disk: .value.disk
@@ -54,18 +67,21 @@ yq '
       vm_nodes: (
         $hosts
         | to_entries
-        | map(select(.value.type == "vm" and .value.address != "TBD"))
+        | map(select(.value.type == "vm" and $resolved[.key] != "TBD"))
         | map({
             (.key): {
               proxmox_node: (.value.proxmox_node // "pve"),
               cpu: .value.cpu,
               memory: .value.memory,
               disk: .value.disk,
-              ip: .value.address
+              ip: $resolved[.key]
             }
           })
         | (if length == 0 then {} else add end)
-      )
+      ),
+      gateway: $net.lan.gateway,
+      network_bridge: $net.lan.bridge,
+      network_mask: $net.lan.mask
     }
 ' "${SOURCE}" > "${OUTPUT}"
 

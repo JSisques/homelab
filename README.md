@@ -22,7 +22,8 @@ What exists so far:
 * Jellyfin (`services/jellyfin/`), a media server whose libraries are mounted read-only from NFS exports on the NAS, same pattern as Obsidian. Reachable on the LAN at `https://jellyfin.home.arpa` and remotely at `https://jellyfin.jsisques.net` via the existing Cloudflare Tunnel; see `services/jellyfin/README.md`.
 * A downloads stack (`services/downloads/`) — qBittorrent (behind a gluetun VPN gateway), Prowlarr, Sonarr, Radarr, pyLoad, and MeTube, all on one LXC. Paste a torrent/magnet link, a direct HTTP/FTP link, or a video-site link and it lands on the NAS; Sonarr/Radarr additionally organize finished TV/movie downloads straight into Jellyfin's library. LAN-only (`*.home.arpa`), never routed through the Cloudflare Tunnel; see `services/downloads/README.md`.
 * A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it. Sisques Labs Landing and Days Off (`kubernetes/applications/sisqueslabs-landing/`, `kubernetes/applications/daysoff/`) are two static Astro sites that, unlike Kafka/Gardenia, are small enough to actually run on the single node today — no workers needed — exposed at `landing.sisqueslabs.com` and `daysoff.sisqueslabs.com` via a NodePort each, since there's no in-cluster ingress controller yet.
-* A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
+* Rancher (`kubernetes/argocd/applications/rancher.yaml`), the Kubernetes cluster management UI, deployed as a Helm chart via Argo CD onto the same k3s-server it manages (Rancher's "local cluster" pattern) — `config/hosts.yaml` bumps k3s-server's sizing to fit it. Exposed at `https://rancher.home.arpa` via a NodePort and Traefik, same pattern as the other Kubernetes workloads above; see that file's header comment for what still needs verifying against the live Helm chart before the first real sync.
+* A NAS already exists on the local network (`config/hosts.yaml`) and backs PBS's datastore, Obsidian's vault, Jellyfin's media, and now RustFS (`services/rustfs/`) — an S3-compatible object store whose data lives entirely on the NAS over NFS, same pattern as Obsidian/Jellyfin. Its console is at `https://rustfs.home.arpa`; the S3 API itself is reached directly by LAN IP, not through Traefik. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still planned.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
 
 None of this has been applied to real infrastructure yet — `terraform apply`/the `deploy.yaml` workflow have not been run. Treat everything above as "ready to deploy," not "deployed."
@@ -80,6 +81,7 @@ The final architecture will combine:
 * K3s
 * Helm
 * Argo CD
+* Rancher
 * Docker
 * Prometheus
 * Grafana
@@ -88,6 +90,7 @@ The final architecture will combine:
 * Homepage
 * Uptime Kuma
 * Traefik / Cloudflare Tunnel
+* RustFS (S3-compatible object storage)
 * VPN (internal-only access)
 * Home Assistant
 * Additional services and personal projects
@@ -100,7 +103,7 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
+| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Rancher, RustFS, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
 | Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site, Jellyfin (also reachable on `*.home.arpa` for LAN) |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
 
@@ -187,11 +190,20 @@ The `config/` directory contains the high-level desired state of the homelab. Se
 `config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `cloudflared`), and the two Raspberry Pi K3s workers.
 
 ```yaml
+network:
+  lan:
+    prefix: "192.168.1"
+    mask: 24
+    gateway: "192.168.1.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
   it-tools:
     type: lxc
     platform: proxmox
-    address: 192.168.1.23
+    octet: 23
     cpu: 2
     memory: 1024
     disk: 8
@@ -201,18 +213,18 @@ hosts:
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
-    address: 192.168.1.40
+    octet: 40
     role:
       - k3s
       - worker
 ```
 
-`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't.
+`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't. Hosts resolve their address as `network.<network // "lan">.prefix` + `.` + `octet` (an explicit `address:` literal is still available as an override — see `config/README.md`), so a subnet change is a one-line edit to `network.lan.prefix`/`gateway`, not 25 hand-edited IPs.
 
-This is the **only** place addresses and sizing are written down. Two generators consume it, and neither is edited by hand:
+This is the **only** place addresses, network config, and sizing are written down. The generators that consume it (via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`) are never edited by hand:
 
-* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `k3s_nodes`, auto-loaded by Terraform — no more copy-pasting IPs into `terraform.tfvars`).
-* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together).
+* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`, plus `gateway`/`network_bridge`/`network_mask` — all auto-loaded by Terraform, no more copy-pasting IPs or gateway into `terraform.tfvars`).
+* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together — plus an `all.vars.lan_cidr` that roles like `wireguard` consume instead of hardcoding the LAN subnet).
 
 A host with `address: TBD` (like `proxmox` today) is skipped by both, with a warning, instead of generating a broken config.
 
@@ -319,7 +331,7 @@ CI (`.github/workflows/`) validates every push/PR; the `deploy.yaml` workflow (m
 
 ## Storage
 
-Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network has its first concrete role: Proxmox Backup Server (`ansible/roles/pbs/`) mounts an NFS export from it as its datastore, so LXC/VM backups live off the host they protect. A general-purpose storage layer on top of the NAS — an S3-compatible object store (evaluating [rustfs](https://rustfs.com/) over MinIO) plus Restic/Borg for backups of anything outside Proxmox's own backup scope — is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
+Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network backs Proxmox Backup Server's datastore (`ansible/roles/pbs/`), so LXC/VM backups live off the host they protect, plus Obsidian's vault and Jellyfin's media over their own NFS exports. The general-purpose S3-compatible object store on top of it is now [RustFS](https://rustfs.com/) (`services/rustfs/`, `ansible/roles/rustfs/`) — chosen over MinIO — with its own NFS export on the NAS; Restic/Borg for backups of anything outside Proxmox's own backup scope is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
 
 ## Secrets
 
@@ -331,7 +343,7 @@ Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-to
 
 * **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
 * **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.
-* **NAS-backed application storage** — PBS now uses the NAS for backups; a general S3-compatible layer on top of it (evaluating [rustfs](https://rustfs.com/) over MinIO) for application data is still open.
+* **NAS-backed application storage** — PBS, Obsidian, Jellyfin, and now RustFS all use the NAS. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still open.
 * **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
 * **Authelia / Authentik** — SSO in front of exposed apps.
 * **CrowdSec** — collaborative IPS/IDS reading logs from the exposed services (Cloudflared, AdGuard, Traefik).

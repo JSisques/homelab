@@ -140,22 +140,39 @@ Additional Uptime Kuma configuration can be added as required.
 
 ## `hosts.yaml`
 
-`hosts.yaml` describes the physical and virtual machines that make up the homelab.
+`hosts.yaml` describes the physical and virtual machines that make up the homelab, plus the `network:` block every one of them resolves its address against.
 
 Example:
 
 ```yaml
+network:
+  lan:
+    prefix: "192.168.1"
+    mask: 24
+    gateway: "192.168.1.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
 
   proxmox:
     type: server
-    address: 192.168.1.10
+    address: TBD  # LAN IP not confirmed yet
     platform: proxmox
+
+  nas:
+    type: physical
+    platform: nas
+    network: nas
+    octet: 111
+    role:
+      - storage
 
   monitoring:
     type: lxc
     platform: proxmox
-    address: 192.168.1.20
+    octet: 20
     cpu: 4
     memory: 4096
     disk: 32
@@ -163,35 +180,43 @@ hosts:
       - prometheus
       - grafana
 
-  k3s-01:
+  k3s-server:
     type: vm
-    address: 192.168.1.30
-    platform: linux
+    octet: 31
+    platform: proxmox
     cpu: 4
     memory: 8192
     disk: 50
     role:
       - k3s
-      - control-plane
+      - server
 
   raspberrypi-01:
     type: physical
-    address: 192.168.1.40
+    octet: 40
     platform: raspberry-pi
     role:
       - k3s
       - worker
 ```
 
-`cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
+### Resolving a host's address
+
+Every host resolves to a full IPv4 address one of three ways, in order:
+
+1. `address: TBD` — unconfirmed, skipped everywhere (see below).
+2. `address: <literal IP>` — an explicit override, used as-is. Reach for this only when a host's IP genuinely isn't `<network>.<prefix>.<octet>` (today, only `proxmox` while its real IP is still unknown).
+3. `octet: <n>` — the common case. Resolves to `network.<network // "lan">.prefix` + `.` + `octet`, so `octet: 20` under the default `lan` network becomes `192.168.1.20`. Set `network: nas` (see the `nas` host above) to resolve against `network.nas.prefix` instead.
+
+This means changing your home network's subnet — `192.168.1.0/24` today, `10.0.0.0/24` tomorrow — is a one-line change to `network.lan.prefix` (and `network.lan.gateway`), not 25 hand-edited IPs. `cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
 
 This information is used to generate:
 
-* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `k3s_nodes`), which Terraform loads automatically. **Addresses and sizing are only ever set here, never duplicated in `terraform.tfvars`.**
-* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`.
-* Monitoring targets, Node Exporter configuration, and infrastructure documentation, as those pieces are built out.
+* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`), plus `network_gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
+* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.1.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
+* Monitoring targets, Node Exporter configuration, Traefik routes, and blackbox_exporter targets — every generator in `scripts/generation/` resolves addresses the same way, via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`.
 
-A host with `address: TBD` is skipped by both generators (with a warning) instead of producing a broken IP.
+A host with `address: TBD` is skipped by every generator (with a warning) instead of producing a broken IP.
 
 ## Configuration vs Infrastructure
 
