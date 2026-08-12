@@ -190,11 +190,20 @@ The `config/` directory contains the high-level desired state of the homelab. Se
 `config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `cloudflared`), and the two Raspberry Pi K3s workers.
 
 ```yaml
+network:
+  lan:
+    prefix: "192.168.1"
+    mask: 24
+    gateway: "192.168.1.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
   it-tools:
     type: lxc
     platform: proxmox
-    address: 192.168.1.23
+    octet: 23
     cpu: 2
     memory: 1024
     disk: 8
@@ -204,18 +213,18 @@ hosts:
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
-    address: 192.168.1.40
+    octet: 40
     role:
       - k3s
       - worker
 ```
 
-`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't.
+`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't. Hosts resolve their address as `network.<network // "lan">.prefix` + `.` + `octet` (an explicit `address:` literal is still available as an override — see `config/README.md`), so a subnet change is a one-line edit to `network.lan.prefix`/`gateway`, not 25 hand-edited IPs.
 
-This is the **only** place addresses and sizing are written down. Two generators consume it, and neither is edited by hand:
+This is the **only** place addresses, network config, and sizing are written down. The generators that consume it (via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`) are never edited by hand:
 
-* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `k3s_nodes`, auto-loaded by Terraform — no more copy-pasting IPs into `terraform.tfvars`).
-* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together).
+* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`, plus `gateway`/`network_bridge`/`network_mask` — all auto-loaded by Terraform, no more copy-pasting IPs or gateway into `terraform.tfvars`).
+* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together — plus an `all.vars.lan_cidr` that roles like `wireguard` consume instead of hardcoding the LAN subnet).
 
 A host with `address: TBD` (like `proxmox` today) is skipped by both, with a warning, instead of generating a broken config.
 

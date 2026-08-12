@@ -41,6 +41,12 @@ variable "gateway" {
   type        = string
 }
 
+variable "network_mask" {
+  description = "CIDR prefix length applied to every LXC/VM static IP"
+  type        = number
+  default     = 24
+}
+
 variable "ssh_public_key" {
   description = "SSH public key installed on provisioned LXC containers and VMs"
   type        = string

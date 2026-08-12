@@ -27,6 +27,8 @@ if [[ ! -f "${HOSTS_SOURCE}" ]]; then
     exit 1
 fi
 
+source "${ROOT_DIR}/scripts/generation/lib.sh"
+
 mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating blackbox_exporter targets..."
@@ -38,10 +40,10 @@ echo "Generating blackbox_exporter targets..."
 # carry a `blackbox:` block — no host of their own beyond that), so they
 # resolve directly with no role fallback needed.
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-ADDR_MAP="$(yq -c '
+ADDR_MAP="$(yq -c --argjson resolved "$(resolve_addresses "${HOSTS_SOURCE}")" '
   .hosts as $hosts
-  | ($hosts | to_entries | map({key: (.value.role // [])[], value: .value.address}) | from_entries) as $by_role
-  | ($hosts | to_entries | map({key: .key, value: .value.address}) | from_entries) as $by_key
+  | ($hosts | to_entries | map({key: (.value.role // [])[], value: $resolved[.key]}) | from_entries) as $by_role
+  | $resolved as $by_key
   | $by_role * $by_key
 ' "${HOSTS_SOURCE}")"
 

@@ -1,3 +1,17 @@
+# `network` is the single source of truth for anything subnet-shaped —
+# change a prefix/gateway/bridge here and every generated file (Terraform
+# vars, Ansible inventory, Traefik routes, Prometheus/blackbox targets,
+# WireGuard's ALLOWEDIPS/PEERDNS) picks it up on the next `make generate`.
+# See config/README.md for the full resolution rules.
+network:
+  lan:
+    prefix: "192.168.1"
+    mask: 24
+    gateway: "192.168.1.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
   proxmox:
     type: server
@@ -9,14 +23,15 @@ hosts:
   nas:
     type: physical
     platform: nas
-    address: 192.168.0.111
+    network: nas
+    octet: 111
     role:
       - storage
 
   monitoring:
     type: lxc
     platform: proxmox
-    address: 192.168.1.20
+    octet: 20
     cpu: 2
     # Bumped from 2560 to fit the OTel Collector + Tempo alongside
     # Prometheus/Grafana/Loki/Alertmanager on the same LXC.
@@ -36,7 +51,7 @@ hosts:
   homepage:
     type: lxc
     platform: proxmox
-    address: 192.168.1.21
+    octet: 21
     cpu: 1
     memory: 256
     disk: 4
@@ -46,7 +61,7 @@ hosts:
   uptime-kuma:
     type: lxc
     platform: proxmox
-    address: 192.168.1.22
+    octet: 22
     cpu: 1
     memory: 512
     disk: 4
@@ -56,7 +71,7 @@ hosts:
   it-tools:
     type: lxc
     platform: proxmox
-    address: 192.168.1.23
+    octet: 23
     cpu: 1
     memory: 256
     disk: 4
@@ -66,7 +81,7 @@ hosts:
   n8n:
     type: lxc
     platform: proxmox
-    address: 192.168.1.24
+    octet: 24
     cpu: 2
     memory: 2560
     disk: 16
@@ -76,7 +91,7 @@ hosts:
   obsidian:
     type: lxc
     platform: proxmox
-    address: 192.168.1.29
+    octet: 29
     cpu: 1
     # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
     # so this can't be trimmed as far as the other LXCs.
@@ -88,7 +103,7 @@ hosts:
   jellyfin:
     type: lxc
     platform: proxmox
-    address: 192.168.1.32
+    octet: 32
     # Not in use yet. Direct play barely needs any CPU; bump this (or pass
     # through the iGPU for hardware transcoding) if software transcoding
     # becomes the common case.
@@ -101,7 +116,7 @@ hosts:
   downloads:
     type: lxc
     platform: proxmox
-    address: 192.168.1.33
+    octet: 33
     # gluetun + qBittorrent (torrents, routed through VPN) + Prowlarr +
     # Sonarr/Radarr (indexing/organizing into Jellyfin's library) + pyLoad
     # (direct HTTP/FTP links) + MeTube (yt-dlp web UI). All app state is
@@ -121,7 +136,7 @@ hosts:
   cloudflared:
     type: lxc
     platform: proxmox
-    address: 192.168.1.25
+    octet: 25
     cpu: 1
     memory: 128
     disk: 4
@@ -131,7 +146,7 @@ hosts:
   adguard-home:
     type: lxc
     platform: proxmox
-    address: 192.168.1.26
+    octet: 26
     cpu: 1
     memory: 256
     disk: 4
@@ -141,7 +156,7 @@ hosts:
   traefik:
     type: lxc
     platform: proxmox
-    address: 192.168.1.28
+    octet: 28
     cpu: 1
     memory: 256
     disk: 4
@@ -151,7 +166,7 @@ hosts:
   wireguard:
     type: lxc
     platform: proxmox
-    address: 192.168.1.27
+    octet: 27
     cpu: 1
     memory: 256
     disk: 4
@@ -161,7 +176,7 @@ hosts:
   pbs:
     type: vm
     platform: proxmox
-    address: 192.168.1.30
+    octet: 30
     cpu: 2
     # Was undersized, not oversized: PBS wants ~4GB baseline for its
     # dedup chunk index, even with under 1TB of backup data.
@@ -173,7 +188,7 @@ hosts:
   k3s-server:
     type: vm
     platform: proxmox
-    address: 192.168.1.31
+    octet: 31
     # Runs real pods today (no worker nodes yet), so this keeps headroom
     # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
     # as workers and take workload off this node.
@@ -204,7 +219,7 @@ hosts:
   portfolio-web:
     type: lxc
     platform: proxmox
-    address: 192.168.1.34
+    octet: 34
     cpu: 1
     memory: 256
     disk: 4
@@ -214,7 +229,7 @@ hosts:
   cookidoo-mcp:
     type: lxc
     platform: proxmox
-    address: 192.168.1.35
+    octet: 35
     # Single Node/NestJS container, no database — same profile as it-tools.
     cpu: 1
     memory: 512
@@ -225,7 +240,7 @@ hosts:
   rustfs:
     type: lxc
     platform: proxmox
-    address: 192.168.1.36
+    octet: 36
     # S3-compatible object storage (https://rustfs.com/, see
     # services/rustfs/README.md). Object data lives on the NAS over NFS
     # (ansible/roles/rustfs/), not on this LXC's own disk — disk here
@@ -239,7 +254,7 @@ hosts:
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
-    address: 192.168.1.40
+    octet: 40
     role:
       - k3s
       - worker
@@ -247,7 +262,7 @@ hosts:
   raspberrypi-02:
     type: physical
     platform: raspberry-pi
-    address: 192.168.1.41
+    octet: 41
     role:
       - k3s
       - worker

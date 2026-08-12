@@ -27,6 +27,8 @@ if [[ ! -f "${HOSTS_SOURCE}" ]]; then
     exit 1
 fi
 
+source "${ROOT_DIR}/scripts/generation/lib.sh"
+
 mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating Prometheus configuration..."
@@ -67,13 +69,15 @@ yq -r '
 # mandatory Ansible baseline (see ansible/README.md) regardless of which
 # application is deployed there, so they're scraped from config/hosts.yaml
 # directly rather than from a per-service monitoring block.
+RESOLVED="$(resolve_addresses "${HOSTS_SOURCE}")"
+
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-HOST_IPS="$(yq -r '
+HOST_IPS="$(yq -r --argjson resolved "${RESOLVED}" '
   .hosts
   | to_entries[]
   | select(.value.type == "lxc" or .value.type == "vm")
-  | select(.value.address != "TBD")
-  | .value.address
+  | select($resolved[.key] != "TBD")
+  | $resolved[.key]
 ' "${HOSTS_SOURCE}")"
 
 if [[ -n "${HOST_IPS}" ]]; then

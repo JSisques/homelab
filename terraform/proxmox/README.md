@@ -141,9 +141,9 @@ Example:
 
 ```hcl
 proxmox_endpoint = "https://proxmox.home.arpa:8006"
-network_bridge   = "vmbr0"
-gateway          = "192.168.1.1"
 ```
+
+`network_bridge`, `gateway`, and `network_mask` are **not** set by hand — they come from `config/hosts.yaml`'s `network.lan` block (the same single source of truth as every host's address), written into `hosts.auto.tfvars.json` by `scripts/generation/generate-terraform-vars.sh` alongside `lxc_network`/`vm_nodes`. Change the LAN subnet by editing `config/hosts.yaml`, not `terraform.tfvars`.
 
 Sensitive values must not be committed.
 
