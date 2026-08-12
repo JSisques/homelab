@@ -81,6 +81,32 @@ services:
       type: prometheus
       endpoint: http://alertmanager:9093/metrics
 
+  otel-collector:
+    name: OTel Collector
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no UI, receives OTLP (traces/metrics/logs) from services
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://otel-collector:8889/metrics
+
+  tempo:
+    name: Tempo
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no standalone UI, browsed through Grafana
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://tempo:3200/metrics
+
   cloudflared:
     name: Cloudflared
     category: Networking
@@ -299,6 +325,29 @@ services:
       port: 5678
       scheme: http
       module: http_2xx
+
+  cookidoo-mcp:
+    name: Cookidoo MCP
+    category: Automation
+    tier: internal  # exposes Cookidoo account credentials, LAN/VPN only
+    url: https://cookidoo-mcp.home.arpa
+    icon: mdi-chef-hat
+
+    homepage:
+      enabled: true
+      description: MCP server exposing a Cookidoo account to AI agents
+
+    traefik:
+      enabled: true
+      port: 3000
+
+    uptime:
+      enabled: true  # HTTP check should target GET /api/health, not "/"
+
+    # No native /metrics — cookidoo-mcp only pushes OTLP metrics when
+    # OTEL_EXPORTER_OTLP_ENDPOINT is set (see services/cookidoo-mcp). No
+    # blackbox block either: root "/" isn't a mapped route (404), only
+    # /api/health and /api/mcp are, same reasoning as obsidian below.
 
   obsidian:
     name: Obsidian

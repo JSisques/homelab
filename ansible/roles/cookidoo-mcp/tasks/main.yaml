@@ -1,0 +1,34 @@
+---
+- name: Assert Cookidoo credentials are provided
+  ansible.builtin.assert:
+    that:
+      - cookidoo_mcp_email | length > 0
+      - cookidoo_mcp_password | length > 0
+    fail_msg: >-
+      cookidoo_mcp_email / cookidoo_mcp_password are not set. Provide real
+      Cookidoo account credentials via Ansible Vault or CI secrets before
+      running this role (see services/cookidoo-mcp/README.md).
+
+- name: Create cookidoo-mcp application directory
+  ansible.builtin.file:
+    path: "{{ cookidoo_mcp_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy cookidoo-mcp environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ cookidoo_mcp_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy cookidoo-mcp Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/cookidoo-mcp/compose.yml"
+    dest: "{{ cookidoo_mcp_app_dir }}/compose.yml"
+    mode: "0644"
+
+- name: Start cookidoo-mcp
+  community.docker.docker_compose_v2:
+    project_src: "{{ cookidoo_mcp_app_dir }}"
+    state: present

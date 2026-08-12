@@ -6,6 +6,8 @@ monitoring_grafana_app_dir: /opt/grafana
 monitoring_loki_app_dir: /opt/loki
 monitoring_alertmanager_app_dir: /opt/alertmanager
 monitoring_blackbox_app_dir: /opt/blackbox-exporter
+monitoring_otel_collector_app_dir: /opt/otel-collector
+monitoring_tempo_app_dir: /opt/tempo
 
 # Telegram receiver for Alertmanager. Without these, alerts still fire but
 # land in a "null" receiver instead of Telegram. Override via Ansible Vault

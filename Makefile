@@ -5,10 +5,12 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
+SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home traefik wireguard pbs promtail k3s-server
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
+	-e "cookidoo_mcp_email=$${COOKIDOO_MCP_EMAIL}" \
+	-e "cookidoo_mcp_password=$${COOKIDOO_MCP_PASSWORD}" \
 	-e "cloudflared_credentials_json=$${CLOUDFLARED_CREDS_JSON}" \
 	-e "monitoring_alertmanager_telegram_bot_token=$${TELEGRAM_BOT_TOKEN}" \
 	-e "monitoring_alertmanager_telegram_chat_id=$${TELEGRAM_CHAT_ID}" \
