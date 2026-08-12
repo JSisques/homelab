@@ -1,0 +1,205 @@
+/*
+ * Tema "Homelab as Code": paleta terminal/infra propia sobre Starlight.
+ * Acento verde-menta (estado "healthy" de un dashboard de monitorización),
+ * fondo casi-negro azulado, tipografía de sistema (sin dependencias externas).
+ */
+
+@layer starlight.core {
+  :root {
+    --slh-mint-50: #ecfdf6;
+    --slh-mint-100: #d1fae3;
+    --slh-mint-300: #7fe8bd;
+    --slh-mint-400: #4ed6a2;
+    --slh-mint-500: #2bbd8a;
+    --slh-mint-600: #1c9a70;
+    --slh-mint-700: #157a59;
+
+    --slh-ink-950: #080b10;
+    --slh-ink-900: #0b0f16;
+    --slh-ink-850: #0e131b;
+    --slh-ink-800: #121924;
+    --slh-ink-700: #1a2330;
+    --slh-ink-600: #263143;
+    --slh-ink-500: #3a4a61;
+
+    --sl-font: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji";
+    --sl-font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", "SF Mono", Menlo, Consolas,
+      "Liberation Mono", monospace;
+
+    --slh-radius: 0.5rem;
+  }
+
+  /* Oscuro (por defecto) */
+  :root {
+    --sl-color-white: #f4f7fa;
+    --sl-color-gray-1: #e3e9ef;
+    --sl-color-gray-2: #c3ccd8;
+    --sl-color-gray-3: #93a1b3;
+    --sl-color-gray-4: #62728a;
+    --sl-color-gray-5: #3f4d64;
+    --sl-color-gray-6: #232e3f;
+    --sl-color-gray-7: #161e2a;
+    --sl-color-black: var(--slh-ink-950);
+
+    --sl-color-accent-low: #12362b;
+    --sl-color-accent: var(--slh-mint-500);
+    --sl-color-accent-high: var(--slh-mint-300);
+
+    --sl-color-bg: var(--slh-ink-950);
+    --sl-color-bg-nav: var(--slh-ink-900);
+    --sl-color-bg-sidebar: var(--slh-ink-900);
+    --sl-color-bg-inline-code: var(--slh-ink-800);
+    --sl-color-hairline-light: var(--slh-ink-600);
+    --sl-color-hairline: var(--slh-ink-700);
+    --sl-color-hairline-shade: var(--slh-ink-950);
+
+    --sl-color-bg-accent: var(--slh-mint-400);
+    --sl-color-text-accent: var(--slh-mint-400);
+  }
+
+  /* Claro */
+  :root[data-theme="light"] {
+    --sl-color-white: var(--slh-ink-950);
+    --sl-color-gray-1: #1c2735;
+    --sl-color-gray-2: #3a4a61;
+    --sl-color-gray-3: #62728a;
+    --sl-color-gray-4: #93a1b3;
+    --sl-color-gray-5: #c3ccd8;
+    --sl-color-gray-6: #e3e9ef;
+    --sl-color-gray-7: #f1f4f7;
+    --sl-color-black: #ffffff;
+
+    --sl-color-accent-low: #cdf3e2;
+    --sl-color-accent: var(--slh-mint-600);
+    --sl-color-accent-high: var(--slh-mint-700);
+
+    --sl-color-bg: #fbfcfd;
+    --sl-color-bg-nav: #ffffff;
+    --sl-color-bg-sidebar: #ffffff;
+    --sl-color-bg-inline-code: #eef2f5;
+    --sl-color-hairline-light: var(--sl-color-gray-6);
+    --sl-color-hairline: var(--sl-color-gray-5);
+    --sl-color-hairline-shade: var(--sl-color-gray-6);
+
+    --sl-color-bg-accent: var(--slh-mint-600);
+    --sl-color-text-accent: var(--slh-mint-700);
+  }
+}
+
+/* Enlaces y foco con el acento menta, más contraste que el verde por defecto */
+@layer starlight.core {
+  a:not(:where(.sl-badge, .not-content *)) {
+    text-underline-offset: 0.2em;
+  }
+
+  ::selection {
+    background: var(--slh-mint-400);
+    color: var(--slh-ink-950);
+  }
+}
+
+/* Cabecera: leve desenfoque + borde inferior más marcado que el default */
+@layer starlight.core {
+  header.header {
+    backdrop-filter: blur(10px);
+    background-color: color-mix(in srgb, var(--sl-color-bg-nav) 88%, transparent);
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+}
+
+/* Bloques de código: bordes redondeados consistentes con el resto de la UI */
+@layer starlight.core {
+  .expressive-code {
+    --ec-brdRad: var(--slh-radius);
+  }
+}
+
+/* Tarjetas (CardGrid) con un toque de elevación y borde acentuado al pasar el ratón */
+@layer starlight.core {
+  .card {
+    border-radius: var(--slh-radius);
+    transition:
+      border-color 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .card:hover {
+    border-color: var(--sl-color-accent);
+    transform: translateY(-1px);
+  }
+}
+
+/* Tablas: cabecera con fondo sutil y bordes redondeados en el contenedor */
+@layer starlight.core {
+  .sl-markdown-content table {
+    border-radius: var(--slh-radius);
+    overflow: hidden;
+  }
+
+  .sl-markdown-content thead th {
+    background-color: var(--sl-color-gray-7);
+  }
+
+  :root[data-theme="light"] .sl-markdown-content thead th {
+    background-color: var(--sl-color-gray-7);
+  }
+}
+
+/* Hero de la portada: fondo con rejilla puntillada muy sutil, look "infra" */
+.hero {
+  position: relative;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -2rem -1rem auto -1rem;
+  height: 34rem;
+  background-image: radial-gradient(var(--sl-color-hairline) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 20%, black 40%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 55% at 50% 20%, black 40%, transparent 75%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Chips de estado usados en las páginas de servicios/arquitectura */
+.slh-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  font-family: var(--sl-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  border: 1px solid var(--sl-color-hairline);
+  color: var(--sl-color-gray-2);
+  white-space: nowrap;
+}
+
+.slh-tier::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.slh-tier--internal {
+  color: var(--sl-color-gray-3);
+}
+
+.slh-tier--personal {
+  color: #f2b84b;
+}
+
+.slh-tier--public {
+  color: var(--slh-mint-400);
+}
+
+:root[data-theme="light"] .slh-tier--public {
+  color: var(--slh-mint-600);
+}
