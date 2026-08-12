@@ -1,0 +1,62 @@
+# Rancher (https://rancher.com): management UI/API for this homelab's
+# Kubernetes cluster, using Rancher's "local cluster" pattern — it runs
+# on and manages the same single-node k3s it's installed into. See
+# ansible/roles/k3s/README.md for the cluster topology and
+# config/hosts.yaml's k3s-server entry for the sizing bumped to fit it.
+#
+# Verify before the first real `argocd app sync` — this file was written
+# without a working connection to
+# https://releases.rancher.com/server-charts/stable, so both the pinned
+# targetRevision and the `helm.values` keys below should be checked
+# against the live chart first:
+#   helm repo add rancher-stable \
+#     https://releases.rancher.com/server-charts/stable
+#   helm show values rancher-stable/rancher --version <targetRevision>
+#
+# `tls: external` + `ingress.enabled: false` + `service.type: NodePort`
+# is the documented setup for "TLS terminates on an external L7 load
+# balancer" (here: the Traefik LXC, services/traefik/) with no
+# in-cluster ingress controller — same reasoning as the NodePort Service
+# in kubernetes/applications/daysoff/service.yaml.
+#
+# No password is set below. Rancher generates a random bootstrap
+# password on first boot; retrieve it with:
+#   kubectl -n cattle-system get secret bootstrap-secret \
+#     -o go-template='{{.data.bootstrapPassword|base64decode}}{{"\n"}}'
+# Rotate/discard it after first login, same as Argo CD's own
+# argocd-initial-admin-secret (see ansible/roles/k3s/README.md).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher
+  namespace: argocd
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    targetRevision: 2.9.3
+    helm:
+      releaseName: rancher
+      values: |
+        hostname: rancher.home.arpa
+        replicas: 1
+        ingress:
+          enabled: false
+        tls: external
+        service:
+          type: NodePort
+          nodePort: 30082
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true

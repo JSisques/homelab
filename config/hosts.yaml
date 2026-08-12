@@ -178,21 +178,28 @@ hosts:
     # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
     # as workers and take workload off this node.
     #
-    # sisqueslabs-landing/daysoff carry no LXC/VM of their own — they're
-    # Kubernetes workloads (see kubernetes/applications/), deployed via
-    # Argo CD, not Ansible. These roles exist only so
-    # generate-blackbox.sh can resolve a LAN address for their
-    # config/services.yaml blackbox target (this node's NodePort), same
-    # trick as grafana/prometheus/loki/alertmanager sharing the
-    # "monitoring" host below.
-    cpu: 2
-    memory: 3072
-    disk: 30
+    # Bumped from 2/3072/30 to fit Rancher's management server (Helm
+    # chart via Argo CD, see kubernetes/argocd/applications/rancher.yaml)
+    # alongside Argo CD and the existing workloads — Rancher alone wants
+    # ~2GB+ of headroom on top of what was already a tight single node.
+    #
+    # sisqueslabs-landing/daysoff/rancher carry no LXC/VM of their own —
+    # they're Kubernetes workloads (see kubernetes/applications/ and
+    # kubernetes/argocd/applications/), deployed via Argo CD, not
+    # Ansible. These roles exist only so generate-blackbox.sh /
+    # generate-traefik.sh can resolve a LAN address for their
+    # config/services.yaml target (this node's NodePort), same trick as
+    # grafana/prometheus/loki/alertmanager sharing the "monitoring" host
+    # below.
+    cpu: 4
+    memory: 6144
+    disk: 40
     role:
       - k3s
       - server
       - sisqueslabs-landing
       - daysoff
+      - rancher
 
   portfolio-web:
     type: lxc

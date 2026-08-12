@@ -22,6 +22,7 @@ What exists so far:
 * Jellyfin (`services/jellyfin/`), a media server whose libraries are mounted read-only from NFS exports on the NAS, same pattern as Obsidian. Reachable on the LAN at `https://jellyfin.home.arpa` and remotely at `https://jellyfin.jsisques.net` via the existing Cloudflare Tunnel; see `services/jellyfin/README.md`.
 * A downloads stack (`services/downloads/`) — qBittorrent (behind a gluetun VPN gateway), Prowlarr, Sonarr, Radarr, pyLoad, and MeTube, all on one LXC. Paste a torrent/magnet link, a direct HTTP/FTP link, or a video-site link and it lands on the NAS; Sonarr/Radarr additionally organize finished TV/movie downloads straight into Jellyfin's library. LAN-only (`*.home.arpa`), never routed through the Cloudflare Tunnel; see `services/downloads/README.md`.
 * A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it. Sisques Labs Landing and Days Off (`kubernetes/applications/sisqueslabs-landing/`, `kubernetes/applications/daysoff/`) are two static Astro sites that, unlike Kafka/Gardenia, are small enough to actually run on the single node today — no workers needed — exposed at `landing.sisqueslabs.com` and `daysoff.sisqueslabs.com` via a NodePort each, since there's no in-cluster ingress controller yet.
+* Rancher (`kubernetes/argocd/applications/rancher.yaml`), the Kubernetes cluster management UI, deployed as a Helm chart via Argo CD onto the same k3s-server it manages (Rancher's "local cluster" pattern) — `config/hosts.yaml` bumps k3s-server's sizing to fit it. Exposed at `https://rancher.home.arpa` via a NodePort and Traefik, same pattern as the other Kubernetes workloads above; see that file's header comment for what still needs verifying against the live Helm chart before the first real sync.
 * A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
 * A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
 
@@ -80,6 +81,7 @@ The final architecture will combine:
 * K3s
 * Helm
 * Argo CD
+* Rancher
 * Docker
 * Prometheus
 * Grafana
@@ -100,7 +102,7 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
+| Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Rancher, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
 | Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site, Jellyfin (also reachable on `*.home.arpa` for LAN) |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
 

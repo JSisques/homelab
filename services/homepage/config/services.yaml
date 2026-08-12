@@ -58,6 +58,10 @@ Infrastructure:
     href: https://kafka.home.arpa
     icon: kafka.png
     description: Event streaming platform
+  Rancher:
+    href: https://rancher.home.arpa
+    icon: rancher.png
+    description: Kubernetes cluster management
 Media:
   Jellyfin:
     href: https://jellyfin.home.arpa

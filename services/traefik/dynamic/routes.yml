@@ -99,6 +99,11 @@ http:
       entryPoints: ["websecure"]
       service: metube
       tls: {}
+    rancher:
+      rule: "Host(`rancher.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: rancher
+      tls: {}
   services:
     grafana:
       loadBalancer:
@@ -168,3 +173,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.33:8081"
+    rancher:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.31:30082"
