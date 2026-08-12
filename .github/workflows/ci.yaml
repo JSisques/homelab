@@ -10,6 +10,25 @@ permissions:
   contents: read
 
 jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    # Secrets aren't available to workflows triggered by a fork's pull_request,
+    # so skip cleanly there instead of failing CI red for external contributors.
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v4
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   yaml:
     name: Validate YAML
     runs-on: ubuntu-latest

@@ -46,3 +46,6 @@
 
 - name: Deploy Portfolio Web
   ansible.builtin.import_playbook: portfolio-web.yaml
+
+- name: Deploy SonarQube
+  ansible.builtin.import_playbook: sonarqube.yaml

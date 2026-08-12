@@ -1,0 +1,12 @@
+---
+sonarqube_app_dir: /opt/sonarqube
+
+sonarqube_postgres_db: sonarqube
+sonarqube_postgres_user: sonarqube
+# Must be overridden via Ansible Vault or CI secrets. Never commit a real value.
+sonarqube_db_password: changeme
+
+# Required by the Elasticsearch bundled inside the SonarQube image. Host-wide
+# kernel setting, not namespaced per-container — see
+# services/sonarqube/README.md ("Kernel requirements").
+sonarqube_vm_max_map_count: 524288

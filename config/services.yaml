@@ -644,3 +644,34 @@ services:
       port: 6443
       scheme: https
       module: http_2xx_insecure
+
+  sonarqube:
+    name: SonarQube
+    category: Development
+    # LAN via Traefik; also on sonarqube.jsisques.net via Cloudflare Tunnel
+    # for GitHub Actions (and other personal repos) to reach it for CI code
+    # analysis — see services/cloudflared/config.yml, same pattern as
+    # jellyfin/portfolio-web above.
+    tier: internal
+    url: https://sonarqube.home.arpa
+    icon: sonarqube.png
+
+    homepage:
+      enabled: true
+      description: Static code analysis
+
+    traefik:
+      enabled: true
+      port: 9000
+
+    uptime:
+      enabled: true
+
+    # No native /metrics in Community Build (Prometheus metrics are an
+    # Enterprise-tier feature). Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9000
+      scheme: http
+      module: http_2xx

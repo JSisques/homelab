@@ -1,0 +1,43 @@
+---
+- name: Set vm.max_map_count for Elasticsearch (bundled in SonarQube)
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: "{{ sonarqube_vm_max_map_count }}"
+    sysctl_set: true
+    state: present
+    reload: true
+  register: sonarqube_max_map_count
+  failed_when: false
+
+- name: Warn if vm.max_map_count could not be set from inside the LXC
+  ansible.builtin.debug:
+    msg: >-
+      Could not set vm.max_map_count from inside the sonarqube LXC — common
+      for unprivileged containers, since it's a host-wide kernel setting.
+      Set it on the Proxmox host instead: either lxc.sysctl.vm.max_map_count
+      in the container config, or vm.max_map_count in /etc/sysctl.d/ on the
+      PVE host itself. See services/sonarqube/README.md.
+  when: sonarqube_max_map_count is failed
+
+- name: Create SonarQube application directory
+  ansible.builtin.file:
+    path: "{{ sonarqube_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy SonarQube environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ sonarqube_app_dir }}/.env"
+    mode: "0600"
+
+- name: Deploy SonarQube Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/sonarqube/compose.yaml"
+    dest: "{{ sonarqube_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start SonarQube
+  community.docker.docker_compose_v2:
+    project_src: "{{ sonarqube_app_dir }}"
+    state: present

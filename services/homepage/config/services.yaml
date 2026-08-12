@@ -24,6 +24,11 @@ Automation:
     href: https://cookidoo-mcp.home.arpa
     icon: mdi-chef-hat
     description: MCP server exposing a Cookidoo account to AI agents
+Development:
+  SonarQube:
+    href: https://sonarqube.home.arpa
+    icon: sonarqube.png
+    description: Static code analysis
 Downloads:
   qBittorrent:
     href: https://qbittorrent.home.arpa

@@ -20,6 +20,7 @@ What exists so far:
 * Proxmox Backup Server (`ansible/roles/pbs/`), backing up onto the NAS over NFS — installed as a native package (not Docker), on its own VM. The Proxmox VE side (registering PBS as a storage backend, the actual backup job) is still a manual one-time step; see `ansible/roles/pbs/README.md`.
 * Obsidian (`services/obsidian/`), a headless, MCP-only "second brain" vault — no browser GUI, just an MCP endpoint (`https://obsidian.home.arpa`) that AI agents use to read/write notes. Its Markdown files live on the NAS over NFS, same pattern as PBS; see `services/obsidian/README.md`.
 * Jellyfin (`services/jellyfin/`), a media server whose libraries are mounted read-only from NFS exports on the NAS, same pattern as Obsidian. Reachable on the LAN at `https://jellyfin.home.arpa` and remotely at `https://jellyfin.jsisques.net` via the existing Cloudflare Tunnel; see `services/jellyfin/README.md`.
+* SonarQube (`services/sonarqube/`), Community Build, for static code analysis on pull requests. Same dual-exposure pattern as Jellyfin — `https://sonarqube.home.arpa` on the LAN, `https://sonarqube.jsisques.net` via the Cloudflare Tunnel so GitHub Actions (GitHub-hosted runners can't reach `*.home.arpa`) can reach it for CI; see `services/sonarqube/README.md`.
 * A downloads stack (`services/downloads/`) — qBittorrent (behind a gluetun VPN gateway), Prowlarr, Sonarr, Radarr, pyLoad, and MeTube, all on one LXC. Paste a torrent/magnet link, a direct HTTP/FTP link, or a video-site link and it lands on the NAS; Sonarr/Radarr additionally organize finished TV/movie downloads straight into Jellyfin's library. LAN-only (`*.home.arpa`), never routed through the Cloudflare Tunnel; see `services/downloads/README.md`.
 * A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it. Sisques Labs Landing and Days Off (`kubernetes/applications/sisqueslabs-landing/`, `kubernetes/applications/daysoff/`) are two static Astro sites that, unlike Kafka/Gardenia, are small enough to actually run on the single node today — no workers needed — exposed at `landing.sisqueslabs.com` and `daysoff.sisqueslabs.com` via a NodePort each, since there's no in-cluster ingress controller yet.
 * A NAS already exists on the local network (`config/hosts.yaml`) and now has a concrete first consumer (PBS's datastore); a general-purpose storage layer (S3-compatible, backups) on top of it is still planned.
@@ -101,7 +102,7 @@ Services are split across three access tiers, depending on who they're for and h
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
 | Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
-| Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site, Jellyfin (also reachable on `*.home.arpa` for LAN) |
+| Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Personal apps/site, Jellyfin, SonarQube (all also reachable on `*.home.arpa` for LAN) |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
 
 Each service's tier is declared explicitly via the `tier` field in `config/services.yaml` (see [`config/README.md`](config/README.md#tier)) — nothing is public by default.
@@ -176,7 +177,7 @@ make validate              # Terraform + Ansible + YAML + shell + Compose checks
 make status                # show current Terraform-managed infrastructure
 ```
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `traefik`, `wireguard`, `pbs`, `k3s-server`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, and `downloads` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`); see the matching role's README.
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home`, `traefik`, `wireguard`, `pbs`, `k3s-server`, `promtail`, or `sonarqube` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `sonarqube`, `cloudflared`, `monitoring`, and `downloads` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `SONARQUBE_DB_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`); see the matching role's README.
 
 ## Configuration
 
@@ -327,7 +328,7 @@ Secrets should never be committed in plaintext. Sensitive configuration will use
 
 ## Roadmap / Planned Services
 
-Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD. The next priorities:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Traefik, Proxmox Backup Server, SonarQube, a single-node K3s server with Argo CD. The next priorities:
 
 * **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
 * **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.

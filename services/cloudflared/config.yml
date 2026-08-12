@@ -17,6 +17,10 @@ ingress:
     service: http://portfolio-web.home.arpa:8080
   - hostname: jellyfin.jsisques.net
     service: http://jellyfin.home.arpa:8096
+  # SonarQube CI analysis, reached from GitHub Actions (this repo and other
+  # personal repos) — see services/sonarqube/README.md.
+  - hostname: sonarqube.jsisques.net
+    service: http://sonarqube.home.arpa:9000
   # - hostname: <app>.jsisques.net
   #   service: http://<internal-target>
 

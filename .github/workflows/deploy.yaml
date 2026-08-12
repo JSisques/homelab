@@ -85,11 +85,13 @@ jobs:
             -i inventory/hosts.yml \
             playbooks/site.yaml \
             -e "n8n_postgres_password=${N8N_POSTGRES_PASSWORD}" \
+            -e "sonarqube_db_password=${SONARQUBE_DB_PASSWORD}" \
             -e "cloudflared_credentials_json=${CLOUDFLARED_CREDS_JSON}" \
             -e "${BOT_TOKEN_VAR}" \
             -e "${CHAT_ID_VAR}"
         env:
           N8N_POSTGRES_PASSWORD: ${{ secrets.N8N_POSTGRES_PASSWORD }}
+          SONARQUBE_DB_PASSWORD: ${{ secrets.SONARQUBE_DB_PASSWORD }}
           CLOUDFLARED_CREDS_JSON: ${{ secrets.CLOUDFLARED_CREDS_JSON }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

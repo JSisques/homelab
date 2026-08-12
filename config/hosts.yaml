@@ -215,6 +215,19 @@ hosts:
     role:
       - cookidoo-mcp
 
+  sonarqube:
+    type: lxc
+    platform: proxmox
+    address: 192.168.1.36
+    # SonarQube bundles Elasticsearch, which wants real headroom; its own
+    # Postgres runs alongside it in the same compose stack (see
+    # services/sonarqube/).
+    cpu: 2
+    memory: 4096
+    disk: 20
+    role:
+      - sonarqube
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

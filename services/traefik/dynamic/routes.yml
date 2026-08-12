@@ -99,6 +99,11 @@ http:
       entryPoints: ["websecure"]
       service: metube
       tls: {}
+    sonarqube:
+      rule: "Host(`sonarqube.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: sonarqube
+      tls: {}
   services:
     grafana:
       loadBalancer:
@@ -168,3 +173,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.1.33:8081"
+    sonarqube:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.1.36:9000"
