@@ -20,7 +20,7 @@
     opts: rw,sync,hard,intr
     state: mounted
 
-- name: Create Postgres data, db-config, and Storage directories on the NFS export
+- name: Create db, db-config, and storage directories on the NFS mount
   ansible.builtin.file:
     path: "{{ supabase_nas_mount_path }}/{{ item }}"
     state: directory

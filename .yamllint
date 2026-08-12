@@ -5,6 +5,12 @@ ignore: |
   website/node_modules/
   website/pnpm-lock.yaml
   .terraform/
+  # Vendored verbatim from supabase/supabase's docker/ self-hosting
+  # reference (see services/supabase/README.md "Upstream") and kept
+  # close to source on purpose, so future upstream updates diff cleanly
+  # instead of drowning in reformatting noise.
+  services/supabase/compose.yaml
+  services/supabase/volumes/
 
 rules:
   # No file in this repo uses "---" document markers; enforcing it now
