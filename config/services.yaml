@@ -182,16 +182,16 @@ services:
       scheme: http
       module: http_2xx
 
-  adguard-home:
-    name: AdGuard Home
+  adguard-home-1:
+    name: AdGuard Home (Primary)
     category: Networking
     tier: internal
-    url: https://adguard.home.arpa
+    url: https://adguard1.home.arpa
     icon: adguard-home.png
 
     homepage:
       enabled: true
-      description: DNS and network-wide ad blocking
+      description: Primary DNS resolver and network-wide ad blocking
 
     traefik:
       enabled: true
@@ -202,6 +202,30 @@ services:
 
     # No native /metrics — AdGuard Home has no Prometheus support. Probed
     # by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
+
+  adguard-home-2:
+    name: AdGuard Home (Secondary)
+    category: Networking
+    tier: internal
+    url: https://adguard2.home.arpa
+    icon: adguard-home.png
+
+    homepage:
+      enabled: true
+      description: Secondary DNS resolver, kept in sync from the primary
+
+    traefik:
+      enabled: true
+      port: 3000
+
+    uptime:
+      enabled: true
+
     blackbox:
       enabled: true
       port: 3000

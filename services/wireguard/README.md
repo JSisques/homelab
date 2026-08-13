@@ -6,7 +6,7 @@ Self-hosted VPN gateway ([linuxserver/wireguard](https://docs.linuxserver.io/ima
 
 - Terminate WireGuard connections from road-warrior clients (phone, laptop)
 - Route those clients into the LAN subnet (`ALLOWEDIPS`, `config/hosts.yaml`'s `network.lan`) so they can reach every LXC on the LAN
-- Hand out AdGuard Home as the DNS server (`PEERDNS`), so VPN clients resolve `*.home.arpa` and get ad-blocking too
+- Hand out both AdGuard Home instances as primary/secondary DNS (`PEERDNS`), so VPN clients resolve `*.home.arpa`, get ad-blocking, and keep resolving DNS even if one instance is down
 
 ## Directory Structure
 
@@ -39,9 +39,9 @@ docker compose cp wireguard:/config/peer1/peer1.conf ./peer1.conf
 `ALLOWEDIPS` tells connected clients to route all LAN-bound traffic through the tunnel, and the container NATs that traffic onto the LAN bridge on their behalf. Neither `ALLOWEDIPS` nor `PEERDNS` is hardcoded here — `compose.yaml` reads them from a `.env` that the Ansible role renders (`ansible/roles/wireguard/templates/env.j2`) from:
 
 - `ALLOWEDIPS` ← `lan_cidr`, an Ansible inventory var generated from `config/hosts.yaml`'s `network.lan` block (`scripts/generation/generate-inventory.sh`).
-- `PEERDNS` ← `hostvars['adguard-home'].ansible_host`, AdGuard Home's resolved LAN address.
+- `PEERDNS` ← `hostvars['adguard-home-1'].ansible_host,hostvars['adguard-home-2'].ansible_host` — both AdGuard Home instances' resolved LAN addresses, comma-separated (primary first).
 
-So changing the LAN subnet (`config/hosts.yaml`'s `network.lan.prefix`) or AdGuard Home's address doesn't need a `compose.yaml` edit — re-running Ansible picks up both automatically.
+So changing the LAN subnet (`config/hosts.yaml`'s `network.lan.prefix`) or either AdGuard Home instance's address doesn't need a `compose.yaml` edit — re-running Ansible picks up all of it automatically.
 
 This is the piece most likely to need hands-on debugging on real hardware — if VPN clients can reach the WireGuard host but nothing else on the LAN, check `net.ipv4.conf.all.src_valid_mark` (already set) and that the Proxmox firewall isn't blocking forwarded traffic from the LXC.
 
@@ -53,5 +53,5 @@ Terraform creates the `wireguard` LXC (`terraform/proxmox/lxc.tf`). Ansible depl
 
 ```bash
 cd services/wireguard
-ALLOWEDIPS=192.168.0.0/24 PEERDNS=192.168.0.26 docker compose up -d
+ALLOWEDIPS=192.168.0.0/24 PEERDNS=192.168.0.26,192.168.0.37 docker compose up -d
 ```

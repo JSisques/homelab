@@ -1,0 +1,7 @@
+---
+- name: Deploy AdGuard Home (Secondary)
+  hosts: adguard-home-2
+  become: true
+
+  roles:
+    - adguard-home

@@ -16,13 +16,14 @@ ansible/
 ├── playbooks/
 │   ├── site.yaml          # everything, in order
 │   ├── it-tools.yaml  n8n.yaml  monitoring.yaml  homepage.yaml
-│   ├── uptime-kuma.yaml  cloudflared.yaml  adguard-home.yaml
+│   ├── uptime-kuma.yaml  cloudflared.yaml
+│   ├── adguard-home-1.yaml  adguard-home-2.yaml  adguard-home-sync.yaml
 │   ├── wireguard.yaml  pbs.yaml  k3s-server.yaml
 │   └── promtail.yaml      # promtail alone, against every host
 └── roles/
     ├── common/  node-exporter/  promtail/  docker/    # mandatory baseline
     └── it-tools/  n8n/  monitoring/  homepage/  uptime-kuma/
-        cloudflared/  adguard-home/  wireguard/  pbs/  k3s/
+        cloudflared/  adguard-home/  adguard-home-sync/  wireguard/  pbs/  k3s/
 ```
 
 ## Mandatory Baseline: Every Host Gets Node Exporter + Promtail

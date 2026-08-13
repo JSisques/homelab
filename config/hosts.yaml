@@ -143,7 +143,7 @@ hosts:
     role:
       - cloudflared
 
-  adguard-home:
+  adguard-home-1:
     type: lxc
     platform: proxmox
     octet: 26
@@ -151,7 +151,22 @@ hosts:
     memory: 256
     disk: 4
     role:
-      - adguard-home
+      - adguard-home-1
+
+  adguard-home-2:
+    type: lxc
+    platform: proxmox
+    # Independent secondary DNS resolver, on its own LXC, so LAN clients
+    # get real redundancy (primary = adguard-home-1, secondary =
+    # adguard-home-2) instead of a single point of failure for DNS.
+    # Kept in sync from adguard-home-1 by the adguard-home-sync role
+    # (see ansible/roles/adguard-home-sync/) rather than sharing state.
+    octet: 37
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - adguard-home-2
 
   traefik:
     type: lxc

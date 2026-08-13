@@ -102,7 +102,7 @@ Same trust model as `n8n`/`grafana`/other internal services: no auth in front of
 
 ## Resource sizing
 
-Headless Chromium/Electron is heavier than the other single-container services here (`it-tools`, `adguard-home`): 2 vCPU / 2GB RAM, 20GB disk (image layers from the `docker build` step, not vault data — that's all on the NAS). `shm_size: "1gb"` in `compose.yaml` avoids Chromium crashing on the default 64MB `/dev/shm`.
+Headless Chromium/Electron is heavier than the other single-container services here (`it-tools`, `adguard-home-1`): 2 vCPU / 2GB RAM, 20GB disk (image layers from the `docker build` step, not vault data — that's all on the NAS). `shm_size: "1gb"` in `compose.yaml` avoids Chromium crashing on the default 64MB `/dev/shm`.
 
 If the container fails to start on first deploy, the most likely cause is the unprivileged LXC's `nesting=true` feature not being enough for headless Chromium's sandbox — see `terraform/proxmox/lxc.tf`. That's a per-container Proxmox feature flag, not something this role can fix on its own.
 

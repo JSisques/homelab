@@ -17,10 +17,10 @@ services:
       - PEERS=5
       # PEERDNS/ALLOWEDIPS come from .env, rendered by the Ansible role
       # (ansible/roles/wireguard/templates/env.j2) from the Ansible
-      # inventory's lan_cidr/adguard-home address — both ultimately
-      # derived from config/hosts.yaml's `network:` block, so a LAN
-      # subnet change doesn't leave the VPN routing clients into the old
-      # one. See README.md.
+      # inventory's lan_cidr and both adguard-home-1/adguard-home-2
+      # addresses — all ultimately derived from config/hosts.yaml's
+      # `network:` block, so a LAN subnet change doesn't leave the VPN
+      # routing clients into the old one. See README.md.
       - PEERDNS=${PEERDNS}
       - INTERNAL_SUBNET=10.13.13.0
       - ALLOWEDIPS=${ALLOWEDIPS}

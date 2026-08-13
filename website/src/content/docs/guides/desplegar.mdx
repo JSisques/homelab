@@ -72,7 +72,9 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    make deploy-uptime-kuma
    make deploy-it-tools
    make deploy-n8n
-   # ...y así con el resto: obsidian, jellyfin, downloads, adguard-home,
+   # ...y así con el resto: obsidian, jellyfin, downloads,
+   # adguard-home-1, adguard-home-2, adguard-home-sync (en ese orden —
+   # sync necesita que las dos instancias ya existan),
    # traefik, wireguard, pbs, promtail, k3s-server, rustfs, cookidoo-mcp
    ```
 
@@ -127,6 +129,8 @@ Nada de esto está commiteado ni lo estará.
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Notificaciones de Alertmanager | Las alertas se siguen disparando pero no llegan a ningún sitio |
 | `DOWNLOADS_VPN_SERVICE_PROVIDER` / `DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY` / `DOWNLOADS_VPN_WIREGUARD_ADDRESSES` | Configuración del gateway VPN (gluetun) del stack de descargas | qBittorrent no tiene por dónde salir a internet |
 | `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` | Credenciales del object storage S3-compatible | El servicio arranca sin credenciales configuradas |
+| `ADGUARD_SYNC_ORIGIN_USERNAME` / `_PASSWORD` | Credenciales de admin de `adguard-home-1`, para que `adguard-home-sync` pueda leer su config | El contenedor de sync no puede autenticarse contra el origen |
+| `ADGUARD_SYNC_REPLICA_USERNAME` / `_PASSWORD` | Credenciales de admin de `adguard-home-2`, para que `adguard-home-sync` pueda escribir en la réplica | El contenedor de sync no puede autenticarse contra la réplica |
 
 Estas son las que usa `Makefile` (`ANSIBLE_EXTRA_VARS`) para cualquier `make deploy` / `make deploy-<servicio>` — solo hace falta exportar las del servicio que estés desplegando en ese momento, el resto puede quedar vacío. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
 
