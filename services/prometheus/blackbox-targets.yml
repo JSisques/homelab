@@ -12,7 +12,6 @@
     - "http://192.168.0.205:3000"  # homepage
     - "http://192.168.0.201:3000"  # adguard-home-1
     - "http://192.168.0.202:3000"  # adguard-home-2
-    - "http://192.168.0.217:8080"  # portfolio-web
     - "http://192.168.0.207:30080"  # sisqueslabs-landing
     - "http://192.168.0.207:30081"  # daysoff
     - "http://192.168.0.207:30083"  # blog

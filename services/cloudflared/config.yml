@@ -13,8 +13,6 @@ ingress:
     service: http://192.168.0.207:30081
 
   # jsisques.net — personal apps (add entries here as they're deployed)
-  - hostname: portfolio.jsisques.net
-    service: http://portfolio-web.home.arpa:8080
   - hostname: jellyfin.jsisques.net
     service: http://jellyfin.home.arpa:8096
   # Kubernetes-hosted (see kubernetes/applications/blog/), no in-cluster

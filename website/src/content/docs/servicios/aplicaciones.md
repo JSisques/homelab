@@ -1,21 +1,9 @@
 ---
 title: Aplicaciones
-description: Portfolio, Gardenia, Sisques Labs Landing, Days Off y Blog — las aplicaciones de cara al público del homelab.
+description: Gardenia, Sisques Labs Landing, Days Off y Blog — las aplicaciones de cara al público del homelab.
 ---
 
 Categoría `Applications` en `config/services.yaml`. A diferencia del resto de secciones, la mayoría de estas apps no tienen su código en este repositorio — aquí solo se documenta cómo se despliegan y exponen.
-
-## Portfolio
-
-<span class="slh-tier slh-tier--internal">interna</span> · `portfolio-web.home.arpa` · también `portfolio.jsisques.net`
-
-Portfolio personal de desarrollador, sitio estático Astro con i18n es/en. El código fuente está en [github.com/JSisques/portfolio-web](https://github.com/JSisques/portfolio-web).
-
-- El CI de ese repositorio, no este, construye y publica la imagen a `ghcr.io/jsisques/portfolio-web`; esta LXC solo hace `pull` y ejecuta la imagen publicada — nunca construye nada.
-- Sin estado persistente ni secretos — redesplegar es solo traer la última etiqueta de imagen y reiniciar.
-- Alcanzable en LAN (`https://portfolio-web.home.arpa`, vía Traefik) y públicamente (`https://portfolio.jsisques.net`, vía Cloudflare Tunnel).
-
-Ver [rol de Ansible](https://github.com/JSisques/homelab/tree/main/ansible/roles/portfolio-web).
 
 ## Gardenia
 

@@ -232,16 +232,6 @@ hosts:
       - rancher
       - blog
 
-  portfolio-web:
-    type: lxc
-    platform: proxmox
-    octet: 217
-    cpu: 1
-    memory: 256
-    disk: 4
-    role:
-      - portfolio-web
-
   cookidoo-mcp:
     type: lxc
     platform: proxmox
