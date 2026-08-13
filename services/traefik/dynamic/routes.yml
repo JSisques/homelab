@@ -34,10 +34,15 @@ http:
       entryPoints: ["websecure"]
       service: homepage
       tls: {}
-    adguard-home:
-      rule: "Host(`adguard.home.arpa`)"
+    adguard-home-1:
+      rule: "Host(`adguard1.home.arpa`)"
       entryPoints: ["websecure"]
-      service: adguard-home
+      service: adguard-home-1
+      tls: {}
+    adguard-home-2:
+      rule: "Host(`adguard2.home.arpa`)"
+      entryPoints: ["websecure"]
+      service: adguard-home-2
       tls: {}
     portfolio-web:
       rule: "Host(`portfolio-web.home.arpa`)"
@@ -126,10 +131,14 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.0.21:3000"
-    adguard-home:
+    adguard-home-1:
       loadBalancer:
         servers:
           - url: "http://192.168.0.26:3000"
+    adguard-home-2:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.37:3000"
     portfolio-web:
       loadBalancer:
         servers:

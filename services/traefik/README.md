@@ -33,17 +33,17 @@ scripts/generation/generate-traefik.sh
 services/traefik/dynamic/routes.yml
 ```
 
-A service gets a router + backend automatically once it declares a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml` (see grafana, prometheus, homepage, uptime-kuma, it-tools, n8n, adguard-home for examples). The router's hostname comes from that service's own `url:`; the backend address comes from `config/hosts.yaml` — a host whose key matches the service name directly, or (for services like Grafana/Prometheus that share the `monitoring` host rather than getting one of their own) whose `role` list includes the service name.
+A service gets a router + backend automatically once it declares a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml` (see grafana, prometheus, homepage, uptime-kuma, it-tools, n8n, adguard-home-1/adguard-home-2 for examples). The router's hostname comes from that service's own `url:`; the backend address comes from `config/hosts.yaml` — a host whose key matches the service name directly, or (for services like Grafana/Prometheus that share the `monitoring` host rather than getting one of their own) whose `role` list includes the service name.
 
 ## One-time setup: point `*.home.arpa` at Traefik
 
-Nothing resolves these hostnames until AdGuard Home is told to. AdGuard Home has no config-as-code path (see `services/adguard-home/README.md`), so this is manual, once:
+Nothing resolves these hostnames until AdGuard Home is told to. AdGuard Home has no config-as-code path (see `services/adguard-home/README.md`), so this is manual, once — **on both instances** (`adguard-home-1` and `adguard-home-2`), since a client could be using either as its DNS server:
 
-1. Open AdGuard Home's UI (`http://192.168.0.26:3000` until Traefik itself is up, `https://adguard.home.arpa` after).
+1. Open the instance's UI (`http://192.168.0.26:3000` / `http://192.168.0.37:3000` until Traefik itself is up, `https://adguard1.home.arpa` / `https://adguard2.home.arpa` after).
 2. **Filters → DNS rewrites → Add**.
 3. Domain: `*.home.arpa`, Answer: `192.168.0.28` (Traefik's address).
 
-Every hostname in `dynamic/routes.yml` will resolve from then on for any client using AdGuard as its DNS server.
+Every hostname in `dynamic/routes.yml` will resolve from then on for any client using either AdGuard instance as its DNS server. Once `adguard-home-sync` (`services/adguard-home-sync/`) is deployed, this rewrite only has to be added on `adguard-home-1` — it propagates to `adguard-home-2` automatically from then on.
 
 ## TLS
 

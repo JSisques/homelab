@@ -89,10 +89,14 @@ Monitoring:
     icon: uptime-kuma.png
     description: Service monitoring
 Networking:
-  AdGuard Home:
-    href: https://adguard.home.arpa
+  AdGuard Home (Primary):
+    href: https://adguard1.home.arpa
     icon: adguard-home.png
-    description: DNS and network-wide ad blocking
+    description: Primary DNS resolver and network-wide ad blocking
+  AdGuard Home (Secondary):
+    href: https://adguard2.home.arpa
+    icon: adguard-home.png
+    description: Secondary DNS resolver, kept in sync from the primary
   Traefik:
     href: https://traefik.home.arpa
     icon: traefik.png

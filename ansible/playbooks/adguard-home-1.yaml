@@ -1,0 +1,7 @@
+---
+- name: Deploy AdGuard Home (Primary)
+  hosts: adguard-home-1
+  become: true
+
+  roles:
+    - adguard-home

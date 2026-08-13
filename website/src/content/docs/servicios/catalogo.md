@@ -29,8 +29,11 @@ Las páginas de esta sección agrupan los mismos servicios por función, con el 
 | --- | --- | --- | --- |
 | Traefik | interna | `traefik.home.arpa` | Proxy inverso interno para `*.home.arpa` |
 | Cloudflared | interna | *(sin UI)* | Túnel de Cloudflare hacia `sisqueslabs.com`/`jsisques.net` |
-| AdGuard Home | interna | `adguard.home.arpa` | DNS y bloqueo de anuncios de toda la red |
+| AdGuard Home (Primary) | interna | `adguard1.home.arpa` | DNS primario y bloqueo de anuncios de toda la red |
+| AdGuard Home (Secondary) | interna | `adguard2.home.arpa` | DNS secundario, sincronizado desde el primario |
 | WireGuard | interna | *(sin URL, es VPN)* | Puerta de enlace VPN para acceso remoto interno |
+
+`adguard-home-sync` (ver [redes y acceso](/homelab/servicios/redes/#sincronizaci%C3%B3n-adguard-home-sync)) no tiene fila propia aquí — no declara `traefik`/`homepage`/`monitoring` en `config/services.yaml`, solo existe como rol de Ansible sobre la LXC de `adguard-home-2`.
 
 ## Multimedia y descargas
 

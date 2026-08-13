@@ -10,7 +10,8 @@
 # see services/blackbox-exporter/README.md for available modules.
 - targets:
     - "http://192.168.0.21:3000"  # homepage
-    - "http://192.168.0.26:3000"  # adguard-home
+    - "http://192.168.0.26:3000"  # adguard-home-1
+    - "http://192.168.0.37:3000"  # adguard-home-2
     - "http://192.168.0.34:8080"  # portfolio-web
     - "http://192.168.0.31:30080"  # sisqueslabs-landing
     - "http://192.168.0.31:30081"  # daysoff

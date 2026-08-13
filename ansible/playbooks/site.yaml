@@ -29,8 +29,14 @@
 - name: Deploy Cloudflare Tunnel
   ansible.builtin.import_playbook: cloudflared.yaml
 
-- name: Deploy AdGuard Home
-  ansible.builtin.import_playbook: adguard-home.yaml
+- name: Deploy AdGuard Home (Primary)
+  ansible.builtin.import_playbook: adguard-home-1.yaml
+
+- name: Deploy AdGuard Home (Secondary)
+  ansible.builtin.import_playbook: adguard-home-2.yaml
+
+- name: Deploy AdGuard Home Sync
+  ansible.builtin.import_playbook: adguard-home-sync.yaml
 
 - name: Deploy Traefik
   ansible.builtin.import_playbook: traefik.yaml
