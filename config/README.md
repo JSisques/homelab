@@ -147,7 +147,7 @@ Example:
 ```yaml
 network:
   lan:
-    prefix: "192.168.1"
+    prefix: "192.168.0"
     mask: 24
     gateway: "192.168.0.1"
     bridge: "vmbr0"
