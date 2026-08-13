@@ -194,7 +194,7 @@ network:
   lan:
     prefix: "192.168.1"
     mask: 24
-    gateway: "192.168.1.1"
+    gateway: "192.168.0.1"
     bridge: "vmbr0"
   nas:
     prefix: "192.168.0"
@@ -278,7 +278,7 @@ Terraform answers *"what machines should exist?"*; Ansible answers *"how should 
 
 ## Kubernetes
 
-K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.1.31`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
+K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.0.31`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
 
 ### Helm / Argo CD
 

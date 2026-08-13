@@ -82,9 +82,9 @@ Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/temp
 
 Punto de ingesta OTLP (trazas/métricas/logs) para aplicaciones instrumentadas con OpenTelemetry — hoy, solo `cookidoo-mcp`.
 
-- Publicado en el host de la LXC `monitoring` en `192.168.1.20:4317` (gRPC) y `:4318` (HTTP) para que apps de la LAN puedan enviarle datos.
+- Publicado en el host de la LXC `monitoring` en `192.168.0.20:4317` (gRPC) y `:4318` (HTTP) para que apps de la LAN puedan enviarle datos.
 - Reparte lo recibido: las métricas quedan en un endpoint que Prometheus scrapea (`:8889/metrics`, *pull*, no `remote_write` — la configuración de Prometheus no cambia), los logs van al endpoint OTLP nativo de Loki, y las trazas a Tempo.
-- Añadir un nuevo servicio instrumentado es solo apuntar su `OTEL_EXPORTER_OTLP_ENDPOINT` a `http://192.168.1.20:4318`.
+- Añadir un nuevo servicio instrumentado es solo apuntar su `OTEL_EXPORTER_OTLP_ENDPOINT` a `http://192.168.0.20:4318`.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/otel-collector).
 

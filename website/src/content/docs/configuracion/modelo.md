@@ -136,13 +136,13 @@ A diferencia de Homepage y Prometheus, Uptime Kuma no tiene todavía un generado
 hosts:
   proxmox:
     type: server
-    address: 192.168.1.10
+    address: 192.168.0.10
     platform: proxmox
 
   monitoring:
     type: lxc
     platform: proxmox
-    address: 192.168.1.20
+    address: 192.168.0.20
     cpu: 4
     memory: 4096
     disk: 32
@@ -152,7 +152,7 @@ hosts:
 
   k3s-01:
     type: vm
-    address: 192.168.1.30
+    address: 192.168.0.30
     platform: linux
     cpu: 4
     memory: 8192
@@ -163,7 +163,7 @@ hosts:
 
   raspberrypi-01:
     type: physical
-    address: 192.168.1.40
+    address: 192.168.0.40
     platform: raspberry-pi
     role:
       - k3s

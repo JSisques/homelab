@@ -33,7 +33,7 @@ Proxy inverso interno para todos los servicios `tier: internal` (`*.home.arpa`).
 
 - `dynamic/routes.yml` se **genera** desde `config/services.yaml`/`config/hosts.yaml` (`generate-traefik.sh`) — las rutas apuntan a la IP:puerto exacta de cada LXC porque Traefik corre en su propia LXC, sin *service discovery* por etiquetas de Docker.
 - El TLS es autofirmado/generado automáticamente (`tls: {}` vacío) — el navegador avisará, es el comportamiento esperado hasta que se sustituya por una CA real.
-- Paso manual de una sola vez: AdGuard Home necesita una reescritura DNS `*.home.arpa → 192.168.1.28` (la IP de Traefik) — nada resuelve hasta hacerlo, porque AdGuard no tiene configuración como código.
+- Paso manual de una sola vez: AdGuard Home necesita una reescritura DNS `*.home.arpa → 192.168.0.28` (la IP de Traefik) — nada resuelve hasta hacerlo, porque AdGuard no tiene configuración como código.
 - Dashboard propio en `https://traefik.home.arpa`; métricas Prometheus en `:8082`. La configuración se recarga sola (`providers.file.watch: true`), sin reiniciar tras regenerar las rutas.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/traefik).
@@ -57,7 +57,7 @@ Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/clou
 Resolutor DNS de toda la red y bloqueador de anuncios/trackers para clientes LAN y VPN.
 
 - Sin configuración como código: el primer arranque exige un asistente manual (credenciales de admin, DNS upstream, interfaces de escucha) en el puerto `3000`.
-- Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.1.28` para que Traefik funcione.
+- Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.0.28` para que Traefik funcione.
 - Estado persistente en los volúmenes `adguard-work`/`adguard-conf`. Puertos: `53/tcp+udp` (DNS), `3000/tcp` (panel de administración). Solo interno, nunca a través del Cloudflare Tunnel.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/adguard-home).
@@ -70,6 +70,6 @@ Puerta de enlace VPN autoalojada (`linuxserver/wireguard`) para acceder en remot
 
 - Pasos manuales que solo puede hacer el operador antes de desplegar: sustituir `SERVERURL` por un hostname que resuelva a la IP pública de casa (DNS dinámico si no hay IP fija) y abrir el puerto UDP `51820` en el router hacia la LXC.
 - `PEERS=5` genera automáticamente 5 configuraciones de cliente + códigos QR en el volumen `wireguard-config` en el primer arranque; se extraen con `docker compose cp`.
-- Enruta los clientes hacia `192.168.1.0/24` y les entrega AdGuard Home como DNS, así que los clientes VPN también tienen bloqueo de anuncios.
+- Enruta los clientes hacia `192.168.0.0/24` y les entrega AdGuard Home como DNS, así que los clientes VPN también tienen bloqueo de anuncios.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/wireguard).

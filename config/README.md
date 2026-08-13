@@ -149,7 +149,7 @@ network:
   lan:
     prefix: "192.168.1"
     mask: 24
-    gateway: "192.168.1.1"
+    gateway: "192.168.0.1"
     bridge: "vmbr0"
   nas:
     prefix: "192.168.0"
@@ -206,14 +206,14 @@ Every host resolves to a full IPv4 address one of three ways, in order:
 
 1. `address: TBD` — unconfirmed, skipped everywhere (see below).
 2. `address: <literal IP>` — an explicit override, used as-is. Reach for this only when a host's IP genuinely isn't `<network>.<prefix>.<octet>` (today, only `proxmox` while its real IP is still unknown).
-3. `octet: <n>` — the common case. Resolves to `network.<network // "lan">.prefix` + `.` + `octet`, so `octet: 20` under the default `lan` network becomes `192.168.1.20`. Set `network: nas` (see the `nas` host above) to resolve against `network.nas.prefix` instead.
+3. `octet: <n>` — the common case. Resolves to `network.<network // "lan">.prefix` + `.` + `octet`, so `octet: 20` under the default `lan` network becomes `192.168.0.20`. Set `network: nas` (see the `nas` host above) to resolve against `network.nas.prefix` instead.
 
-This means changing your home network's subnet — `192.168.1.0/24` today, `10.0.0.0/24` tomorrow — is a one-line change to `network.lan.prefix` (and `network.lan.gateway`), not 25 hand-edited IPs. `cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
+This means changing your home network's subnet — `192.168.0.0/24` today, `10.0.0.0/24` tomorrow — is a one-line change to `network.lan.prefix` (and `network.lan.gateway`), not 25 hand-edited IPs. `cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
 
 This information is used to generate:
 
 * **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`), plus `network_gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
-* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.1.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
+* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.0.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
 * Monitoring targets, Node Exporter configuration, Traefik routes, and blackbox_exporter targets — every generator in `scripts/generation/` resolves addresses the same way, via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`.
 
 A host with `address: TBD` is skipped by every generator (with a warning) instead of producing a broken IP.

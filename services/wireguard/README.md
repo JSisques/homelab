@@ -53,5 +53,5 @@ Terraform creates the `wireguard` LXC (`terraform/proxmox/lxc.tf`). Ansible depl
 
 ```bash
 cd services/wireguard
-ALLOWEDIPS=192.168.1.0/24 PEERDNS=192.168.1.26 docker compose up -d
+ALLOWEDIPS=192.168.0.0/24 PEERDNS=192.168.0.26 docker compose up -d
 ```

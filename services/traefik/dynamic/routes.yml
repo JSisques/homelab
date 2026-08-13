@@ -113,76 +113,76 @@ http:
     grafana:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.20:3000"
+          - url: "http://192.168.0.20:3000"
     prometheus:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.20:9090"
+          - url: "http://192.168.0.20:9090"
     uptime-kuma:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.22:3001"
+          - url: "http://192.168.0.22:3001"
     homepage:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.21:3000"
+          - url: "http://192.168.0.21:3000"
     adguard-home:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.26:3000"
+          - url: "http://192.168.0.26:3000"
     portfolio-web:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.34:8080"
+          - url: "http://192.168.0.34:8080"
     it-tools:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.23:8080"
+          - url: "http://192.168.0.23:8080"
     n8n:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.24:5678"
+          - url: "http://192.168.0.24:5678"
     cookidoo-mcp:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.35:3000"
+          - url: "http://192.168.0.35:3000"
     obsidian:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.29:4000"
+          - url: "http://192.168.0.29:4000"
     jellyfin:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.32:8096"
+          - url: "http://192.168.0.32:8096"
     qbittorrent:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:8080"
+          - url: "http://192.168.0.33:8080"
     prowlarr:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:9696"
+          - url: "http://192.168.0.33:9696"
     sonarr:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:8989"
+          - url: "http://192.168.0.33:8989"
     radarr:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:7878"
+          - url: "http://192.168.0.33:7878"
     pyload:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:8000"
+          - url: "http://192.168.0.33:8000"
     metube:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.33:8081"
+          - url: "http://192.168.0.33:8081"
     rustfs:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.36:9001"
+          - url: "http://192.168.0.36:9001"
     rancher:
       loadBalancer:
         servers:
-          - url: "http://192.168.1.31:30082"
+          - url: "http://192.168.0.31:30082"

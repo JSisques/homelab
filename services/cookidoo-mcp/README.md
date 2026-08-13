@@ -96,7 +96,7 @@ cookidoo-mcp
 ## Monitoring
 
 - **Uptime Kuma**: an HTTP monitor should target `GET https://cookidoo-mcp.home.arpa/api/health`, not `/` — the root path has no route and returns `404`, so a plain "is `/` 2xx" check would be a false negative. This is also why `config/services.yaml` doesn't set a `blackbox:` block for this service (`generate-blackbox.sh` always probes the bare host:port with no path).
-- **OpenTelemetry**: traces, metrics, and logs are pushed via OTLP to the homelab's OTel Collector (`services/otel-collector/`, on the `monitoring` LXC at `192.168.1.20:4318`) — see `OTEL_EXPORTER_OTLP_ENDPOINT` in `compose.yml`. There is no native `/metrics` endpoint to scrape directly.
+- **OpenTelemetry**: traces, metrics, and logs are pushed via OTLP to the homelab's OTel Collector (`services/otel-collector/`, on the `monitoring` LXC at `192.168.0.20:4318`) — see `OTEL_EXPORTER_OTLP_ENDPOINT` in `compose.yml`. There is no native `/metrics` endpoint to scrape directly.
 
 ## Deployment
 

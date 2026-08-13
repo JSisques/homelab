@@ -61,7 +61,7 @@ The Kubernetes tree is split into:
 
 Most services run directly on dedicated LXC containers (or, for Proxmox Backup Server, a VM) rather than Kubernetes: Prometheus, Grafana, Loki, Alertmanager, Tempo, and the OTel Collector (all on the shared `monitoring` LXC), Homepage, IT-Tools, n8n, `cookidoo-mcp`, Uptime Kuma, `cloudflared`, AdGuard Home, and WireGuard. Each has a matching directory under `services/` (the Compose source of truth) and an Ansible role under `ansible/roles/` that deploys it unmodified. Proxmox Backup Server and Promtail are the exceptions — native packages installed by Ansible, no Docker involved. Prometheus stores its data in the Docker volume `prometheus-data`.
 
-Applications that emit OpenTelemetry data (currently `cookidoo-mcp`) push OTLP traces/metrics/logs to the OTel Collector on the `monitoring` LXC (`192.168.1.20:4317`/`4318`), which fans them out: metrics are exposed on a Prometheus-scrapeable endpoint (pull, not `remote_write`, so the shared Prometheus instance's configuration doesn't change), logs go to Loki's native OTLP endpoint, and traces go to Tempo. This keeps the existing scrape-based Prometheus model intact while giving OTel-native services somewhere to push to.
+Applications that emit OpenTelemetry data (currently `cookidoo-mcp`) push OTLP traces/metrics/logs to the OTel Collector on the `monitoring` LXC (`192.168.0.20:4317`/`4318`), which fans them out: metrics are exposed on a Prometheus-scrapeable endpoint (pull, not `remote_write`, so the shared Prometheus instance's configuration doesn't change), logs go to Loki's native OTLP endpoint, and traces go to Tempo. This keeps the existing scrape-based Prometheus model intact while giving OTel-native services somewhere to push to.
 
 ## Data and Control Flow
 
