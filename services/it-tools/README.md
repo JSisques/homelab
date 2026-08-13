@@ -12,7 +12,7 @@ Host:
 it-tools
 
 IP:
-192.168.0.23
+192.168.0.214
 
 Reverse proxy:
 it-tools.home.arpa

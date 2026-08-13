@@ -118,7 +118,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      endpoint: http://192.168.0.25:20241/metrics
+      endpoint: http://192.168.0.200:20241/metrics
 
   kafka:
     name: Kafka
@@ -249,7 +249,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      endpoint: http://192.168.0.28:8082/metrics
+      endpoint: http://192.168.0.204:8082/metrics
 
   gardenia:
     name: Gardenia

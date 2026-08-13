@@ -8,9 +8,9 @@ ingress:
   # Kubernetes-hosted (see kubernetes/applications/), no in-cluster ingress
   # yet, so these forward straight to the k3s-server node's NodePort.
   - hostname: landing.sisqueslabs.com
-    service: http://192.168.0.31:30080
+    service: http://192.168.0.207:30080
   - hostname: daysoff.sisqueslabs.com
-    service: http://192.168.0.31:30081
+    service: http://192.168.0.207:30081
 
   # jsisques.net — personal apps (add entries here as they're deployed)
   - hostname: portfolio.jsisques.net
@@ -21,7 +21,7 @@ ingress:
   # ingress yet, so this forwards straight to the k3s-server node's
   # NodePort, same as landing/daysoff above.
   - hostname: blog.jsisques.net
-    service: http://192.168.0.31:30083
+    service: http://192.168.0.207:30083
   # - hostname: <app>.jsisques.net
   #   service: http://<internal-target>
 

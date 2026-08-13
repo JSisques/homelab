@@ -33,7 +33,7 @@ Proxy inverso interno para todos los servicios `tier: internal` (`*.home.arpa`).
 
 - `dynamic/routes.yml` se **genera** desde `config/services.yaml`/`config/hosts.yaml` (`generate-traefik.sh`) — las rutas apuntan a la IP:puerto exacta de cada LXC porque Traefik corre en su propia LXC, sin *service discovery* por etiquetas de Docker.
 - El TLS es autofirmado/generado automáticamente (`tls: {}` vacío) — el navegador avisará, es el comportamiento esperado hasta que se sustituya por una CA real.
-- Paso manual de una sola vez, **en ambas instancias de AdGuard**: reescritura DNS `*.home.arpa → 192.168.0.28` (la IP de Traefik) — nada resuelve hasta hacerlo, porque AdGuard no tiene configuración como código. Una vez desplegado `adguard-home-sync`, basta con añadirla en `adguard-home-1`; se replica sola a `adguard-home-2`.
+- Paso manual de una sola vez, **en ambas instancias de AdGuard**: reescritura DNS `*.home.arpa → 192.168.0.204` (la IP de Traefik) — nada resuelve hasta hacerlo, porque AdGuard no tiene configuración como código. Una vez desplegado `adguard-home-sync`, basta con añadirla en `adguard-home-1`; se replica sola a `adguard-home-2`.
 - Dashboard propio en `https://traefik.home.arpa`; métricas Prometheus en `:8082`. La configuración se recarga sola (`providers.file.watch: true`), sin reiniciar tras regenerar las rutas.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/traefik).
@@ -57,7 +57,7 @@ Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/clou
 Resolutor DNS de toda la red y bloqueador de anuncios/trackers para clientes LAN y VPN, desplegado como **dos instancias independientes** — `adguard-home-1` (primaria) y `adguard-home-2` (secundaria), en LXC separadas — para que la resolución DNS no dependa de una sola máquina. Los clientes (DHCP del router, o `PEERDNS` en WireGuard) reciben las dos IPs, primaria y secundaria.
 
 - Sin configuración como código: el primer arranque exige un asistente manual (credenciales de admin, DNS upstream, interfaces de escucha) en el puerto `3000`, **en cada instancia por separado**.
-- Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.0.28` para que Traefik funcione (ver nota de sincronización más abajo).
+- Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.0.204` para que Traefik funcione (ver nota de sincronización más abajo).
 - Estado persistente en los volúmenes `adguard-work`/`adguard-conf` de cada LXC — no comparten datos entre sí. Puertos: `53/tcp+udp` (DNS), `3000/tcp` (panel de administración). Solo interno, nunca a través del Cloudflare Tunnel.
 
 ### Sincronización (`adguard-home-sync`)

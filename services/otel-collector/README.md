@@ -22,7 +22,7 @@ services/otel-collector/
 
 ## Networking
 
-Published on the LXC host (`192.168.0.20:4317`/`4318`) so applications on other LXCs (e.g. `cookidoo-mcp` at `192.168.0.35`) can reach it over the LAN. Also attached to the shared `monitoring` Docker network so it can reach `loki` and `tempo` by container name.
+Published on the LXC host (`192.168.0.209:4317`/`4318`) so applications on other LXCs (e.g. `cookidoo-mcp` at `192.168.0.212`) can reach it over the LAN. Also attached to the shared `monitoring` Docker network so it can reach `loki` and `tempo` by container name.
 
 ## Deployment
 
@@ -30,4 +30,4 @@ Deployed by the `monitoring` Ansible role alongside Prometheus, Grafana, Loki, A
 
 ## Adding another OTel-instrumented service
 
-Point its `OTEL_EXPORTER_OTLP_ENDPOINT` at `http://192.168.0.20:4318` — no changes needed here unless a new signal type or exporter is required.
+Point its `OTEL_EXPORTER_OTLP_ENDPOINT` at `http://192.168.0.209:4318` — no changes needed here unless a new signal type or exporter is required.
