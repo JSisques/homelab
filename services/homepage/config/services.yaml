@@ -15,6 +15,10 @@ Applications:
     href: https://daysoff.sisqueslabs.com
     icon: mdi-beach
     description: Vacation bridge calculator
+  Blog:
+    href: https://blog.jsisques.net
+    icon: mdi-post-outline
+    description: Personal blog
 Automation:
   n8n:
     href: https://n8n.home.arpa
