@@ -17,6 +17,11 @@ ingress:
     service: http://portfolio-web.home.arpa:8080
   - hostname: jellyfin.jsisques.net
     service: http://jellyfin.home.arpa:8096
+  # Kubernetes-hosted (see kubernetes/applications/blog/), no in-cluster
+  # ingress yet, so this forwards straight to the k3s-server node's
+  # NodePort, same as landing/daysoff above.
+  - hostname: blog.jsisques.net
+    service: http://192.168.1.31:30083
   # - hostname: <app>.jsisques.net
   #   service: http://<internal-target>
 

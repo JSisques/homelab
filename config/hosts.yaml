@@ -215,6 +215,7 @@ hosts:
       - sisqueslabs-landing
       - daysoff
       - rancher
+      - blog
 
   portfolio-web:
     type: lxc

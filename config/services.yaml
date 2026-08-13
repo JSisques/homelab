@@ -331,6 +331,37 @@ services:
       scheme: http
       module: http_2xx
 
+  blog:
+    name: Blog
+    category: Applications
+    # Static Astro site (source: github.com/JSisques/blog), deployed on
+    # Kubernetes via Argo CD (kubernetes/applications/blog/), same pattern
+    # as sisqueslabs-landing/daysoff — no LXC, no Traefik LAN route,
+    # exposed only via the Cloudflare Tunnel at blog.jsisques.net
+    # (NodePort 30083 on k3s-server, see services/cloudflared/config.yml).
+    # tier: personal (not public) since it's under jsisques.net, not
+    # sisqueslabs.com.
+    tier: personal
+    url: https://blog.jsisques.net
+    icon: mdi-post-outline
+
+    homepage:
+      enabled: true
+      description: Personal blog
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "blog" role on the k3s-server host in
+    # config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 30083
+      scheme: http
+      module: http_2xx
+
   it-tools:
     name: IT-Tools
     category: Utilities
