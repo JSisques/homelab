@@ -7,7 +7,7 @@ Like `pbs`, this is a native install (the official K3s install script), not Dock
 ## Current topology
 
 ```text
-k3s-server (VM, 192.168.1.31)
+k3s-server (VM, 192.168.0.31)
   │
   ├── K3s server (control plane + kubelet — schedulable, single node)
   └── Argo CD (namespace: argocd)

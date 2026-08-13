@@ -13,10 +13,24 @@ Antes de seguir, conviene tener claro el [flujo de datos](/homelab/guides/flujo-
 
 ## 0. Antes de tocar nada
 
+Todo esto se ejecuta desde una **máquina de control** (tu portátil, o el runner que uses) — no desde el propio Proxmox.
+
 - Proxmox instalado y accesible en la red, con un **API token** creado (*Datacenter → Permissions → API Tokens*).
-- [`yq`](https://github.com/kislyuk/yq) instalado — el de **kislyuk** (Python), no el de mikefarah. `pip install yq`. Si tienes el otro instalado, los generadores fallan con errores de `jq` que no tienen mucho sentido a simple vista.
+- [`yq`](https://github.com/kislyuk/yq) instalado — el de **kislyuk** (jq wrapper), no el de mikefarah (sintaxis distinta, incompatible con los generadores). Si tienes el otro instalado, los generadores fallan con errores de `jq` que no tienen mucho sentido a simple vista.
+
+  En Debian/Ubuntu está directamente en apt y es el mismo binario/paquete (no hace falta pip ni instalar Python aparte — `apt` ya resuelve `jq` y `python3` como dependencias):
+
+  ```bash
+  sudo apt install yq
+  ```
+
+  Solo hace falta `pip install yq` en distros donde ese paquete no exista en los repos.
 - Terraform y Ansible instalados (`ansible-core` + `ansible-galaxy`).
 - Una plantilla de LXC Debian ya subida a Proxmox (para `debian_template`), y la clave pública SSH a mano.
+
+:::note[¿Y Docker?]
+No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio Proxmox — solo es el hipervisor. Dentro de cada LXC lo instala Ansible automáticamente (rol `docker`, dependencia obligatoria de todo rol de servicio, ver `ansible/roles/docker/`). En tu máquina de control solo importa si además quieres correr `make validate` en local (usa `docker compose config` para comprobar la sintaxis de los ficheros `compose.yaml`) — si no, esa misma validación ya la hace `ci.yaml` en GitHub Actions.
+:::
 
 ## 1. Desplegar de cero
 
@@ -42,26 +56,27 @@ Antes de seguir, conviene tener claro el [flujo de datos](/homelab/guides/flujo-
    ```bash
    make generate   # hosts.auto.tfvars.json, inventario, Homepage y Prometheus al día
    make init
-   make plan       # deberías ver 6 LXC nuevas: monitoring, homepage, uptime-kuma, it-tools, n8n, cloudflared
+   make plan       # revisa el plan: hoy son 15 LXC + 2 VM (pbs, k3s-server) nuevas
    make apply
    ```
 
-3. **Configura los servicios dentro de esas LXC**, uno a uno la primera vez:
+3. **Configura los servicios dentro de esas LXC/VM**, uno a uno la primera vez:
 
    ```bash
    cd ansible && ansible-galaxy collection install -r requirements.yml && cd ..
-   make ping   # confirma que Ansible llega por SSH a las 6 LXC
-
-   export N8N_POSTGRES_PASSWORD="algo-fuerte-de-verdad"
+   make ping        # confirma que Ansible llega por SSH a todos los hosts
+   make services    # lista los nombres válidos para deploy-<nombre>
 
    make deploy-monitoring
    make deploy-homepage
    make deploy-uptime-kuma
    make deploy-it-tools
    make deploy-n8n
+   # ...y así con el resto: obsidian, jellyfin, downloads, adguard-home,
+   # traefik, wireguard, pbs, promtail, k3s-server, rustfs, cookidoo-mcp
    ```
 
-   `cloudflared` se deja para el final — necesita su [configuración manual de una sola vez](#cloudflare-tunnel) antes de poder desplegarse.
+   `cloudflared` se deja para el final — necesita su [configuración manual de una sola vez](#cloudflare-tunnel) antes de poder desplegarse. Antes de desplegar un servicio concreto, exporta los secretos que le correspondan (ver la [tabla de abajo](#secretos)) — sin ellos algunos roles simplemente fallan (`assert`) y otros arrancan con un valor por defecto inseguro.
 
 </Steps>
 
@@ -102,14 +117,18 @@ make deploy-cloudflared # it-tools · n8n · monitoring · homepage · uptime-ku
 
 ## Secretos
 
-Nada de esto está commiteado ni lo estará. Dos servicios los necesitan:
+Nada de esto está commiteado ni lo estará.
 
 | Variable | Para qué | Si falta |
 | --- | --- | --- |
 | `N8N_POSTGRES_PASSWORD` | Contraseña de la Postgres interna de n8n | Se despliega igual, con `changeme` por defecto — riesgo silencioso |
+| `COOKIDOO_MCP_EMAIL` / `COOKIDOO_MCP_PASSWORD` | Credenciales de Cookidoo para `cookidoo-mcp` | El rol falla al arrancar el contenedor |
 | `CLOUDFLARED_CREDS_JSON` | Contenido completo del `credentials.json` del túnel | El rol hace `assert` y para antes de arrancar nada |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Notificaciones de Alertmanager | Las alertas se siguen disparando pero no llegan a ningún sitio |
+| `DOWNLOADS_VPN_SERVICE_PROVIDER` / `DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY` / `DOWNLOADS_VPN_WIREGUARD_ADDRESSES` | Configuración del gateway VPN (gluetun) del stack de descargas | qBittorrent no tiene por dónde salir a internet |
+| `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` | Credenciales del object storage S3-compatible | El servicio arranca sin credenciales configuradas |
 
-En local se pasan como variables de entorno antes de `make deploy` / `make deploy-n8n` / `make deploy-cloudflared`. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*: `N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
+Estas son las que usa `Makefile` (`ANSIBLE_EXTRA_VARS`) para cualquier `make deploy` / `make deploy-<servicio>` — solo hace falta exportar las del servicio que estés desplegando en ese momento, el resto puede quedar vacío. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
 
 ## Cloudflare Tunnel
 
@@ -134,7 +153,8 @@ Los servicios `tier: internal` (`*.home.arpa`) no llevan entrada en `config.yml`
 - **IP real de Proxmox** — sigue como `TBD` en `config/hosts.yaml`.
 - **`terraform.tfvars` local** — no existe todavía.
 - **Usuario SSH que usa Ansible** — no está fijado explícitamente en el inventario; confirma que la clave de `ssh_public_key` corresponde a la cuenta con la que Ansible se conecta (normalmente `root` en plantillas Debian sin cloud-init).
-- **K3s / VMs** — `config/hosts.yaml` no tiene todavía ninguna entrada `type: vm`, así que `k3s_nodes` sigue vacío y Kafka/Argo CD no tienen dónde correr.
+- **Argo CD** — el rol `k3s` lo instala vacío al desplegar la VM `k3s-server`; aplicar `kubernetes/argocd/projects/homelab.yaml` y las `Application` que quieras sigue siendo manual (`kubectl apply -f`), no está automatizado todavía.
 - **Cloudflare Tunnel** — el `config.yml` tiene un tunnel ID de mentira hasta hacer el setup manual de arriba.
+- **AdGuard Home / Traefik** — tras desplegarlos hace falta el asistente de primer arranque de AdGuard y añadir a mano el DNS rewrite `*.home.arpa` → la IP de Traefik (ver [Redes y acceso](/homelab/servicios/redes/)).
 
 Ver también: [comandos de referencia](/homelab/reference/comandos/).

@@ -146,7 +146,7 @@ The exact hostname depends on the deployment architecture.
 If Prometheus runs in another LXC, use its internal homelab address instead, for example:
 
 ```text
-http://192.168.1.24:9090
+http://192.168.0.24:9090
 ```
 
 ## Dashboards

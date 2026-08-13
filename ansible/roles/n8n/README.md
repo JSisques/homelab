@@ -296,7 +296,7 @@ Example:
 n8n:
   hosts:
     n8n:
-      ansible_host: 192.168.1.24
+      ansible_host: 192.168.0.24
 ```
 
 ## Design Principles
