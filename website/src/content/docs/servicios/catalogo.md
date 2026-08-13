@@ -60,8 +60,9 @@ Las páginas de esta sección agrupan los mismos servicios por función, con el 
 | Gardenia* | pública | `gardenia.sisqueslabs.com` | Plataforma de gestión de huertos |
 | Sisques Labs Landing* | pública | `landing.sisqueslabs.com` | Landing pública de Sisques Labs |
 | Days Off* | pública | `daysoff.sisqueslabs.com` | Calculadora de puentes/vacaciones |
+| Blog* | personal | `blog.jsisques.net` | Blog personal |
 
-<small>* Gardenia, Sisques Labs Landing y Days Off viven en repositorios propios; aquí solo se documenta cómo se despliegan y exponen, no su código.</small>
+<small>* Gardenia, Sisques Labs Landing, Days Off y Blog viven en repositorios propios; aquí solo se documenta cómo se despliegan y exponen, no su código.</small>
 
 ## Infraestructura y utilidades
 

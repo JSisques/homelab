@@ -1,6 +1,6 @@
 ---
 title: Aplicaciones
-description: Portfolio, Gardenia, Sisques Labs Landing y Days Off — las aplicaciones de cara al público del homelab.
+description: Portfolio, Gardenia, Sisques Labs Landing, Days Off y Blog — las aplicaciones de cara al público del homelab.
 ---
 
 Categoría `Applications` en `config/services.yaml`. A diferencia del resto de secciones, la mayoría de estas apps no tienen su código en este repositorio — aquí solo se documenta cómo se despliegan y exponen.
@@ -36,6 +36,12 @@ Landing pública de Sisques Labs, sitio estático Astro. Código en [github.com/
 <span class="slh-tier slh-tier--public">pública</span> · `daysoff.sisqueslabs.com`
 
 Calculadora de puentes/vacaciones, sitio estático Astro. Código en [github.com/sisques-labs/daysoff](https://github.com/sisques-labs). Mismo patrón de despliegue que Sisques Labs Landing: Kubernetes vía Argo CD (`kubernetes/applications/daysoff/`), sin LXC, expuesta solo por el Cloudflare Tunnel vía `NodePort`.
+
+## Blog
+
+<span class="slh-tier slh-tier--personal">personal</span> · `blog.jsisques.net`
+
+Blog personal, sitio estático Astro con cada entrada como un fichero Markdown. Código en [github.com/JSisques/blog](https://github.com/JSisques/blog). Mismo patrón de despliegue que Sisques Labs Landing/Days Off: Kubernetes vía Argo CD (`kubernetes/applications/blog/`), sin LXC, expuesto solo por el Cloudflare Tunnel vía `NodePort` — la diferencia es el dominio, `jsisques.net` en vez de `sisqueslabs.com`, de ahí `tier: personal` en lugar de `tier: public`.
 
 ## Kafka
 
