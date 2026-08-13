@@ -7,7 +7,7 @@
 # Resolves every host in config/hosts.yaml to a full IPv4 address (or the
 # literal string "TBD" for unconfirmed hosts) against the `network:`
 # block's prefixes, and prints a single compact JSON object mapping host
-# key to resolved address, e.g. {"monitoring": "192.168.0.20", ...}.
+# key to resolved address, e.g. {"monitoring": "192.168.0.209", ...}.
 #
 # Resolution order per host — see config/README.md:
 #   1. address: TBD           -> "TBD"

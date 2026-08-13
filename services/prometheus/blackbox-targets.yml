@@ -9,28 +9,27 @@
 # scheme: http|https, module: <name>}` block in config/services.yaml —
 # see services/blackbox-exporter/README.md for available modules.
 - targets:
-    - "http://192.168.0.21:3000"  # homepage
-    - "http://192.168.0.26:3000"  # adguard-home-1
-    - "http://192.168.0.37:3000"  # adguard-home-2
-    - "http://192.168.0.34:8080"  # portfolio-web
-    - "http://192.168.0.31:30080"  # sisqueslabs-landing
-    - "http://192.168.0.31:30081"  # daysoff
-    - "http://192.168.0.31:30083"  # blog
-    - "http://192.168.0.23:8080"  # it-tools
-    - "http://192.168.0.24:5678"  # n8n
-    - "http://192.168.0.32:8096"  # jellyfin
-    - "http://192.168.0.33:8080"  # qbittorrent
-    - "http://192.168.0.33:9696"  # prowlarr
-    - "http://192.168.0.33:8989"  # sonarr
-    - "http://192.168.0.33:7878"  # radarr
-    - "http://192.168.0.33:8000"  # pyload
-    - "http://192.168.0.33:8081"  # metube
-    - "http://192.168.0.36:9001"  # rustfs
-    - "http://192.168.0.31:30082"  # rancher
+    - "http://192.168.0.205:3000"  # homepage
+    - "http://192.168.0.201:3000"  # adguard-home-1
+    - "http://192.168.0.202:3000"  # adguard-home-2
+    - "http://192.168.0.207:30080"  # sisqueslabs-landing
+    - "http://192.168.0.207:30081"  # daysoff
+    - "http://192.168.0.207:30083"  # blog
+    - "http://192.168.0.214:8080"  # it-tools
+    - "http://192.168.0.211:5678"  # n8n
+    - "http://192.168.0.215:8096"  # jellyfin
+    - "http://192.168.0.216:8080"  # qbittorrent
+    - "http://192.168.0.216:9696"  # prowlarr
+    - "http://192.168.0.216:8989"  # sonarr
+    - "http://192.168.0.216:7878"  # radarr
+    - "http://192.168.0.216:8000"  # pyload
+    - "http://192.168.0.216:8081"  # metube
+    - "http://192.168.0.208:9001"  # rustfs
+    - "http://192.168.0.207:30082"  # rancher
   labels:
     module: http_2xx
 - targets:
-    - "https://192.168.0.30:8007"  # pbs
-    - "https://192.168.0.31:6443"  # k3s-server
+    - "https://192.168.0.206:8007"  # pbs
+    - "https://192.168.0.207:6443"  # k3s-server
   labels:
     module: http_2xx_insecure

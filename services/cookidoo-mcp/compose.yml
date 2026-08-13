@@ -17,7 +17,7 @@ services:
       - COOKIDOO_URL=https://cookidoo.es/foundation/es-ES
       - COOKIDOO_COOKIE_FILE=/data/session.json
 
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.0.20:4318
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://192.168.0.209:4318
       - OTEL_SERVICE_NAME=cookidoo-mcp
 
       - LOG_LEVEL=info

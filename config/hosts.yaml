@@ -31,7 +31,7 @@ hosts:
   monitoring:
     type: lxc
     platform: proxmox
-    octet: 20
+    octet: 209
     cpu: 2
     # Bumped from 2560 to fit the OTel Collector + Tempo alongside
     # Prometheus/Grafana/Loki/Alertmanager on the same LXC.
@@ -51,7 +51,7 @@ hosts:
   homepage:
     type: lxc
     platform: proxmox
-    octet: 21
+    octet: 205
     cpu: 1
     memory: 256
     disk: 4
@@ -61,7 +61,7 @@ hosts:
   uptime-kuma:
     type: lxc
     platform: proxmox
-    octet: 22
+    octet: 210
     cpu: 1
     memory: 512
     disk: 4
@@ -71,7 +71,7 @@ hosts:
   it-tools:
     type: lxc
     platform: proxmox
-    octet: 23
+    octet: 214
     cpu: 1
     memory: 256
     disk: 4
@@ -81,7 +81,7 @@ hosts:
   n8n:
     type: lxc
     platform: proxmox
-    octet: 24
+    octet: 211
     cpu: 2
     memory: 2560
     disk: 16
@@ -91,7 +91,7 @@ hosts:
   obsidian:
     type: lxc
     platform: proxmox
-    octet: 29
+    octet: 213
     cpu: 1
     # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
     # so this can't be trimmed as far as the other LXCs.
@@ -103,7 +103,7 @@ hosts:
   jellyfin:
     type: lxc
     platform: proxmox
-    octet: 32
+    octet: 215
     # Not in use yet. Direct play barely needs any CPU; bump this (or pass
     # through the iGPU for hardware transcoding) if software transcoding
     # becomes the common case.
@@ -116,7 +116,7 @@ hosts:
   downloads:
     type: lxc
     platform: proxmox
-    octet: 33
+    octet: 216
     # gluetun + qBittorrent (torrents, routed through VPN) + Prowlarr +
     # Sonarr/Radarr (indexing/organizing into Jellyfin's library) + pyLoad
     # (direct HTTP/FTP links) + MeTube (yt-dlp web UI). All app state is
@@ -136,7 +136,7 @@ hosts:
   cloudflared:
     type: lxc
     platform: proxmox
-    octet: 25
+    octet: 200
     cpu: 1
     memory: 128
     disk: 4
@@ -146,7 +146,7 @@ hosts:
   adguard-home-1:
     type: lxc
     platform: proxmox
-    octet: 26
+    octet: 201
     cpu: 1
     memory: 256
     disk: 4
@@ -161,7 +161,7 @@ hosts:
     # adguard-home-2) instead of a single point of failure for DNS.
     # Kept in sync from adguard-home-1 by the adguard-home-sync role
     # (see ansible/roles/adguard-home-sync/) rather than sharing state.
-    octet: 37
+    octet: 202
     cpu: 1
     memory: 256
     disk: 4
@@ -171,7 +171,7 @@ hosts:
   traefik:
     type: lxc
     platform: proxmox
-    octet: 28
+    octet: 204
     cpu: 1
     memory: 256
     disk: 4
@@ -181,7 +181,7 @@ hosts:
   wireguard:
     type: lxc
     platform: proxmox
-    octet: 27
+    octet: 203
     cpu: 1
     memory: 256
     disk: 4
@@ -191,7 +191,7 @@ hosts:
   pbs:
     type: vm
     platform: proxmox
-    octet: 30
+    octet: 206
     cpu: 2
     # Was undersized, not oversized: PBS wants ~4GB baseline for its
     # dedup chunk index, even with under 1TB of backup data.
@@ -203,7 +203,7 @@ hosts:
   k3s-server:
     type: vm
     platform: proxmox
-    octet: 31
+    octet: 207
     # Runs real pods today (no worker nodes yet), so this keeps headroom
     # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
     # as workers and take workload off this node.
@@ -232,20 +232,10 @@ hosts:
       - rancher
       - blog
 
-  portfolio-web:
-    type: lxc
-    platform: proxmox
-    octet: 34
-    cpu: 1
-    memory: 256
-    disk: 4
-    role:
-      - portfolio-web
-
   cookidoo-mcp:
     type: lxc
     platform: proxmox
-    octet: 35
+    octet: 212
     # Single Node/NestJS container, no database — same profile as it-tools.
     cpu: 1
     memory: 512
@@ -256,7 +246,7 @@ hosts:
   rustfs:
     type: lxc
     platform: proxmox
-    octet: 36
+    octet: 208
     # S3-compatible object storage (https://rustfs.com/, see
     # services/rustfs/README.md). Object data lives on the NAS over NFS
     # (ansible/roles/rustfs/), not on this LXC's own disk — disk here

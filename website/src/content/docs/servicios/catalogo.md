@@ -59,7 +59,6 @@ Las páginas de esta sección agrupan los mismos servicios por función, con el 
 
 | Servicio | Nivel | URL | Descripción |
 | --- | --- | --- | --- |
-| Portfolio | interna | `portfolio-web.home.arpa` · también `portfolio.jsisques.net` | Portfolio personal de desarrollador |
 | Gardenia* | pública | `gardenia.sisqueslabs.com` | Plataforma de gestión de huertos |
 | Sisques Labs Landing* | pública | `landing.sisqueslabs.com` | Landing pública de Sisques Labs |
 | Days Off* | pública | `daysoff.sisqueslabs.com` | Calculadora de puentes/vacaciones |

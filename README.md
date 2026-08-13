@@ -104,7 +104,7 @@ Services are split across three access tiers, depending on who they're for and h
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
 | Internal only | `*.home.arpa` | LAN / VPN only, never exposed to the internet | Grafana, Proxmox, Prometheus, Kafka, Rancher, RustFS, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube |
-| Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Portfolio, Jellyfin (also reachable on `*.home.arpa` for LAN), Blog (Kubernetes) |
+| Personal | `jsisques.net` | Personal-facing services, exposed via Cloudflare Tunnel | Jellyfin (also reachable on `*.home.arpa` for LAN), Blog (Kubernetes) |
 | Public | `sisqueslabs.com` | Public homelab apps, exposed via Cloudflare Tunnel | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
 
 Each service's tier is declared explicitly via the `tier` field in `config/services.yaml` (see [`config/README.md`](config/README.md#tier)) — nothing is public by default.
@@ -278,7 +278,7 @@ Terraform answers *"what machines should exist?"*; Ansible answers *"how should 
 
 ## Kubernetes
 
-K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.0.31`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
+K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.0.207`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
 
 ### Helm / Argo CD
 

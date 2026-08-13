@@ -118,7 +118,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      endpoint: http://192.168.0.25:20241/metrics
+      endpoint: http://192.168.0.200:20241/metrics
 
   kafka:
     name: Kafka
@@ -249,7 +249,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      endpoint: http://192.168.0.28:8082/metrics
+      endpoint: http://192.168.0.204:8082/metrics
 
   gardenia:
     name: Gardenia
@@ -266,35 +266,6 @@ services:
       enabled: true
       type: prometheus
       endpoint: http://gardenia:3000/metrics
-
-  portfolio-web:
-    name: Portfolio
-    category: Applications
-    # Static Astro site (source: github.com/JSisques/portfolio-web), served
-    # from its own LXC via Traefik on the LAN and via Cloudflare Tunnel at
-    # portfolio.jsisques.net for public access, same pattern as jellyfin.
-    tier: internal
-    url: https://portfolio-web.home.arpa
-    icon: mdi-account-box
-
-    homepage:
-      enabled: true
-      description: Personal developer portfolio
-
-    traefik:
-      enabled: true
-      port: 8080
-
-    uptime:
-      enabled: true
-
-    # No native /metrics — static site with no backend. Probed by
-    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
-    blackbox:
-      enabled: true
-      port: 8080
-      scheme: http
-      module: http_2xx
 
   sisqueslabs-landing:
     name: Sisques Labs Landing

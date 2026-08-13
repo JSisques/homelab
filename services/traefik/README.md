@@ -39,9 +39,9 @@ A service gets a router + backend automatically once it declares a `traefik: {en
 
 Nothing resolves these hostnames until AdGuard Home is told to. AdGuard Home has no config-as-code path (see `services/adguard-home/README.md`), so this is manual, once — **on both instances** (`adguard-home-1` and `adguard-home-2`), since a client could be using either as its DNS server:
 
-1. Open the instance's UI (`http://192.168.0.26:3000` / `http://192.168.0.37:3000` until Traefik itself is up, `https://adguard1.home.arpa` / `https://adguard2.home.arpa` after).
+1. Open the instance's UI (`http://192.168.0.201:3000` / `http://192.168.0.202:3000` until Traefik itself is up, `https://adguard1.home.arpa` / `https://adguard2.home.arpa` after).
 2. **Filters → DNS rewrites → Add**.
-3. Domain: `*.home.arpa`, Answer: `192.168.0.28` (Traefik's address).
+3. Domain: `*.home.arpa`, Answer: `192.168.0.204` (Traefik's address).
 
 Every hostname in `dynamic/routes.yml` will resolve from then on for any client using either AdGuard instance as its DNS server. Once `adguard-home-sync` (`services/adguard-home-sync/`) is deployed, this rewrite only has to be added on `adguard-home-1` — it propagates to `adguard-home-2` automatically from then on.
 

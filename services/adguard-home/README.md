@@ -22,7 +22,7 @@ services/adguard-home/
 
 AdGuard Home has no declarative config file suitable for generation from `config/services.yaml` — like Uptime Kuma, its setup wizard and settings live entirely in its own persistent volumes (`adguard-work`, `adguard-conf`). First boot walks through a setup wizard on port `3000` (admin username/password, upstream DNS, which network interfaces to listen on).
 
-Once that's done, add one DNS rewrite so `*.home.arpa` resolves to Traefik instead of nowhere — **Filters → DNS rewrites**, domain `*.home.arpa`, answer `192.168.0.28`. See `services/traefik/README.md`.
+Once that's done, add one DNS rewrite so `*.home.arpa` resolves to Traefik instead of nowhere — **Filters → DNS rewrites**, domain `*.home.arpa`, answer `192.168.0.204`. See `services/traefik/README.md`.
 
 ## Networking
 

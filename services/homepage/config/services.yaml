@@ -3,10 +3,6 @@ Applications:
     href: https://gardenia.sisqueslabs.com
     icon: mdi-sprout
     description: Garden management platform
-  Portfolio:
-    href: https://portfolio-web.home.arpa
-    icon: mdi-account-box
-    description: Personal developer portfolio
   Sisques Labs Landing:
     href: https://landing.sisqueslabs.com
     icon: mdi-web
