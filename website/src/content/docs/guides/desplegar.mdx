@@ -51,6 +51,20 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
    ```
 
+   :::caution[`proxmox_node` no es el realm]
+   `proxmox_node` es el **nombre del nodo** tal como aparece en el árbol de la izquierda de la UI de Proxmox (*Centro de datos → &lt;nombre-del-nodo&gt;*) — no tiene relación con el `pve` de `user@pve!tokenid` (eso es el realm de autenticación, otra cosa). Si lo dejás mal (por ejemplo `pve` cuando el nodo real se llama `proxmox`), `terraform apply` falla con `hostname lookup '<valor>' failed`.
+
+   `ssh_public_key` tampoco funciona con el placeholder del `.example` (`ssh-ed25519 AAAA... user@host`) — genera un par de claves real antes del primer `apply`:
+
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/homelab_proxmox_ed25519 -N "" -C "terraform-ansible@homelab"
+   cat ~/.ssh/homelab_proxmox_ed25519.pub
+   # pegá esa línea completa como ssh_public_key en terraform.tfvars
+   ```
+
+   Sin passphrase (`-N ""`) a propósito: Terraform y Ansible necesitan loguearse sin interacción.
+   :::
+
    :::caution[El `!` en zsh]
    En macOS con zsh interactivo, el *history expansion* (`!`) se come el `!` y el `-` que le sigue **sin avisar** — el token queda corrupto y `terraform plan` falla más tarde con un error de formato que no delata la causa real. Si no querés arriesgarte, escribí los `export` en un fichero y hacé `source`, que no pasa por la expansión de historial:
 

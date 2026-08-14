@@ -104,7 +104,7 @@ Permisos a asignar (rol personalizado, por ejemplo `TerraformProvision`):
 
 <Steps>
 
-1. **Usuario**: *Datacenter → Permissions → Users → Add*. Username `terraform`, realm `pve` (autenticación por token, no hace falta contraseña real).
+1. **Usuario**: *Datacenter → Permissions → Users → Add*. Username `terraform`, realm `pve` (autenticación por token, no hace falta contraseña real). Confirma que el checkbox **Enabled** queda marcado — si el usuario aparece deshabilitado, cualquier token suyo devuelve `401 Unauthorized` en la API aunque el token y sus permisos estén bien configurados (síntoma fácil de confundir con un secret o rol incorrectos).
 2. **Rol**: *Datacenter → Permissions → Roles → Create*. Nombre `TerraformProvision`, marca exactamente los permisos de la tabla de arriba.
 3. **Grupo**: *Datacenter → Permissions → Groups → Create*, nombre `terraform`.
 4. **Asignar el rol al grupo** en la raíz: *Datacenter → Permissions → Add → Group Permission*. Path `/`, Group `terraform`, Role `TerraformProvision`, con Propagate activado.
@@ -114,6 +114,14 @@ Permisos a asignar (rol personalizado, por ejemplo `TerraformProvision`):
 </Steps>
 
 El resultado es el valor de `TF_VAR_proxmox_api_token`, con el formato `user@realm!tokenid=uuid` (por ejemplo `terraform@pve!terraform=xxxxxxxx-...`) — ver la [tabla de secretos de la guía de despliegue](/homelab/guides/desplegar/#secretos).
+
+:::caution[401 Unauthorized contra la API de Proxmox]
+Si `terraform plan`/`apply` falla con `Unable to create Proxmox VE API credentials` o un `curl` directo a `/api2/json/cluster/nextid` con el header `Authorization: PVEAPIToken=...` devuelve `401`, revisa en este orden — las tres causas más comunes:
+
+1. **Usuario deshabilitado**: *Users → terraform* → checkbox `Enabled` sin marcar. Un usuario deshabilitado hace que cualquiera de sus tokens devuelva 401, aunque el token y sus permisos estén perfectos.
+2. **Privilege Separation activada sin permiso propio para el token**: si el token se creó con esa opción en `Sí`, no hereda los permisos del usuario/grupo — necesita su propia entrada en *Permissions* (`Path /`, el token mismo como sujeto, rol `TerraformProvision`, Propagate activado), o recrearlo con Privilege Separation desactivada.
+3. **Secret mal copiado**: verifica que tenga exactamente 36 caracteres y ningún espacio/salto de línea de más (`echo -n "$TF_VAR_proxmox_api_token" | wc -c` como referencia, contando también `user@realm!tokenid=`). Si hay dudas, regeneralo desde *API Tokens → Regenerar secreto* y copialo directo del botón de copiar, sin retipearlo.
+:::
 
 :::tip[Fuente]
 Basado en el proceso descrito en ["Provisioning Proxmox Virtual Machines with Terraform" (Daniel Edwards, Medium)](https://medium.com/@DatBoyBlu3/provisioning-proxmox-virtual-machines-with-terraform-d9e9c549f947), adaptado al provider [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox/latest/docs) que usa este repo (en vez de `Telmate/proxmox`) y al flujo de plantillas por imagen cloud en lugar de ISO instalada a mano.
