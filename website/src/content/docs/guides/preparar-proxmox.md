@@ -109,7 +109,8 @@ Permisos a asignar (rol personalizado, por ejemplo `TerraformProvision`):
 3. **Grupo**: *Datacenter → Permissions → Groups → Create*, nombre `terraform`.
 4. **Asignar el rol al grupo** en la raíz: *Datacenter → Permissions → Add → Group Permission*. Path `/`, Group `terraform`, Role `TerraformProvision`, con Propagate activado.
 5. **Meter el usuario en el grupo**: *Users → terraform → Edit* → Group `terraform`.
-6. **Token API**: *Users → terraform → API Tokens → Add*. Token ID `terraform` (o el que prefieras) — con "Privilege Separation" desactivado, para que el token herede directamente los permisos del usuario/grupo. Copia el secret en el momento: Proxmox no lo vuelve a mostrar.
+6. **Token API**: *Users → terraform → API Tokens → Add*. Token ID `terraform` (o el que prefieras). Copia el secret en el momento: Proxmox no lo vuelve a mostrar.
+7. **Permiso propio del token**: *Datacenter → Permissions → Add → API Token Permission*. Path `/`, API Token `terraform@pve!<tu-token-id>`, Role `TerraformProvision`, Propagate activado — **hace falta este permiso además del que le diste al grupo en el paso 4**, incluso con "Privilege Separation" desactivada en el token. En la práctica, el token no heredó el permiso del grupo/usuario sin esta entrada explícita propia; verificalo consultando `GET /access/permissions` con el token (ver el aviso de abajo).
 
 </Steps>
 
@@ -119,8 +120,31 @@ El resultado es el valor de `TF_VAR_proxmox_api_token`, con el formato `user@rea
 Si `terraform plan`/`apply` falla con `Unable to create Proxmox VE API credentials` o un `curl` directo a `/api2/json/cluster/nextid` con el header `Authorization: PVEAPIToken=...` devuelve `401`, revisa en este orden — las tres causas más comunes:
 
 1. **Usuario deshabilitado**: *Users → terraform* → checkbox `Enabled` sin marcar. Un usuario deshabilitado hace que cualquiera de sus tokens devuelva 401, aunque el token y sus permisos estén perfectos.
-2. **Privilege Separation activada sin permiso propio para el token**: si el token se creó con esa opción en `Sí`, no hereda los permisos del usuario/grupo — necesita su propia entrada en *Permissions* (`Path /`, el token mismo como sujeto, rol `TerraformProvision`, Propagate activado), o recrearlo con Privilege Separation desactivada.
+2. **Al token le falta su propio permiso**: el grant al grupo (paso 4) no alcanza — el token necesita además su propia entrada en *Permissions* (paso 7: `Path /`, el token como sujeto, rol `TerraformProvision`, Propagate activado). Esto aplica tanto si "Privilege Separation" está activada como desactivada.
 3. **Secret mal copiado**: verifica que tenga exactamente 36 caracteres y ningún espacio/salto de línea de más (`echo -n "$TF_VAR_proxmox_api_token" | wc -c` como referencia, contando también `user@realm!tokenid=`). Si hay dudas, regeneralo desde *API Tokens → Regenerar secreto* y copialo directo del botón de copiar, sin retipearlo.
+
+Para confirmar qué permisos tiene el token realmente (en vez de adivinar por la UI), consultá el endpoint que refleja lo que Proxmox aplica de verdad:
+
+```bash
+curl -sk -H "Authorization: PVEAPIToken=${TF_VAR_proxmox_api_token}" \
+  "${TF_VAR_proxmox_endpoint}/api2/json/access/permissions" | jq
+```
+
+Si devuelve `{"data": {}}`, el token no tiene ningún permiso efectivo — falta el paso 7.
+
+Si en cambio falla con **`403 Permission check failed`** (no 401) y sin generar ninguna tarea visible en *Tareas*, es lo mismo: el chequeo de permisos rechazó la petición antes de encolar el trabajo. Mismo diagnóstico, mismo fix.
+:::
+
+:::caution[Plantilla LXC no descargada]
+Si `terraform apply` falla con `unable to create CT <id> - volume 'local:vztmpl/<archivo>' does not exist`, la plantilla `debian_template` que pusiste en `terraform.tfvars` no está descargada en el storage `local`. Bajala desde el nodo Proxmox (por SSH o *Shell* en la UI):
+
+```bash
+pveam update
+pveam available | grep debian-12
+pveam download local debian-12-standard_<version>_amd64.tar.zst
+```
+
+`debian_template` debe incluir el prefijo `vztmpl/` (`local:vztmpl/debian-12-standard_<version>_amd64.tar.zst`) — sin él, Terraform apunta a una ruta que no existe aunque la plantilla esté descargada.
 :::
 
 :::tip[Fuente]
