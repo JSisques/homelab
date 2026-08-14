@@ -23,6 +23,7 @@ export default defineConfig({
           label: "Guías",
           items: [
             { label: "Cómo funciona (flujo de datos)", slug: "guides/flujo-de-datos" },
+            { label: "Preparar Proxmox para Terraform", slug: "guides/preparar-proxmox" },
             { label: "Cómo desplegarlo", slug: "guides/desplegar" },
           ],
         },
