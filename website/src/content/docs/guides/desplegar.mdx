@@ -51,6 +51,19 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
    ```
 
+   :::caution[El `!` en zsh]
+   En macOS con zsh interactivo, el *history expansion* (`!`) se come el `!` y el `-` que le sigue **sin avisar** — el token queda corrupto y `terraform plan` falla más tarde con un error de formato que no delata la causa real. Si no querés arriesgarte, escribí los `export` en un fichero y hacé `source`, que no pasa por la expansión de historial:
+
+   ```bash
+   cat > ~/.proxmox_token.sh <<'EOF'
+   export TF_VAR_proxmox_endpoint="https://<ip-proxmox>:8006/"
+   export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
+   EOF
+   source ~/.proxmox_token.sh
+   echo "[$TF_VAR_proxmox_api_token]"  # confirma que el "!" sobrevivió
+   ```
+   :::
+
 2. **Genera y provisiona la infraestructura.**
 
    ```bash

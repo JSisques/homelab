@@ -171,6 +171,8 @@ Authenticate as a dedicated `terraform` user with a least-privilege role, not `r
 
 The resulting `user@realm!tokenid=uuid` string is `proxmox_api_token` (`TF_VAR_proxmox_api_token`).
 
+> **macOS/zsh warning:** typing `export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"` directly at an interactive zsh prompt triggers history expansion on the `!`, silently stripping it (and the following `-`) from the value. `terraform plan` then fails with a confusing "API token must be in the format ..." error even though what you typed was correct. Write the `export` to a file with a quoted heredoc (`<<'EOF'`) and `source` it instead — that path skips history expansion.
+
 For the full click-by-click walkthrough, see the website guide [Preparar Proxmox para Terraform](../../website/src/content/docs/guides/preparar-proxmox.md).
 
 ## Variables
