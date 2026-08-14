@@ -15,7 +15,7 @@ Antes de seguir, conviene tener claro el [flujo de datos](/homelab/guides/flujo-
 
 Todo esto se ejecuta desde una **máquina de control** (tu portátil, o el runner que uses) — no desde el propio Proxmox.
 
-- Proxmox instalado y accesible en la red, con un **API token** creado (*Datacenter → Permissions → API Tokens*).
+- Proxmox instalado y accesible en la red, con una plantilla cloud-init y un **API token** de una cuenta de servicio ya creados — ver [Preparar Proxmox para Terraform](/homelab/guides/preparar-proxmox/) si todavía no existen.
 - [`yq`](https://github.com/kislyuk/yq) instalado — el de **kislyuk** (jq wrapper), no el de mikefarah (sintaxis distinta, incompatible con los generadores). Si tienes el otro instalado, los generadores fallan con errores de `jq` que no tienen mucho sentido a simple vista.
 
   En Debian/Ubuntu está directamente en apt y es el mismo binario/paquete (no hace falta pip ni instalar Python aparte — `apt` ya resuelve `jq` y `python3` como dependencias):
