@@ -33,7 +33,9 @@
 # verification (NO_PUBKEY) even though the file exists on disk.
 - name: Dearmor Grafana APT repository key
   ansible.builtin.command:
-    cmd: gpg --batch --yes --dearmor -o {{ promtail_apt_keyring }} /tmp/grafana-apt-key.asc
+    cmd: >-
+      gpg --batch --yes --dearmor
+      -o {{ promtail_apt_keyring }} /tmp/grafana-apt-key.asc
   changed_when: true
 
 - name: Configure Grafana APT repository
