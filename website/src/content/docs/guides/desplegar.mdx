@@ -51,6 +51,41 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
    ```
 
+   :::caution[`proxmox_node` no es el realm]
+   `proxmox_node` es el **nombre del nodo** tal como aparece en el árbol de la izquierda de la UI de Proxmox (*Centro de datos → &lt;nombre-del-nodo&gt;*) — no tiene relación con el `pve` de `user@pve!tokenid` (eso es el realm de autenticación, otra cosa). Si lo dejás mal (por ejemplo `pve` cuando el nodo real se llama `proxmox`), `terraform apply` falla con `hostname lookup '<valor>' failed`.
+
+   `ssh_public_key` tampoco funciona con el placeholder del `.example` (`ssh-ed25519 AAAA... user@host`) — genera un par de claves real antes del primer `apply`:
+
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/homelab_proxmox_ed25519 -N "" -C "terraform-ansible@homelab"
+   cat ~/.ssh/homelab_proxmox_ed25519.pub
+   # pegá esa línea completa como ssh_public_key en terraform.tfvars
+   ```
+
+   Sin passphrase (`-N ""`) a propósito: Terraform y Ansible necesitan loguearse sin interacción.
+
+   Terraform provisiona los LXC/VM con esa clave pública, pero **Ansible no sabe cuál privada usar** salvo que se lo digas: SSH solo prueba las identidades por defecto (`id_rsa`, `id_ed25519`, ...) o las que estén en el `ssh-agent`, y `homelab_proxmox_ed25519` no es ninguna de esas. La forma correcta es la variable estándar de Ansible (no toques `ansible.cfg`: es compartido con CI y otros equipos, que pueden usar un path de clave distinto):
+
+   ```bash
+   export ANSIBLE_PRIVATE_KEY_FILE=~/.ssh/homelab_proxmox_ed25519
+   ```
+
+   Sin esto, `make ping`/`make deploy-*` fallan con `Permission denied (publickey,password)` aunque la clave esté bien instalada en el host (verificable con `pct exec <vmid> -- cat /root/.ssh/authorized_keys` desde el propio Proxmox) y `sshd` esté corriendo — el síntoma engaña porque todo del lado del servidor está bien.
+   :::
+
+   :::caution[El `!` en zsh]
+   En macOS con zsh interactivo, el *history expansion* (`!`) se come el `!` y el `-` que le sigue **sin avisar** — el token queda corrupto y `terraform plan` falla más tarde con un error de formato que no delata la causa real. Si no querés arriesgarte, escribí los `export` en un fichero y hacé `source`, que no pasa por la expansión de historial:
+
+   ```bash
+   cat > ~/.proxmox_token.sh <<'EOF'
+   export TF_VAR_proxmox_endpoint="https://<ip-proxmox>:8006/"
+   export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
+   EOF
+   source ~/.proxmox_token.sh
+   echo "[$TF_VAR_proxmox_api_token]"  # confirma que el "!" sobrevivió
+   ```
+   :::
+
 2. **Genera y provisiona la infraestructura.**
 
    ```bash

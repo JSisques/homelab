@@ -10,7 +10,7 @@ OUTPUT="${OUTPUT_DIR}/services.yaml"
 
 if ! command -v yq >/dev/null 2>&1; then
     echo "Error: yq is required but was not found."
-    echo "Install yq from https://github.com/mikefarah/yq"
+    echo "Install yq: https://github.com/kislyuk/yq"
     exit 1
 fi
 

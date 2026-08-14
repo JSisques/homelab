@@ -21,12 +21,22 @@
     state: directory
     mode: "0755"
 
-- name: Install Grafana APT repository key
+- name: Download Grafana APT repository key (armored)
   ansible.builtin.get_url:
     url: "{{ promtail_apt_key_url }}"
-    dest: "{{ promtail_apt_keyring }}"
+    dest: /tmp/grafana-apt-key.asc
     mode: "0644"
     force: true
+
+# apt.grafana.com/gpg.key is ASCII-armored, but apt's `signed-by` needs a
+# binary keyring — download it raw and it silently fails apt-secure
+# verification (NO_PUBKEY) even though the file exists on disk.
+- name: Dearmor Grafana APT repository key
+  ansible.builtin.command:
+    cmd: >-
+      gpg --batch --yes --dearmor
+      -o {{ promtail_apt_keyring }} /tmp/grafana-apt-key.asc
+  changed_when: true
 
 - name: Configure Grafana APT repository
   ansible.builtin.apt_repository:
