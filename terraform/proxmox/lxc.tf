@@ -50,5 +50,7 @@ resource "proxmox_virtual_environment_container" "lxc" {
     nesting = true
   }
 
+  tags = each.value.tags
+
   started = true
 }

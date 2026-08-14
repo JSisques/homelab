@@ -213,6 +213,10 @@ This means changing your home network's subnet — `192.168.0.0/24` today, `10.0
 This information is used to generate:
 
 * **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`), plus `network_gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
+
+### Proxmox tags
+
+Every `lxc`/`vm` host gets a `tags` list on its Proxmox resource, generated automatically — there's no `tags:` field to set by hand in `hosts.yaml`. Each host's tags are `[type] + role`, e.g. the `monitoring` host above (`type: lxc`, `role: [prometheus, grafana, ...]`) gets `tags: ["alertmanager", "grafana", "loki", "lxc", "otel-collector", "prometheus", "tempo"]`. Renaming or adding a `role` entry changes the tags on the next `make terraform-vars` + `terraform apply`; nothing else to maintain.
 * **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.0.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
 * Monitoring targets, Node Exporter configuration, Traefik routes, and blackbox_exporter targets — every generator in `scripts/generation/` resolves addresses the same way, via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`.
 

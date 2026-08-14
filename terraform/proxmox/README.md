@@ -97,6 +97,7 @@ Terraform defines the infrastructure of these containers, such as:
 - Network configuration
 - IP address
 - Operating system template
+- Tags (see below)
 
 Application configuration should not be placed in Terraform.
 
@@ -132,6 +133,10 @@ Proxmox
 ```
 
 K3s nodes and PBS share the same generic VM mechanism — what differs is the Ansible role that configures each one afterwards.
+
+## Tags
+
+Every LXC container and VM gets Proxmox `tags` set automatically — `[type] + role`, derived from each host's `type` and `role` list in `config/hosts.yaml`. Nothing needs to be set by hand: `generate-terraform-vars.sh` computes them into the `tags` field of `lxc_network`/`vm_nodes` in `hosts.auto.tfvars.json`, and `lxc.tf`/`vms.tf` pass them straight through as `tags = each.value.tags`. E.g. the `monitoring` LXC (`type: lxc`, `role: [prometheus, grafana, loki, alertmanager, otel-collector, tempo]`) ends up tagged `lxc, prometheus, grafana, loki, alertmanager, otel-collector, tempo` in the Proxmox UI. Add or change a `role` entry and re-run `make terraform-vars` (or `make plan`/`make apply`, which do it automatically) to update the tags.
 
 ## Proxmox-side Setup (one-time, outside Terraform)
 

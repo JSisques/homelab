@@ -77,6 +77,7 @@ variable "vm_nodes" {
     memory       = number
     disk         = number
     ip           = string
+    tags         = optional(list(string), [])
   }))
 
   default = {}
@@ -90,5 +91,6 @@ variable "lxc_network" {
     cores  = number
     memory = number
     disk   = number
+    tags   = optional(list(string), [])
   }))
 }

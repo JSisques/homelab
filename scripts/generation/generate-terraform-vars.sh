@@ -59,7 +59,8 @@ yq --argjson resolved "${RESOLVED}" '
               ip: $resolved[.key],
               cores: .value.cpu,
               memory: .value.memory,
-              disk: .value.disk
+              disk: .value.disk,
+              tags: ([.value.type] + (.value.role // []) | unique | sort)
             }
           })
         | (if length == 0 then {} else add end)
@@ -74,7 +75,8 @@ yq --argjson resolved "${RESOLVED}" '
               cpu: .value.cpu,
               memory: .value.memory,
               disk: .value.disk,
-              ip: $resolved[.key]
+              ip: $resolved[.key],
+              tags: ([.value.type] + (.value.role // []) | unique | sort)
             }
           })
         | (if length == 0 then {} else add end)

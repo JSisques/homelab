@@ -41,5 +41,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
   }
 
+  tags = each.value.tags
+
   started = true
 }
