@@ -51,6 +51,13 @@ fi
     # block) that roles need but can't get from a per-host ansible_host —
     # e.g. wireguard's ALLOWEDIPS derives from lan_cidr instead of
     # hardcoding the LAN subnet.
+    #
+    # ansible_user mirrors what terraform/proxmox actually provisions:
+    # LXCs get their SSH key on root (lxc.tf's user_account has no
+    # username, so bpg/proxmox defaults it to root), VMs get it on
+    # var.vm_user's default "ansible" (vms.tf sets username explicitly).
+    # If you change vm_user in terraform.tfvars, update the "ansible"
+    # literal below to match.
     # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
     yq -y --argjson resolved "${RESOLVED}" '
       .hosts as $hosts
@@ -75,7 +82,10 @@ fi
                         reduce $valid[] as $h (
                           {};
                           if ($h.key == $g) or (($h.value.role // []) | index($g))
-                          then . + { ($h.key): { ansible_host: $resolved[$h.key] } }
+                          then . + { ($h.key): {
+                              ansible_host: $resolved[$h.key],
+                              ansible_user: (if $h.value.type == "vm" then "ansible" else "root" end)
+                            } }
                           else .
                           end
                         )

@@ -63,6 +63,14 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    ```
 
    Sin passphrase (`-N ""`) a propósito: Terraform y Ansible necesitan loguearse sin interacción.
+
+   Terraform provisiona los LXC/VM con esa clave pública, pero **Ansible no sabe cuál privada usar** salvo que se lo digas: SSH solo prueba las identidades por defecto (`id_rsa`, `id_ed25519`, ...) o las que estén en el `ssh-agent`, y `homelab_proxmox_ed25519` no es ninguna de esas. La forma correcta es la variable estándar de Ansible (no toques `ansible.cfg`: es compartido con CI y otros equipos, que pueden usar un path de clave distinto):
+
+   ```bash
+   export ANSIBLE_PRIVATE_KEY_FILE=~/.ssh/homelab_proxmox_ed25519
+   ```
+
+   Sin esto, `make ping`/`make deploy-*` fallan con `Permission denied (publickey,password)` aunque la clave esté bien instalada en el host (verificable con `pct exec <vmid> -- cat /root/.ssh/authorized_keys` desde el propio Proxmox) y `sshd` esté corriendo — el síntoma engaña porque todo del lado del servidor está bien.
    :::
 
    :::caution[El `!` en zsh]
