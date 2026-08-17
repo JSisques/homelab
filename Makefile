@@ -24,6 +24,12 @@ ANSIBLE_EXTRA_VARS := \
 	-e "adguard_sync_replica_username=$${ADGUARD_SYNC_REPLICA_USERNAME}" \
 	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}"
 
+# Loads a root .env (gitignored, see .env.example) into the shell environment
+# for the recipe that follows, if one exists — so ANSIBLE_EXTRA_VARS above
+# picks up real values instead of empty strings without exporting them by
+# hand every session. Silently a no-op when there's no .env.
+LOAD_ENV := if [ -f .env ]; then set -a && . ./.env && set +a; fi;
+
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \
 	deploy ping status services
@@ -90,10 +96,10 @@ ping: inventory ## Check connectivity to every host in the inventory
 	cd $(ANSIBLE_DIR) && ansible all -i $(INVENTORY) -m ping
 
 deploy: apply inventory ## Deploy EVERYTHING: Terraform apply + every Ansible role
-	cd $(ANSIBLE_DIR) && ansible-playbook -i $(INVENTORY) playbooks/site.yaml $(ANSIBLE_EXTRA_VARS)
+	$(LOAD_ENV) cd $(ANSIBLE_DIR) && ansible-playbook -i $(INVENTORY) playbooks/site.yaml $(ANSIBLE_EXTRA_VARS)
 
 deploy-%: inventory ## Deploy a single service only, e.g. `make deploy-n8n` (see `make services`)
-	cd $(ANSIBLE_DIR) && ansible-playbook -i $(INVENTORY) playbooks/$*.yaml $(ANSIBLE_EXTRA_VARS)
+	$(LOAD_ENV) cd $(ANSIBLE_DIR) && ansible-playbook -i $(INVENTORY) playbooks/$*.yaml $(ANSIBLE_EXTRA_VARS)
 
 ## --- Validation -----------------------------------------------------------
 

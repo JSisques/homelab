@@ -83,6 +83,8 @@ No secret is ever committed. Roles that need one read it from a variable with an
 
 Provide real values via Ansible Vault, or as `-e`/`--extra-vars` from CI secrets — see each role's README.
 
+From a control machine, the root `Makefile` builds those `-e`/`--extra-vars` flags from your shell environment (see `ANSIBLE_EXTRA_VARS`). Rather than `export`ing each one by hand every session, copy `.env.example` (repo root) to `.env` — gitignored, never commit the real one — and fill in what you need; `make deploy`/`make deploy-<service>` source it automatically if it exists.
+
 ## Running
 
 Prefer the root `Makefile` (`make deploy`, `make deploy-<service>`, `make ping`, ...). Run Ansible directly when you need more control:

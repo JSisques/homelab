@@ -169,6 +169,8 @@ Nada de esto está commiteado ni lo estará.
 
 Estas son las que usa `Makefile` (`ANSIBLE_EXTRA_VARS`) para cualquier `make deploy` / `make deploy-<servicio>` — solo hace falta exportar las del servicio que estés desplegando en ese momento, el resto puede quedar vacío. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
 
+En local, en vez de exportarlas a mano en cada sesión, copiá `.env.example` (raíz del repo) a `.env` — ya está en `.gitignore`, nunca se commitea — y completá ahí las que necesites. `make deploy`/`make deploy-<servicio>` lo carga solo si existe; si no existe, nada cambia respecto a exportar a mano.
+
 ## Cloudflare Tunnel
 
 Crear el túnel exige estar autenticado contra la cuenta de Cloudflare — no hay forma de scriptearlo desde CI. Es un paso manual, **una vez**:
