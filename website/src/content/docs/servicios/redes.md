@@ -36,6 +36,12 @@ Proxy inverso interno para todos los servicios `tier: internal` (`*.home.arpa`).
 - Paso manual de una sola vez, **en ambas instancias de AdGuard**: reescritura DNS `*.home.arpa → 192.168.0.204` (la IP de Traefik) — nada resuelve hasta hacerlo, porque AdGuard no tiene configuración como código. Una vez desplegado `adguard-home-sync`, basta con añadirla en `adguard-home-1`; se replica sola a `adguard-home-2`.
 - Dashboard propio en `https://traefik.home.arpa`; métricas Prometheus en `:8082`. La configuración se recarga sola (`providers.file.watch: true`), sin reiniciar tras regenerar las rutas.
 
+### Despliegue y configuración
+
+1. `make deploy-traefik` — no pide secretos.
+2. Añadir la reescritura DNS `*.home.arpa → 192.168.0.204` en AdGuard Home (ver más abajo) — sin esto, ningún `*.home.arpa` resuelve y Traefik queda desplegado pero inalcanzable por nombre.
+3. Verificar con `https://traefik.home.arpa` (certificado autofirmado, el navegador avisará) o directo por IP: `https://192.168.0.204`.
+
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/traefik).
 
 ## Cloudflared
@@ -47,6 +53,15 @@ Ejecuta un Cloudflare Tunnel para los dominios público y personal (`sisqueslabs
 - Configuración manual de una sola vez, fuera de Git: `cloudflared tunnel login` + `cloudflared tunnel create homelab`, anotar el tunnel ID en `config.yml`, añadir un CNAME de DNS por cada hostname, y mantener el JSON de credenciales **fuera de Git** — se entrega a Ansible como `cloudflared_credentials_json` (secreto de Vault/CI).
 - `config.yml` (las reglas de ingress) sí se commitea — no lleva secretos, solo el enrutado. El catch-all por defecto es `404`.
 - Los servicios `tier: internal` nunca deben tener entrada aquí — solo los de tier `public`/`personal`. Ver la nota de la [guía de despliegue](/homelab/guides/desplegar/#cloudflare-tunnel).
+
+### Despliegue y configuración
+
+1. `cloudflared tunnel login` (una vez, requiere navegador) y `cloudflared tunnel create homelab`.
+2. Anotar el tunnel ID resultante en `services/cloudflared/config.yml`, sustituyendo `REPLACE_WITH_TUNNEL_ID`.
+3. Crear un CNAME de DNS en Cloudflare por cada hostname enrutado (uno por entrada de `ingress` en `config.yml`).
+4. Pasar el JSON de credenciales generado por `tunnel create` a Ansible como el secreto `cloudflared_credentials_json` (Vault/CI) — **nunca** commiteado.
+5. `make deploy-cloudflared` — se deja para el final del despliegue inicial a propósito, porque depende de los pasos 1-4 hechos a mano.
+6. Verificar que cada hostname público resuelve (`dig landing.sisqueslabs.com`) y responde a través del túnel, no directo.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/cloudflared).
 
@@ -60,6 +75,18 @@ Resolutor DNS de toda la red y bloqueador de anuncios/trackers para clientes LAN
 - Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.0.204` para que Traefik funcione (ver nota de sincronización más abajo).
 - Estado persistente en los volúmenes `adguard-work`/`adguard-conf` de cada LXC — no comparten datos entre sí. Puertos: `53/tcp+udp` (DNS), `3000/tcp` (panel de administración). Solo interno, nunca a través del Cloudflare Tunnel.
 
+### Despliegue y configuración
+
+1. `make deploy-adguard-home-1`, después `make deploy-adguard-home-2` — el contenedor arranca, pero **no sirve DNS todavía**: sin pasar por el asistente se queda en modo "instalación pendiente".
+2. Abrir `http://192.168.0.201:3000` (primaria) en el navegador y completar el asistente: interfaz de escucha DNS, puerto admin, y **usuario + contraseña de admin**. Ese usuario/contraseña es lo que luego va a `adguard_sync_origin_username`/`_password`.
+3. Repetir el asistente en `http://192.168.0.202:3000` (secundaria) — sus credenciales son `adguard_sync_replica_username`/`_password`.
+4. En `adguard-home-1` (la instancia origen; una vez desplegado el sync se replica sola a la secundaria): *Filters → DNS rewrites* → añadir `*.home.arpa → 192.168.0.204` (la IP de Traefik).
+5. Recién ahí `make deploy-adguard-home-sync` (ver abajo) y verificar resolución: `dig @192.168.0.201 traefik.home.arpa`.
+
+:::caution[No saltarse el orden]
+Si desplegás `adguard-home-sync` antes de completar el asistente en ambas instancias, falla al autenticarse — no tiene con qué credenciales conectarse todavía.
+:::
+
 ### Sincronización (`adguard-home-sync`)
 
 Las dos instancias no comparten estado por sí solas — [AdGuardHome-Sync](https://github.com/bakito/adguardhome-sync) corre como contenedor aparte en la LXC de `adguard-home-2`, y copia periódicamente la configuración (filtros, reescrituras DNS, reglas por cliente) de `adguard-home-1` (origen) hacia `adguard-home-2` (réplica).
@@ -67,6 +94,18 @@ Las dos instancias no comparten estado por sí solas — [AdGuardHome-Sync](http
 - Necesita las credenciales de admin de **ambas** instancias (creadas a mano en su asistente de primer arranque) — se pasan como secretos de Ansible (`adguard_sync_origin_username`/`_password`, `adguard_sync_replica_username`/`_password`), nunca commiteados.
 - La URL de origen se resuelve sola desde el inventario de Ansible (`hostvars['adguard-home-1'].ansible_host`) — no hay IP hardcodeada.
 - Si este contenedor se cae, ambas instancias de AdGuard siguen resolviendo DNS con normalidad; solo dejan de mantenerse sincronizadas entre sí.
+
+#### Despliegue y configuración
+
+```bash
+export ADGUARD_SYNC_ORIGIN_USERNAME="admin de adguard-home-1"
+export ADGUARD_SYNC_ORIGIN_PASSWORD="..."
+export ADGUARD_SYNC_REPLICA_USERNAME="admin de adguard-home-2"
+export ADGUARD_SYNC_REPLICA_PASSWORD="..."
+make deploy-adguard-home-sync
+```
+
+Requiere que **ambas** instancias ya hayan pasado por su asistente de primer arranque (paso 2-3 de arriba) — sin eso no hay credenciales que usar.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/adguard-home) y [adguard-home-sync](https://github.com/JSisques/homelab/tree/main/services/adguard-home-sync).
 
@@ -79,5 +118,13 @@ Puerta de enlace VPN autoalojada (`linuxserver/wireguard`) para acceder en remot
 - Pasos manuales que solo puede hacer el operador antes de desplegar: sustituir `SERVERURL` por un hostname que resuelva a la IP pública de casa (DNS dinámico si no hay IP fija) y abrir el puerto UDP `51820` en el router hacia la LXC.
 - `PEERS=5` genera automáticamente 5 configuraciones de cliente + códigos QR en el volumen `wireguard-config` en el primer arranque; se extraen con `docker compose cp`.
 - Enruta los clientes hacia `192.168.0.0/24` y les entrega las dos instancias de AdGuard Home como DNS primario/secundario (`PEERDNS`), así que los clientes VPN también tienen bloqueo de anuncios y no pierden resolución si una de las dos cae.
+
+### Despliegue y configuración
+
+1. Sustituir `SERVERURL` en `services/wireguard/compose.yaml` por un hostname que resuelva a la IP pública de casa (DNS dinámico si no hay IP fija) — no dejar el placeholder.
+2. Abrir el puerto UDP `51820` en el router, apuntando a la LXC de `wireguard`.
+3. `make deploy-wireguard` — con `PEERS=5` genera 5 configuraciones de cliente + QR en el primer arranque, en el volumen `wireguard-config`.
+4. Extraer las configuraciones: `docker compose -f services/wireguard/compose.yaml cp wireguard:/config ./wireguard-peers`.
+5. Verificar conectando un cliente con uno de los perfiles y comprobando que resuelve `*.home.arpa`.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/wireguard).

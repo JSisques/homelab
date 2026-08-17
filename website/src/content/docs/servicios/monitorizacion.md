@@ -5,6 +5,14 @@ description: Prometheus, Grafana, Loki, Alertmanager, Tempo, el OTel Collector, 
 
 Toda la pila de observabilidad corre junta en la LXC compartida `monitoring`, en la misma red Docker, para poder resolverse por nombre entre sí. El [rol de Ansible `monitoring`](https://github.com/JSisques/homelab/tree/main/ansible/roles/monitoring) despliega Prometheus, Grafana, Loki, Alertmanager, Tempo, el OTel Collector y blackbox_exporter de una sola vez. Ver [visión general de arquitectura](/homelab/arquitectura/vision-general/#servicios-fuera-de-kubernetes) para dónde encaja esto en el conjunto.
 
+**Despliegue:** `make deploy-monitoring` levanta los siete contenedores de una sola vez — sin esa pila, `node-exporter`/`promtail` de cada host no tienen a dónde reportar, así que conviene desplegarla primero (ver el [orden recomendado](/homelab/guides/desplegar/)). Para que Alertmanager mande alertas a Telegram en vez de a un receiver nulo:
+
+```bash
+export TELEGRAM_BOT_TOKEN="..."
+export TELEGRAM_CHAT_ID="..."
+make deploy-monitoring
+```
+
 ```text
                          Grafana
                        /    │    \
@@ -108,5 +116,11 @@ Monitorización de disponibilidad y alertado de caídas — una preocupación di
 
 - Sin configuración declarativa: los monitores se crean a mano en la interfaz/API. El campo `uptime.enabled: true` en `config/services.yaml` documenta la intención, pero todavía no existe un generador que cree los monitores automáticamente.
 - Los datos (monitores, historial, ajustes) están en el volumen `uptime-kuma-data` — es la única copia, debe respaldarse.
+
+### Despliegue y configuración
+
+1. `make deploy-uptime-kuma` — no pide secretos.
+2. Primer acceso a `https://uptime.home.arpa`: pide crear la cuenta de admin (usuario + contraseña), no viene con una por defecto.
+3. Dar de alta un monitor a mano por cada servicio con `uptime.enabled: true` en `config/services.yaml` (ver [catálogo](/homelab/servicios/catalogo/)) — HTTP para la mayoría, TCP para los que no sirven un 200 plano en `/` (p. ej. Obsidian, puerto `4000`; Cookidoo MCP contra `/api/health`, no `/`).
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/uptime-kuma).

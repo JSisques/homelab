@@ -38,6 +38,22 @@ qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad y MeTube corren como una sola defi
 - Dimensionado: 4 vCPU / 4 GB / 24 GB.
 - Ninguna de las seis apps expone `/metrics` nativo — todas se sondean con blackbox_exporter y se dan de alta en Uptime Kuma como monitores HTTP.
 
+### Despliegue y configuración
+
+1. En el host Proxmox, habilitar `/dev/net/tun` para la LXC sin privilegios `downloads` — no lo hace Terraform, es manual y previo al despliegue. Si gluetun no levanta su interfaz WireGuard, es lo primero a revisar.
+2. Crear las tres exportaciones NFS en el NAS: `/export/Downloads` (lectura/escritura) y las mismas `/export/Multimedia/{peliculas,series}` que usa Jellyfin, con permisos de escritura para la IP de esta LXC.
+3. Desplegar con los tres secretos de VPN:
+
+   ```bash
+   export DOWNLOADS_VPN_SERVICE_PROVIDER="..."
+   export DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY="..."
+   export DOWNLOADS_VPN_WIREGUARD_ADDRESSES="..."
+   make deploy-downloads
+   ```
+
+4. Anotar la contraseña real que linuxserver.io genera para qBittorrent en el primer arranque (no es `admin`/`adminadmin`) — sale en los logs del contenedor (`docker compose -f services/downloads/compose.yaml logs qbittorrent | grep -i password`) — y cambiarla de inmediato.
+5. En Prowlarr (`https://prowlarr.home.arpa`), *Settings → Apps* → conectar Sonarr, Radarr y qBittorrent a mano — no hay configuración como código para esto.
+
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/downloads).
 
 ### qBittorrent

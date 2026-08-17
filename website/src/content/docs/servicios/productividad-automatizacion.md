@@ -16,6 +16,15 @@ Plataforma de automatización de flujos de trabajo (webhooks, tareas programadas
 - Secretos vía `.env` (nunca commiteado); plantilla en `.env.example`. Necesita `N8N_POSTGRES_PASSWORD` en el entorno antes de `make deploy-n8n` — si falta, se despliega igualmente con `changeme` por defecto, un riesgo silencioso.
 - Zona horaria `TZ`/`GENERIC_TIMEZONE` fijada a `Europe/Madrid` — importante para los workflows programados.
 
+### Despliegue y configuración
+
+```bash
+export N8N_POSTGRES_PASSWORD="..."
+make deploy-n8n
+```
+
+Sin `N8N_POSTGRES_PASSWORD` se despliega igual con `changeme` — no falla, pero queda una contraseña de Postgres previsible expuesta en la LAN. Primer acceso a `https://n8n.home.arpa` pide crear la cuenta de owner.
+
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/n8n).
 
 ## Cookidoo MCP
@@ -29,6 +38,16 @@ Servidor MCP que expone una cuenta de Cookidoo (recetas, lista de la compra, pla
 - `tier: internal` estricto — expone credenciales de una cuenta real, nunca a través del Cloudflare Tunnel.
 - Endpoint MCP en `POST /api/mcp` (sin estado, servidor nuevo por petición); el healthcheck está en `GET /api/health` — la raíz `/` devuelve 404, así que el monitor de Uptime Kuma debe apuntar a `/api/health`, no a `/`.
 - Envía trazas/métricas/logs por OTLP al OTel Collector; no expone `/metrics` propio.
+
+### Despliegue y configuración
+
+```bash
+export COOKIDOO_MCP_EMAIL="..."
+export COOKIDOO_MCP_PASSWORD="..."
+make deploy-cookidoo-mcp
+```
+
+Sin estos dos secretos el rol falla con `assert` — a diferencia de n8n, no hay valor por defecto inseguro con el que arrancar igual. La primera petición MCP dispara el login OAuth2 contra Cookidoo y guarda la sesión en `/data/session.json`; los reinicios siguientes la reutilizan sin volver a autenticarse.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/cookidoo-mcp).
 
