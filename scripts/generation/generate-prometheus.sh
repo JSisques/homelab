@@ -54,7 +54,11 @@ rule_files:
 scrape_configs:
 EOF
 
-# Per-service metrics, declared in config/services.yaml.
+# Per-service metrics, declared in config/services.yaml. Each target gets an
+# explicit `instance` label matching the service key, so Prometheus/Grafana
+# show a readable name instead of the target's bare IP:port (Prometheus only
+# derives `instance` from `__address__` when no `instance` label was already
+# set on the target).
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 yq -r '
   .services
@@ -62,39 +66,43 @@ yq -r '
   | select(.value.monitoring.enabled == true)
   | select(.value.monitoring.type == "prometheus")
   | (.value.monitoring.endpoint | sub("^https?://"; "") | sub("/metrics$"; "") | sub("/pve$"; "")) as $target
-  | "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets:\n          - \"\($target)\""
+  | "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets: [\"\($target)\"]\n        labels:\n          instance: \"\(.key)\""
 ' "${SERVICES_SOURCE}" >> "${OUTPUT}"
 
 # Host-level agents (node-exporter, promtail) run on every LXC/VM as a
 # mandatory Ansible baseline (see ansible/README.md) regardless of which
 # application is deployed there, so they're scraped from config/hosts.yaml
-# directly rather than from a per-service monitoring block.
+# directly rather than from a per-service monitoring block. Each host gets
+# its own static_configs entry with an explicit `instance` label (the host
+# key, e.g. "monitoring") instead of one shared list of bare IPs.
 RESOLVED="$(resolve_addresses "${HOSTS_SOURCE}")"
 
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-HOST_IPS="$(yq -r --argjson resolved "${RESOLVED}" '
+HOST_ENTRIES="$(yq -r --argjson resolved "${RESOLVED}" '
   .hosts
   | to_entries[]
   | select(.value.type == "lxc" or .value.type == "vm")
   | select($resolved[.key] != "TBD")
-  | $resolved[.key]
+  | [.key, $resolved[.key]] | @tsv
 ' "${HOSTS_SOURCE}")"
 
-if [[ -n "${HOST_IPS}" ]]; then
+if [[ -n "${HOST_ENTRIES}" ]]; then
     {
         echo "  - job_name: \"node-exporter\""
         echo "    static_configs:"
-        echo "      - targets:"
-        while IFS= read -r ip; do
-            echo "          - \"${ip}:9100\""
-        done <<<"${HOST_IPS}"
+        while IFS=$'\t' read -r host ip; do
+            echo "      - targets: [\"${ip}:9100\"]"
+            echo "        labels:"
+            echo "          instance: \"${host}\""
+        done <<<"${HOST_ENTRIES}"
 
         echo "  - job_name: \"promtail\""
         echo "    static_configs:"
-        echo "      - targets:"
-        while IFS= read -r ip; do
-            echo "          - \"${ip}:9080\""
-        done <<<"${HOST_IPS}"
+        while IFS=$'\t' read -r host ip; do
+            echo "      - targets: [\"${ip}:9080\"]"
+            echo "        labels:"
+            echo "          instance: \"${host}\""
+        done <<<"${HOST_ENTRIES}"
     } >> "${OUTPUT}"
 fi
 
