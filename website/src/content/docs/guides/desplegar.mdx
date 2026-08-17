@@ -47,9 +47,11 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    cp terraform/proxmox/terraform.tfvars.example terraform/proxmox/terraform.tfvars
    # edítalo con tus valores reales
 
-   export TF_VAR_proxmox_endpoint="https://<ip-proxmox>:8006/"
-   export TF_VAR_proxmox_api_token="user@realm!tokenid=uuid"
+   cp .env.example .env
+   # editá .env: TF_VAR_proxmox_endpoint, TF_VAR_proxmox_api_token
    ```
+
+   `make init`/`plan`/`apply`/`apply-<host>`/`destroy` cargan `.env` solos si existe (ver [Secretos](#secretos)) — no hace falta `export` a mano ni reabrirlo cada sesión nueva.
 
    :::caution[`proxmox_node` no es el realm]
    `proxmox_node` es el **nombre del nodo** tal como aparece en el árbol de la izquierda de la UI de Proxmox (*Centro de datos → &lt;nombre-del-nodo&gt;*) — no tiene relación con el `pve` de `user@pve!tokenid` (eso es el realm de autenticación, otra cosa). Si lo dejás mal (por ejemplo `pve` cuando el nodo real se llama `proxmox`), `terraform apply` falla con `hostname lookup '<valor>' failed`.
@@ -74,7 +76,7 @@ No hace falta instalarlo a mano en ningún sitio. **Nunca** corre en el propio P
    :::
 
    :::caution[El `!` en zsh]
-   En macOS con zsh interactivo, el *history expansion* (`!`) se come el `!` y el `-` que le sigue **sin avisar** — el token queda corrupto y `terraform plan` falla más tarde con un error de formato que no delata la causa real. Si no querés arriesgarte, escribí los `export` en un fichero y hacé `source`, que no pasa por la expansión de historial:
+   En macOS con zsh interactivo, el *history expansion* (`!`) se come el `!` y el `-` que le sigue **sin avisar** si escribís el `export` directo en el prompt — el token queda corrupto y `terraform plan` falla más tarde con un error de formato que no delata la causa real. Editar `.env` (como en el paso de arriba) ya evita esto: el valor se lee de un fichero, nunca se tipea en el prompt interactivo, así que la expansión de historial ni entra en juego. Si por lo que sea no usás `.env`, el mismo truco funciona a mano:
 
    ```bash
    cat > ~/.proxmox_token.sh <<'EOF'
@@ -166,10 +168,11 @@ Nada de esto está commiteado ni lo estará.
 | `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` | Credenciales del object storage S3-compatible | El servicio arranca sin credenciales configuradas |
 | `ADGUARD_SYNC_ORIGIN_USERNAME` / `_PASSWORD` | Credenciales de admin de `adguard-home-1`, para que `adguard-home-sync` pueda leer su config | El contenedor de sync no puede autenticarse contra el origen |
 | `ADGUARD_SYNC_REPLICA_USERNAME` / `_PASSWORD` | Credenciales de admin de `adguard-home-2`, para que `adguard-home-sync` pueda escribir en la réplica | El contenedor de sync no puede autenticarse contra la réplica |
+| `TF_VAR_proxmox_endpoint` / `TF_VAR_proxmox_api_token` | URL de la API de Proxmox y token, para que Terraform pueda hablarle | `init`/`plan`/`apply`/`destroy` fallan al no poder autenticarse |
 
-Estas son las que usa `Makefile` (`ANSIBLE_EXTRA_VARS`) para cualquier `make deploy` / `make deploy-<servicio>` — solo hace falta exportar las del servicio que estés desplegando en ese momento, el resto puede quedar vacío. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets*, más `PROXMOX_ENDPOINT` y `PROXMOX_API_TOKEN` para que Terraform hable con Proxmox.
+Las primeras nueve filas son las que usa `Makefile` (`ANSIBLE_EXTRA_VARS`) para cualquier `make deploy` / `make deploy-<servicio>` — solo hace falta la del servicio que estés desplegando en ese momento, el resto puede quedar vacío. Las dos de Terraform las usan `make init`/`plan`/`apply`/`apply-<host>`/`destroy`. En GitHub Actions (workflow `deploy.yaml`, manual) son *repository secrets* con los mismos nombres (sin el prefijo `TF_VAR_` se gestionan como `PROXMOX_ENDPOINT`/`PROXMOX_API_TOKEN`).
 
-En local, en vez de exportarlas a mano en cada sesión, copiá `.env.example` (raíz del repo) a `.env` — ya está en `.gitignore`, nunca se commitea — y completá ahí las que necesites. `make deploy`/`make deploy-<servicio>` lo carga solo si existe; si no existe, nada cambia respecto a exportar a mano.
+En local, en vez de exportarlas a mano en cada sesión, copiá `.env.example` (raíz del repo) a `.env` — ya está en `.gitignore`, nunca se commitea — y completá ahí las que necesites. Todos los targets de arriba (Terraform y Ansible) lo cargan solos si existe; si no existe, nada cambia respecto a exportar a mano.
 
 ## Cloudflare Tunnel
 

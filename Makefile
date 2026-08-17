@@ -66,16 +66,16 @@ inventory: ## Regenerate only the Ansible inventory
 ## --- Terraform (infrastructure) ------------------------------------------
 
 init: terraform-vars ## Initialize Terraform
-	cd $(TF_DIR) && terraform init
+	$(LOAD_ENV) cd $(TF_DIR) && terraform init
 
 fmt: ## Format Terraform files
 	cd $(TF_DIR) && terraform fmt -recursive
 
 plan: terraform-vars ## Show what Terraform would change
-	cd $(TF_DIR) && terraform plan
+	$(LOAD_ENV) cd $(TF_DIR) && terraform plan
 
 apply: terraform-vars ## Apply Terraform (provisions/updates all LXCs and VMs)
-	cd $(TF_DIR) && terraform apply
+	$(LOAD_ENV) cd $(TF_DIR) && terraform apply
 
 apply-%: terraform-vars ## Apply Terraform for a single LXC/VM only, e.g. `make apply-adguard-home-1` (see `make services`)
 	@if jq -e --arg h "$*" '.lxc_network[$$h]' $(TF_DIR)/hosts.auto.tfvars.json >/dev/null; then \
@@ -85,10 +85,10 @@ apply-%: terraform-vars ## Apply Terraform for a single LXC/VM only, e.g. `make 
 	else \
 		echo "Error: '$*' is not a known LXC or VM host in config/hosts.yaml"; exit 1; \
 	fi; \
-	cd $(TF_DIR) && terraform apply -target="$$addr"
+	$(LOAD_ENV) cd $(TF_DIR) && terraform apply -target="$$addr"
 
 destroy: ## Destroy all Terraform-managed infrastructure (DANGEROUS)
-	cd $(TF_DIR) && terraform destroy
+	$(LOAD_ENV) cd $(TF_DIR) && terraform destroy
 
 ## --- Ansible (configuration + application deployment) --------------------
 
