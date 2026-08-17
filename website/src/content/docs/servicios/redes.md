@@ -40,7 +40,7 @@ Proxy inverso interno para todos los servicios `tier: internal` (`*.home.arpa`).
 
 1. `make deploy-traefik` — no pide secretos.
 2. Añadir la reescritura DNS `*.home.arpa → 192.168.0.204` en AdGuard Home (ver más abajo) — sin esto, ningún `*.home.arpa` resuelve y Traefik queda desplegado pero inalcanzable por nombre.
-3. Verificar con `https://traefik.home.arpa` (certificado autofirmado, el navegador avisará) o directo por IP: `https://192.168.0.204`.
+3. Verificar con `https://traefik.home.arpa` (certificado autofirmado, el navegador avisará). Por IP directa (`https://192.168.0.204`) **no** funciona para el dashboard — el router `traefik-dashboard` solo matchea el header `Host: traefik.home.arpa` (`api.insecure: false` en `traefik.yml`); sin ese header, Traefik devuelve 404 al no encontrar una ruta que aplique. Para probar sin DNS resuelto todavía: `curl -k -H "Host: traefik.home.arpa" https://192.168.0.204/api/rawdata`.
 
 Ver [código fuente](https://github.com/JSisques/homelab/tree/main/services/traefik).
 
@@ -82,6 +82,13 @@ Resolutor DNS de toda la red y bloqueador de anuncios/trackers para clientes LAN
 3. Repetir el asistente en `http://192.168.0.202:3000` (secundaria) — sus credenciales son `adguard_sync_replica_username`/`_password`.
 4. En `adguard-home-1` (la instancia origen; una vez desplegado el sync se replica sola a la secundaria): *Filters → DNS rewrites* → añadir `*.home.arpa → 192.168.0.204` (la IP de Traefik).
 5. Recién ahí `make deploy-adguard-home-sync` (ver abajo) y verificar resolución: `dig @192.168.0.201 traefik.home.arpa`.
+6. **Apuntar tus clientes a AdGuard como DNS** — la reescritura del paso 4 no sirve de nada si tus dispositivos le siguen preguntando al DNS del router/ISP en vez de a AdGuard. Dos formas, no excluyentes:
+   - **DHCP del router (recomendado, cubre toda la LAN sola):** en la configuración del router, cambiar los servidores DNS que reparte por DHCP a `192.168.0.201` y `192.168.0.202`. Los clientes lo toman en la próxima renovación de IP (o forzándola).
+   - **Por dispositivo, mientras tanto o para probar:** en macOS, *System Settings → Network → (interfaz activa) → Details → DNS* → agregar `192.168.0.201` y `192.168.0.202`, sacando los que hubiera por defecto. Después limpiar caché y verificar:
+     ```bash
+     sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+     dig traefik.home.arpa   # debe devolver 192.168.0.204 en ANSWER
+     ```
 
 :::caution[No saltarse el orden]
 Si desplegás `adguard-home-sync` antes de completar el asistente en ambas instancias, falla al autenticarse — no tiene con qué credenciales conectarse todavía.
