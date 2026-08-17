@@ -85,6 +85,8 @@ Provide real values via Ansible Vault, or as `-e`/`--extra-vars` from CI secrets
 
 ## Running
 
+> **`Permission denied (publickey,password)`?** Terraform provisions every host with `homelab_proxmox_ed25519`, but SSH only tries default identities (`id_rsa`, `id_ed25519`, ...) or whatever is loaded in `ssh-agent` — it has no way to know about that key on its own. Set `export ANSIBLE_PRIVATE_KEY_FILE=~/.ssh/homelab_proxmox_ed25519` before running Ansible; see [Cómo desplegarlo](../website/src/content/docs/guides/desplegar.mdx) for the full explanation of why this isn't just set in `ansible.cfg`.
+
 Prefer the root `Makefile` (`make deploy`, `make deploy-<service>`, `make ping`, ...). Run Ansible directly when you need more control:
 
 ```bash
