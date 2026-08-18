@@ -36,6 +36,7 @@ source "${ROOT_DIR}/scripts/generation/lib.sh"
 
 echo "Generating Cloudflare Tunnel ingress configuration..."
 
+# shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 TRAEFIK_ADDR="$(yq -r --argjson resolved "$(resolve_addresses "${HOSTS_SOURCE}")" -n '$resolved.traefik')"
 
 if [[ -z "${TRAEFIK_ADDR}" || "${TRAEFIK_ADDR}" == "null" || "${TRAEFIK_ADDR}" == "TBD" ]]; then
