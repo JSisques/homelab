@@ -195,7 +195,7 @@ services:
 
     traefik:
       enabled: true
-      port: 3000
+      port: 80
 
     uptime:
       enabled: true
@@ -204,7 +204,7 @@ services:
     # by blackbox_exporter instead, see services/blackbox-exporter/README.md.
     blackbox:
       enabled: true
-      port: 3000
+      port: 80
       scheme: http
       module: http_2xx
 
@@ -221,14 +221,14 @@ services:
 
     traefik:
       enabled: true
-      port: 3000
+      port: 80
 
     uptime:
       enabled: true
 
     blackbox:
       enabled: true
-      port: 3000
+      port: 80
       scheme: http
       module: http_2xx
 

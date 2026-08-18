@@ -58,7 +58,7 @@ Resolutor DNS de toda la red y bloqueador de anuncios/trackers para clientes LAN
 
 - Sin configuración como código: el primer arranque exige un asistente manual (credenciales de admin, DNS upstream, interfaces de escucha) en el puerto `3000`, **en cada instancia por separado**.
 - Tras el asistente, hay que añadir a mano la reescritura DNS `*.home.arpa → 192.168.0.204` para que Traefik funcione (ver nota de sincronización más abajo).
-- Estado persistente en los volúmenes `adguard-work`/`adguard-conf` de cada LXC — no comparten datos entre sí. Puertos: `53/tcp+udp` (DNS), `3000/tcp` (panel de administración). Solo interno, nunca a través del Cloudflare Tunnel.
+- Estado persistente en los volúmenes `adguard-work`/`adguard-conf` de cada LXC — no comparten datos entre sí. Puertos: `53/tcp+udp` (DNS), `3000/tcp` (solo el asistente de primer arranque), `80/tcp` (panel de administración una vez configurado). Solo interno, nunca a través del Cloudflare Tunnel.
 
 ### Sincronización (`adguard-home-sync`)
 

@@ -129,11 +129,11 @@ http:
     adguard-home-1:
       loadBalancer:
         servers:
-          - url: "http://192.168.0.201:3000"
+          - url: "http://192.168.0.201:80"
     adguard-home-2:
       loadBalancer:
         servers:
-          - url: "http://192.168.0.202:3000"
+          - url: "http://192.168.0.202:80"
     it-tools:
       loadBalancer:
         servers:
