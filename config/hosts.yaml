@@ -20,7 +20,11 @@ hosts:
   proxmox:
     type: server
     platform: proxmox
-    address: TBD  # LAN IP not confirmed yet
+    # Proxmox API node_name (hostname). VMs used to default to "pve" in the
+    # generator and ignore terraform.tfvars — this is the SSOT for both LXC
+    # and VM node_name.
+    node: proxmox
+    octet: 157
     role:
       - hypervisor
 

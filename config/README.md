@@ -158,8 +158,9 @@ hosts:
 
   proxmox:
     type: server
-    address: TBD  # LAN IP not confirmed yet
     platform: proxmox
+    node: proxmox
+    octet: 157
 
   nas:
     type: physical
@@ -214,9 +215,13 @@ This means changing your home network's subnet — `192.168.0.0/24` today, `10.0
 
 Terraform always sets a pinned Proxmox ID (`vm_id`) so a lost state file cannot spawn a second CT/VM with "the next free ID". The ID is `vmid:` if set, otherwise `octet` — so `it-tools` at `octet: 214` is CT `214` at `192.168.0.214`. Set `vmid:` only when the Proxmox ID must differ from the last IP octet (for example when adopting a guest that was created by hand with another ID).
 
+### Proxmox node name
+
+LXCs and VMs are created on the node named by the hypervisor host's `node:` field (falling back to that host's key). Today that host is `proxmox` with `node: proxmox`. A per-VM `proxmox_node:` override exists for a future multi-node cluster; do not set `proxmox_node` in `terraform.tfvars`.
+
 This information is used to generate:
 
-* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`), plus `network_gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, VMIDs, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
+* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes` / `proxmox_node`), plus `gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, VMIDs, node name, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
 * **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.0.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
 * Monitoring targets, Node Exporter configuration, Traefik routes, and blackbox_exporter targets — every generator in `scripts/generation/` resolves addresses the same way, via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`.
 

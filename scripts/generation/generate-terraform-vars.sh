@@ -81,7 +81,15 @@ yq --argjson resolved "${RESOLVED}" --argjson categories "${CATEGORIES}" '
 
   .hosts as $hosts
   | .network as $net
+  | (
+      $hosts
+      | to_entries
+      | map(select((.value.role // []) | index("hypervisor")))
+      | first
+    ) as $hv
+  | ($hv.value.node // $hv.key // "proxmox") as $default_node
   | {
+      proxmox_node: $default_node,
       lxc_network: (
         $hosts
         | to_entries
@@ -104,7 +112,7 @@ yq --argjson resolved "${RESOLVED}" --argjson categories "${CATEGORIES}" '
         | map(select(.value.type == "vm" and $resolved[.key] != "TBD"))
         | map({
             (.key): {
-              proxmox_node: (.value.proxmox_node // "pve"),
+              proxmox_node: (.value.proxmox_node // $default_node),
               vm_id: (.value.vmid // .value.octet),
               cpu: .value.cpu,
               memory: .value.memory,

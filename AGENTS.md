@@ -10,7 +10,7 @@ Communicate with the human in Spanish. Code, comments, documentation, commit mes
 
 | File | Owns |
 | ---- | ---- |
-| `config/hosts.yaml` | Networks, machines, addresses (`octet` / `address`), Proxmox VMID (`octet`, or `vmid:` override), LXC/VM sizing, `role` |
+| `config/hosts.yaml` | Networks, machines, addresses (`octet` / `address`), Proxmox node name (`node:` on the hypervisor), VMID (`octet`, or `vmid:` override), LXC/VM sizing, `role` |
 | `config/services.yaml` | The service catalog: name, `category`, `tier`, URL, Homepage, Traefik, Prometheus, blackbox, Uptime Kuma |
 
 A service does not exist until it has an entry in `config/services.yaml`. A machine does not exist until it has an entry in `config/hosts.yaml`. Do not invent IPs, hostnames, ports, tiers, or URLs in Ansible, Terraform, Compose, Kubernetes, or docs — change `config/` and regenerate.

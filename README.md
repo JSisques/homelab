@@ -226,7 +226,7 @@ This is the **only** place addresses, network config, and sizing are written dow
 * `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`, plus `gateway`/`network_bridge`/`network_mask` — all auto-loaded by Terraform, no more copy-pasting IPs or gateway into `terraform.tfvars`).
 * `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together — plus an `all.vars.lan_cidr` that roles like `wireguard` consume instead of hardcoding the LAN subnet).
 
-A host with `address: TBD` (like `proxmox` today) is skipped by both, with a warning, instead of generating a broken config.
+A host with `address: TBD` is skipped by both, with a warning, instead of generating a broken config.
 
 ### Services
 
