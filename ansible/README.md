@@ -79,6 +79,7 @@ No secret is ever committed. Roles that need one read it from a variable with an
 | `n8n` | `n8n_postgres_password` | Deploys anyway with `changeme` |
 | `cookidoo-mcp` | `cookidoo_mcp_email` / `cookidoo_mcp_password` | Refuses to run (`assert`) |
 | `cloudflared` | `cloudflared_credentials_json` | Refuses to run (`assert`) |
+| `adguard-home` | `adguard_home_username` / `adguard_home_password` (from `ADGUARD_SYNC_ORIGIN_*` / `ADGUARD_SYNC_REPLICA_*`) | Refuses the first seed (`assert`); later deploys leave the existing YAML alone |
 | `monitoring` | `monitoring_alertmanager_telegram_bot_token` / `_chat_id` | Deploys anyway; alerts fire into a `null` receiver |
 
 Provide real values via Ansible Vault, or as `-e`/`--extra-vars` from CI secrets — see each role's README.

@@ -38,6 +38,10 @@ jobs:
       - name: Ansible Lint
         run: ansible-lint .
 
+      - name: Test AdGuard Home seed config
+        working-directory: .
+        run: ./scripts/validation/test-adguard-home-config.sh
+
   syntax:
     name: Ansible Syntax Check
     runs-on: ubuntu-latest

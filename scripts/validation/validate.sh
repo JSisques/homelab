@@ -20,6 +20,9 @@ require() {
     return 0
 }
 
+section "AdGuard Home seed config"
+./scripts/validation/test-adguard-home-config.sh || FAILED=1
+
 section "YAML (yamllint)"
 if require yamllint; then
     yamllint . || FAILED=1

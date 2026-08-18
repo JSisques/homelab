@@ -1,2 +1,10 @@
 ---
 adguard_home_app_dir: /opt/adguard-home
+
+# Overridden per playbook from ADGUARD_SYNC_ORIGIN_* / ADGUARD_SYNC_REPLICA_*.
+adguard_home_username: ""
+adguard_home_password: ""
+
+# Internal-tier wildcard. The answer is Traefik's LAN address from inventory.
+adguard_home_rewrite_domain: "*.home.arpa"
+adguard_home_rewrite_answer: "{{ hostvars.traefik.ansible_host | default('') }}"

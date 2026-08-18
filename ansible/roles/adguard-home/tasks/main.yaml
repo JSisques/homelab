@@ -5,6 +5,75 @@
     state: directory
     mode: "0755"
 
+- name: Create AdGuard Home conf directory
+  ansible.builtin.file:
+    path: "{{ adguard_home_app_dir }}/conf"
+    state: directory
+    mode: "0755"
+
+- name: Check whether AdGuard Home config already exists
+  ansible.builtin.stat:
+    path: "{{ adguard_home_app_dir }}/conf/AdGuardHome.yaml"
+  register: adguard_home_conf
+
+- name: Assert admin credentials are provided for first seed
+  ansible.builtin.assert:
+    that:
+      - adguard_home_username | length > 0
+      - adguard_home_password | length > 0
+    fail_msg: >-
+      adguard_home_username / adguard_home_password are not set. Provide the
+      ADGUARD_SYNC_ORIGIN_* (primary) or ADGUARD_SYNC_REPLICA_* (secondary)
+      values via extra-vars before the first deploy (see
+      ansible/roles/adguard-home/README.md).
+  when: not adguard_home_conf.stat.exists
+
+- name: Assert Traefik address is available for the home.arpa rewrite
+  ansible.builtin.assert:
+    that:
+      - adguard_home_rewrite_answer | length > 0
+    fail_msg: >-
+      adguard_home_rewrite_answer is empty. Traefik must exist in the generated
+      inventory (config/hosts.yaml) so *.home.arpa can rewrite to its LAN IP.
+  when: not adguard_home_conf.stat.exists
+
+- name: Install python3-bcrypt to hash the admin password
+  ansible.builtin.apt:
+    name: python3-bcrypt
+    state: present
+  when: not adguard_home_conf.stat.exists
+
+- name: Hash AdGuard Home admin password
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import bcrypt
+        import sys
+        password = sys.stdin.read().rstrip("\n").encode("utf-8")
+        hashed = bcrypt.hashpw(password, bcrypt.gensalt(rounds=10))
+        print(hashed.decode("ascii"))
+    stdin: "{{ adguard_home_password }}"
+  register: adguard_home_password_hash
+  changed_when: false
+  no_log: true
+  when: not adguard_home_conf.stat.exists
+
+- name: Remember bcrypt hash for the seed template
+  ansible.builtin.set_fact:
+    adguard_home_password_bcrypt: "{{ adguard_home_password_hash.stdout }}"
+  no_log: true
+  when: not adguard_home_conf.stat.exists
+
+- name: Seed AdGuard Home configuration
+  ansible.builtin.template:
+    src: AdGuardHome.yaml.j2
+    dest: "{{ adguard_home_app_dir }}/conf/AdGuardHome.yaml"
+    mode: "0600"
+    force: false
+  when: not adguard_home_conf.stat.exists
+
 - name: Deploy AdGuard Home Docker Compose file
   ansible.builtin.copy:
     src: "{{ services_dir }}/adguard-home/compose.yaml"

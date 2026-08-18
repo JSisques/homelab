@@ -21,7 +21,7 @@ services/adguard-home-sync/
 
 Runs on the `adguard-home-2` LXC (see `ansible/playbooks/adguard-home-sync.yaml`), pulling from `adguard-home-1` over the LAN and pushing to its own local instance.
 
-Both AdGuard Home instances must already have admin credentials set through their own first-run setup wizard (see `services/adguard-home/README.md`) **before** this can authenticate — those credentials aren't config-as-code and can't be created by Ansible. Pass them in as:
+Both AdGuard Home instances must already be seeded by `ansible/roles/adguard-home` (same `ADGUARD_SYNC_*` credentials). Pass them in as:
 
 ```bash
 export ADGUARD_SYNC_ORIGIN_USERNAME="..."   # adguard-home-1's admin user

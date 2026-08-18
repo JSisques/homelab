@@ -1,0 +1,21 @@
+# Seeded once by Ansible. AdGuard Home rewrites this file at runtime;
+# subsequent deploys leave an existing copy alone (force: false).
+http:
+  address: 0.0.0.0:80
+users:
+  - name: "{{ adguard_home_username }}"
+    password: '{{ adguard_home_password_bcrypt }}'
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  bootstrap_dns:
+    - 1.1.1.1
+    - 8.8.8.8
+  upstream_dns:
+    - https://dns.cloudflare.com/dns-query
+    - https://dns.google/dns-query
+filtering:
+  rewrites:
+    - domain: "{{ adguard_home_rewrite_domain }}"
+      answer: "{{ adguard_home_rewrite_answer }}"

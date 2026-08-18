@@ -40,6 +40,9 @@ crash.*.log
 # Cloudflare Tunnel credentials (never commit)
 **/credentials.json
 
+# AdGuard Home runtime config (seeded on the host, then rewritten by AdGuard)
+services/adguard-home/conf/
+
 # Kubeconfigs fetched from K3s (never commit)
 .kube/
 *kubeconfig*.yaml
