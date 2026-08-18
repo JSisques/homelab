@@ -8,10 +8,11 @@ downloads_app_dir: /opt/downloads
 # Unlike Jellyfin's read-only media mounts, these must be writable: Sonarr/
 # Radarr import into the two Multimedia exports, and everything downloads
 # into the Downloads export.
-_nas: "{{ hostvars['nas'].ansible_host }}"
-downloads_nas_export_downloads: "{{ _nas }}:/export/Downloads"
-downloads_nas_export_peliculas: "{{ _nas }}:/export/Multimedia/peliculas"
-downloads_nas_export_series: "{{ _nas }}:/export/Multimedia/series"
+downloads_nas: "{{ hostvars['nas'].ansible_host }}"
+downloads_nas_export_downloads: "{{ downloads_nas }}:/export/Downloads"
+downloads_nas_export_peliculas: "{{ downloads_nas
+  }}:/export/Multimedia/peliculas"
+downloads_nas_export_series: "{{ downloads_nas }}:/export/Multimedia/series"
 
 downloads_mount_path: /mnt/nas/downloads
 downloads_media_mount_path: /mnt/nas/multimedia
