@@ -37,11 +37,11 @@ A host `role` value must match a `services.yaml` key when that role is a service
 
 | Tier | Domain | Exposure |
 | ---- | ------ | -------- |
-| `internal` | `*.home.arpa` | LAN/VPN only. No public DNS, no Cloudflare route. |
-| `personal` | `*.jsisques.net` | Cloudflare Tunnel. Needs a matching `ingress` in `services/cloudflared/config.yml`. |
-| `public` | `*.sisqueslabs.com` | Cloudflare Tunnel. Same `ingress` requirement. |
+| `internal` | none | LAN only, plain `IP:port` in `url`, linked from Homepage. Never through Traefik or Cloudflare. |
+| `personal` | `*.jsisques.net` | `Cloudflared → Traefik → backend`. Needs a `traefik: {enabled: true, port: <n>}` block; `services/cloudflared/config.yml` is generated, not hand-edited. |
+| `public` | `*.sisqueslabs.com` | Same as `personal`, different domain. |
 
-Default to `internal`.
+Default to `internal`. A service that's `internal` day-to-day but also needs a remote-access alias (e.g. Jellyfin) adds an `external:` block instead of changing its own tier — see `config/README.md#external`.
 
 ## Generated files — never edit
 
@@ -55,6 +55,7 @@ After any `config/` change, run `make generate` then `make validate`.
 | `generate-prometheus.sh` | `services/prometheus/prometheus.yml` |
 | `generate-blackbox.sh` | `services/prometheus/blackbox-targets.yml` |
 | `generate-traefik.sh` | `services/traefik/dynamic/routes.yml` |
+| `generate-cloudflared.sh` | `services/cloudflared/config.yml` |
 
 Do not hand-edit those outputs. Hand-authored files next to them (e.g. `services/prometheus/alerts.yml`, Compose files, Ansible roles) are fine.
 

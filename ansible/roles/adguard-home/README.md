@@ -9,9 +9,11 @@ Used twice, unmodified, against two independent LXCs — `adguard-home-1` (prima
 ## Responsibilities
 
 - Create the application directory (`adguard_home_app_dir`, default `/opt/adguard-home`)
-- Seed `conf/AdGuardHome.yaml` **once** (`force: false`) so the first-run wizard is skipped: admin user, UI on `:80`, and a DNS rewrite of `*.home.arpa` to Traefik's LAN address from the generated inventory
+- Seed `conf/AdGuardHome.yaml` **once** (`force: false`) so the first-run wizard is skipped: admin user and UI on `:80`
 - Deploy `services/adguard-home/compose.yaml` (bind-mounts `./conf` into the container)
 - Start the stack with `community.docker.docker_compose_v2`
+
+Plain DNS resolver + ad-blocking, nothing else — there is no internal domain to rewrite. `internal` services are reached by LAN `IP:port` directly (see `config/README.md#tier`); `personal`/`public` services resolve publicly through Cloudflare DNS, not AdGuard.
 
 AdGuard Home rewrites its YAML at runtime. After the first seed, this role does not overwrite it — further filter/client changes belong in the UI (and then `adguard-home-sync`).
 
@@ -20,8 +22,6 @@ AdGuard Home rewrites its YAML at runtime. After the first seed, this role does 
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `adguard_home_username` / `adguard_home_password` | empty | Required on the first seed. Playbooks map these from `adguard_sync_origin_*` (primary) and `adguard_sync_replica_*` (secondary). |
-| `adguard_home_rewrite_domain` | `*.home.arpa` | Internal-tier wildcard |
-| `adguard_home_rewrite_answer` | `hostvars['traefik'].ansible_host` | Traefik's LAN IP from `config/hosts.yaml` |
 
 ## Deployment
 

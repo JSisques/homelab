@@ -121,7 +121,7 @@ The role should be safe to run repeatedly. Running it again should only modify t
 
 ## Monitoring
 
-- Availability: Uptime Kuma + blackbox_exporter against the console (`https://rustfs.home.arpa`) — see `config/services.yaml`.
+- Availability: Uptime Kuma + blackbox_exporter against the console (`http://192.168.0.208:9001`) — see `config/services.yaml`.
 - Host-level: Node Exporter + Promtail, applied automatically via this role's `meta/main.yml` dependencies.
 
 ## Related Components

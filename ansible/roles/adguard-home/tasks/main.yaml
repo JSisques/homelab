@@ -28,15 +28,6 @@
       ansible/roles/adguard-home/README.md).
   when: not adguard_home_conf.stat.exists
 
-- name: Assert Traefik address is available for the home.arpa rewrite
-  ansible.builtin.assert:
-    that:
-      - adguard_home_rewrite_answer | length > 0
-    fail_msg: >-
-      adguard_home_rewrite_answer is empty. Traefik must exist in the generated
-      inventory (config/hosts.yaml) so *.home.arpa can rewrite to its LAN IP.
-  when: not adguard_home_conf.stat.exists
-
 - name: Install python3-bcrypt to hash the admin password
   ansible.builtin.apt:
     name: python3-bcrypt

@@ -94,9 +94,10 @@ Networking:
     icon: adguard-home.png
     description: Secondary DNS resolver, kept in sync from the primary
   Traefik:
-    href: http://192.168.0.204:8082
+    href: http://192.168.0.204:8080
     icon: traefik.png
-    description: Internal reverse proxy (unused while LAN is IP:port)
+    description: Reverse proxy for Cloudflared -> Traefik -> backend (personal/public
+      tiers only)
 Utilities:
   IT-Tools:
     href: http://192.168.0.214:8080

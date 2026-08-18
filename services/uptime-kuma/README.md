@@ -27,10 +27,10 @@ Unlike Homepage and Prometheus, Uptime Kuma has no declarative configuration fil
 
 ## Networking
 
-Uptime Kuma is exposed through the homelab reverse proxy:
+Uptime Kuma is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://uptime.home.arpa
+http://192.168.0.210:3001
 ```
 
 The internal Docker port is `3001`.

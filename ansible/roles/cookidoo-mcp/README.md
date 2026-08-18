@@ -122,7 +122,7 @@ Updating cookidoo-mcp is done by changing the image tag in `services/cookidoo-mc
 
 ## Monitoring
 
-- Availability: Uptime Kuma, HTTP monitor against `GET https://cookidoo-mcp.home.arpa/api/health` (see `services/cookidoo-mcp/README.md` for why the root path can't be used).
+- Availability: Uptime Kuma, HTTP monitor against `GET http://192.168.0.212:3000/api/health` (see `services/cookidoo-mcp/README.md` for why the root path can't be used).
 - Traces/metrics/logs: pushed via OTLP to the homelab OTel Collector — see `services/otel-collector/`.
 - Host-level: Node Exporter + Promtail, applied automatically via this role's `meta/main.yml` dependencies.
 

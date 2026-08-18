@@ -118,19 +118,16 @@ as the template for local configuration.
 
 ## Networking
 
-n8n is exposed through the homelab reverse proxy:
+n8n is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://n8n.home.arpa
+http://192.168.0.211:5678
 ```
 
 Traffic flows through:
 
 ```text
 Client
-  │
-  ▼
-Reverse Proxy
   │
   ▼
 n8n LXC
@@ -148,14 +145,12 @@ The internal application port is:
 5678
 ```
 
-The reverse proxy is responsible for TLS termination.
-
 ## Webhooks
 
 n8n workflows can expose webhooks through:
 
 ```text
-https://n8n.home.arpa/
+http://192.168.0.211:5678/
 ```
 
 The `WEBHOOK_URL` environment variable must match the externally accessible URL.
@@ -374,10 +369,7 @@ This directory manages:
                    n8n              PostgreSQL
                     │
                     ▼
-              Reverse Proxy
-                    │
-                    ▼
-             n8n.home.arpa
+             192.168.0.211:5678 (LAN IP:port, no Traefik)
 ```
 
 The goal is for the n8n deployment to be reproducible from the repository while keeping secrets and persistent application data outside Git.

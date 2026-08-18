@@ -1,12 +1,16 @@
 # Traefik
 
-Internal reverse proxy for every `tier: internal` service — the piece that makes `https://grafana.home.arpa`, `https://n8n.home.arpa`, etc. (already the `url:` in `config/services.yaml`, and already what those apps' own compose files assume — see e.g. `GF_SERVER_ROOT_URL` in `services/grafana/compose.yaml`) actually resolve to something, instead of nowhere.
+The single reverse proxy for everything Cloudflare Tunnel forwards in — `tier: personal`/`tier: public` services (`*.jsisques.net`, `*.sisqueslabs.com`), including a service's `external:` alias (see `config/README.md#external`). `tier: internal` services never go through Traefik: they're plain LAN `IP:port`, linked straight from Homepage.
+
+```text
+Cloudflared -> Traefik -> backend (LXC/VM/K3s NodePort, by IP:port)
+```
 
 ## Responsibilities
 
-- Terminate HTTPS for `*.home.arpa` (self-signed — see below) and redirect plain HTTP to it.
+- Receive plain HTTP on `:80` from Cloudflared (`services/cloudflared/`) — Cloudflare Tunnel already encrypts the public leg up to the cloudflared LXC, so this internal LAN hop doesn't need its own TLS.
 - Route each hostname to its backend by LAN IP:port (`dynamic/routes.yml`) — Traefik runs on its own LXC, so it can't discover other services' containers via Docker labels the way a same-host Traefik setup normally would. Every backend is listed explicitly.
-- Expose its own dashboard at `https://traefik.home.arpa` and Prometheus metrics on `:8082`.
+- Expose its own dashboard and Prometheus metrics like any other internal-tier service — by IP:port, no domain (`api.insecure: true` on `:8080`, metrics on `:8082`).
 
 ## Directory Structure
 
@@ -33,22 +37,21 @@ scripts/generation/generate-traefik.sh
 services/traefik/dynamic/routes.yml
 ```
 
-A service gets a router + backend automatically once it declares a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml` (see grafana, prometheus, homepage, uptime-kuma, it-tools, n8n, adguard-home-1/adguard-home-2 for examples). The router's hostname comes from that service's own `url:`; the backend address comes from `config/hosts.yaml` — a host whose key matches the service name directly, or (for services like Grafana/Prometheus that share the `monitoring` host rather than getting one of their own) whose `role` list includes the service name.
+A service gets a router + backend automatically once it declares a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml` — either at the top level (its own `tier: personal`/`tier: public`, e.g. Blog, Sisques Labs Landing, Days Off) or nested under `external:` (a service that's `tier: internal` day-to-day but also has a remote-access alias, e.g. Jellyfin). The router's hostname comes from that exposure's `url:`; the backend address comes from `config/hosts.yaml` — a host whose key matches the service name directly, or (for services that share a host rather than getting one of their own) whose `role` list includes the service name.
 
-## `*.home.arpa` rewrite
-
-Ansible seeds AdGuard Home with a DNS rewrite of `*.home.arpa` to Traefik's LAN address (from `config/hosts.yaml`, not a hardcoded octet). After that, every hostname in `dynamic/routes.yml` resolves for clients using either AdGuard instance. `adguard-home-sync` keeps the rewrite (and later UI changes) copied to `adguard-home-2`. See `ansible/roles/adguard-home/README.md`.
+`services/cloudflared/config.yml` is generated from the same catalog (`generate-cloudflared.sh`) and always points every hostname at Traefik's own LAN address — never at the backend directly.
 
 ## TLS
 
-Routers request TLS with an empty `tls: {}`, which makes Traefik hand out its own auto-generated self-signed certificate — zero config, but every browser will warn on first visit. That's expected for now. Trust the cert manually per device, or replace this with a real internal CA later; either way it's a `dynamic/routes.yml`-level change, not a redesign.
+None, by design, on the Cloudflared → Traefik hop: Cloudflare Tunnel terminates and encrypts the public side, so plain HTTP on `:80` between cloudflared and Traefik (both on the trusted LAN) adds no real risk and avoids self-signed-cert / trust-store hassle entirely.
 
-## Adding a new internal service
+## Adding a new personal/public service
 
-1. Add a `traefik: {enabled: true, port: <n>}` block to that service's entry in `config/services.yaml` (its `url:` and the matching entry/role in `config/hosts.yaml` must already exist).
-2. Run `./scripts/generation/generate-traefik.sh` (or `make generate`) and commit the regenerated `dynamic/routes.yml`.
-3. Deploy — Traefik picks up the new file automatically (`providers.file.watch: true` in `traefik.yml`, no restart needed).
-4. Make sure the hostname is covered by the `*.home.arpa` AdGuard rewrite above (it already is, for anything under `.home.arpa`).
+1. Set `tier: personal` or `tier: public` on the service in `config/services.yaml` (or add an `external:` block if it stays `tier: internal` for LAN access), with a `traefik: {enabled: true, port: <n>}` block and its `url:`.
+2. Make sure the backend host/role is resolvable in `config/hosts.yaml`.
+3. Run `make generate` (regenerates both `dynamic/routes.yml` and `services/cloudflared/config.yml`) and commit.
+4. Add the matching Cloudflare DNS CNAME record — see `services/cloudflared/README.md`.
+5. Deploy — Traefik picks up the new file automatically (`providers.file.watch: true` in `traefik.yml`, no restart needed).
 
 ## Deployment
 

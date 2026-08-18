@@ -10,7 +10,7 @@ Terraform creates the LXC (`terraform/proxmox/lxc.tf`). This role installs Docke
 - Deploy `services/traefik/{compose.yaml,traefik.yml,dynamic/}` (the single source of truth for the application configuration)
 - Start the stack with `community.docker.docker_compose_v2`
 
-Traefik itself needs no secrets. `*.home.arpa` resolution is seeded by the AdGuard Home role — see `ansible/roles/adguard-home/README.md`.
+Traefik itself needs no secrets. It only fronts `personal`/`public` tier traffic forwarded by Cloudflared — see `services/traefik/README.md`.
 
 ## Deployment
 

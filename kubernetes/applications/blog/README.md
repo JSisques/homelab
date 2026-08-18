@@ -14,7 +14,7 @@ No persistent state, no secrets.
   (`services/cloudflared/config.yml`) forwarding to the k3s-server node on
   `NodePort 30083`, see `service.yaml`.
 
-There is no LAN/`*.home.arpa` route: `tier: personal` in
+There is no LAN `IP:port` route: `tier: personal` in
 `config/services.yaml` means the only intended entry point is the tunnel,
 same reasoning as the `public` tier used by sisqueslabs-landing/daysoff,
 just under the `jsisques.net` domain instead of `sisqueslabs.com`.

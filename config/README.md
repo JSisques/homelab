@@ -50,7 +50,7 @@ services:
     name: Grafana
     category: Monitoring
     tier: internal
-    url: https://grafana.home.arpa
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
@@ -84,7 +84,7 @@ They can be consumed by multiple systems.
 
 ### Tier
 
-`tier` declares which access tier the service belongs to. It determines the domain used in `url` and whether the service is expected to be reachable outside the LAN.
+`tier` declares which access tier the service belongs to. It determines whether the service has a domain at all, and whether it's routed through Traefik/Cloudflare Tunnel.
 
 ```yaml
 tier: internal
@@ -92,13 +92,32 @@ tier: internal
 
 Valid values:
 
-* `internal` — LAN/VPN only, served under `*.home.arpa`, never given a public DNS record or Cloudflare route.
-* `personal` — personal-facing service, served under `*.jsisques.net`, exposed through Cloudflare Tunnel.
-* `public` — public homelab app, served under `*.sisqueslabs.com`, exposed through Cloudflare Tunnel.
+* `internal` — no domain. `url` is a LAN `IP:port`, linked directly from Homepage. Never routed through Traefik, never given a Cloudflare Tunnel entry. This is the default for everything.
+* `personal` — served under `*.jsisques.net`, exposed via Cloudflare Tunnel → Traefik → backend.
+* `public` — served under `*.sisqueslabs.com`, exposed via Cloudflare Tunnel → Traefik → backend.
 
-Both `personal` and `public` services must get a matching `ingress` entry in `services/cloudflared/config.yml`; `internal` services must not.
+`personal` and `public` services need a `traefik: {enabled: true, port: <n>}` block (the backend port Traefik forwards to) — `generate-traefik.sh` and `generate-cloudflared.sh` both key off it. `internal` services must not set `traefik:` at all.
 
 Default to `internal` unless a service has a deliberate reason to be reachable from outside the home network.
+
+#### `external:` — a service that's internal but also has a public alias
+
+Some services are used day-to-day on the LAN (`tier: internal`, plain `IP:port`) but also need a remote-access alias — e.g. Jellyfin, reachable at `192.168.0.215:8096` on the LAN and at `https://jellyfin.jsisques.net` from anywhere. Rather than change the service's own `tier`, it gets an `external:` block with the same shape as a top-level `personal`/`public` service:
+
+```yaml
+jellyfin:
+  tier: internal
+  url: http://192.168.0.215:8096
+
+  external:
+    tier: personal
+    url: https://jellyfin.jsisques.net
+    traefik:
+      enabled: true
+      port: 8096
+```
+
+`generate-traefik.sh` and `generate-cloudflared.sh` treat `external:` as a second exposure of the same backend (resolved via the same host key in `config/hosts.yaml`), alongside whatever the service's own top-level `tier` gives it. A plain `personal`/`public` service does not need an `external:` block — it's already exposed via its top-level `tier`.
 
 ### Homepage
 

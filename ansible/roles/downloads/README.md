@@ -102,7 +102,7 @@ downloads role
              ├── pyload                         :8000  (direct HTTP/FTP links)
              └── metube                         :8081  (yt-dlp video links)
                       │
-                      └── Traefik → <service>.home.arpa (LAN only, no Cloudflare route)
+                      └── reached by LAN IP:port directly (no Traefik, no Cloudflare route)
 ```
 
 ## Related

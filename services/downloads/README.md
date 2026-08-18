@@ -108,16 +108,16 @@ gluetun needs `/dev/net/tun` and `NET_ADMIN` to bring up the WireGuard interface
 
 ## Networking
 
-Every service in this stack is `tier: internal` — `*.home.arpa` through Traefik, LAN/VPN only. None of it is routed through the Cloudflare Tunnel: a torrent client and download automation have no business being reachable from the public internet.
+Every service in this stack is `tier: internal` — reached directly by LAN `IP:port`, no Traefik. None of it is routed through the Cloudflare Tunnel: a torrent client and download automation have no business being reachable from the public internet.
 
-| Service     | URL                          | Port  |
-| ----------- | ----------------------------- | ----- |
-| qBittorrent | `qbittorrent.home.arpa`       | 8080  |
-| Prowlarr    | `prowlarr.home.arpa`          | 9696  |
-| Sonarr      | `sonarr.home.arpa`            | 8989  |
-| Radarr      | `radarr.home.arpa`            | 7878  |
-| pyLoad      | `pyload.home.arpa`            | 8000  |
-| MeTube      | `metube.home.arpa`            | 8081  |
+| Service     | LAN IP:port            |
+| ----------- | ----------------------- |
+| qBittorrent | `192.168.0.216:8080`    |
+| Prowlarr    | `192.168.0.216:9696`    |
+| Sonarr      | `192.168.0.216:8989`    |
+| Radarr      | `192.168.0.216:7878`    |
+| pyLoad      | `192.168.0.216:8000`    |
+| MeTube      | `192.168.0.216:8081`    |
 
 ## Resource sizing
 

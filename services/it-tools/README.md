@@ -14,8 +14,8 @@ it-tools
 IP:
 192.168.0.214
 
-Reverse proxy:
-it-tools.home.arpa
+LAN URL (no reverse proxy):
+http://192.168.0.214:8080
 
 ## Infrastructure
 

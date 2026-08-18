@@ -23,6 +23,7 @@ scripts/
     ├── generate-homepage.sh
     ├── generate-prometheus.sh
     ├── generate-traefik.sh
+    ├── generate-cloudflared.sh
     ├── generate-inventory.sh
     └── generate-terraform-vars.sh
 ```

@@ -18,7 +18,7 @@ services/adguard-home/
 └── compose.yaml
 ```
 
-`conf/AdGuardHome.yaml` is **not** in this directory. Ansible seeds it on the host once (see `ansible/roles/adguard-home/`) so the first-run wizard is skipped: admin credentials from `ADGUARD_SYNC_*`, UI on port `80`, and a DNS rewrite of `*.home.arpa` to Traefik. After that, AdGuard owns the file and later deploys leave it alone.
+`conf/AdGuardHome.yaml` is **not** in this directory. Ansible seeds it on the host once (see `ansible/roles/adguard-home/`) so the first-run wizard is skipped: admin credentials from `ADGUARD_SYNC_*` and UI on port `80`. After that, AdGuard owns the file and later deploys leave it alone.
 
 ## Configuration
 
