@@ -20,6 +20,9 @@ require() {
     return 0
 }
 
+section "AdGuard Home seed config"
+./scripts/validation/test-adguard-home-config.sh || FAILED=1
+
 section "YAML (yamllint)"
 if require yamllint; then
     yamllint . || FAILED=1
@@ -54,12 +57,18 @@ if require yq; then
     chmod +x scripts/generation/*.sh
     ./scripts/generation/generate-homepage.sh >/dev/null
     ./scripts/generation/generate-prometheus.sh >/dev/null
+    ./scripts/generation/generate-blackbox.sh >/dev/null
+    ./scripts/generation/generate-traefik.sh >/dev/null
+    ./scripts/generation/generate-cloudflared.sh >/dev/null
     ./scripts/generation/generate-inventory.sh >/dev/null
     ./scripts/generation/generate-terraform-vars.sh >/dev/null
 
     if ! git diff --exit-code -- \
         services/homepage/config/services.yaml \
         services/prometheus/prometheus.yml \
+        services/prometheus/blackbox-targets.yml \
+        services/traefik/dynamic/routes.yml \
+        services/cloudflared/config.yml \
         ansible/inventory/hosts.yml \
         terraform/proxmox/hosts.auto.tfvars.json; then
         echo "Generated files are out of date with config/. Review the diff above, then commit it."

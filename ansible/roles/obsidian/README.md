@@ -72,7 +72,7 @@ obsidian role
         (headless Obsidian + MCP bridge, :4000)
              │
              ▼
-        Traefik → obsidian.home.arpa
+        192.168.0.213:4000 (LAN IP:port, no Traefik)
 ```
 
 ## Related

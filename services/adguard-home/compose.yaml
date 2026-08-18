@@ -11,9 +11,8 @@ services:
       - "80:80/tcp"
 
     volumes:
+      - ./conf:/opt/adguardhome/conf
       - adguard-work:/opt/adguardhome/work
-      - adguard-conf:/opt/adguardhome/conf
 
 volumes:
   adguard-work:
-  adguard-conf:

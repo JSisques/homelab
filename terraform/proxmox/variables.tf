@@ -1,5 +1,5 @@
 variable "proxmox_endpoint" {
-  description = "Proxmox API endpoint, e.g. https://proxmox.home.arpa:8006/"
+  description = "Proxmox API endpoint, e.g. https://192.168.0.157:8006/"
   type        = string
 }
 
@@ -73,6 +73,7 @@ variable "vm_nodes" {
 
   type = map(object({
     proxmox_node = string
+    vm_id        = number
     cpu          = number
     memory       = number
     disk         = number
@@ -88,6 +89,7 @@ variable "lxc_network" {
 
   type = map(object({
     ip     = string
+    vm_id  = number
     cores  = number
     memory = number
     disk   = number

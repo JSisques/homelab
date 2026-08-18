@@ -13,11 +13,14 @@
 #     https://releases.rancher.com/server-charts/stable
 #   helm show values rancher-stable/rancher --version <targetRevision>
 #
-# `tls: external` + `ingress.enabled: false` + `service.type: NodePort`
-# is the documented setup for "TLS terminates on an external L7 load
-# balancer" (here: the Traefik LXC, services/traefik/) with no
-# in-cluster ingress controller — same reasoning as the NodePort Service
-# in kubernetes/applications/daysoff/service.yaml.
+# Rancher is `tier: internal` (config/services.yaml) — plain LAN IP:NodePort,
+# not routed through Traefik/Cloudflared (that's `personal`/`public` only,
+# see config/README.md#tier). `tls: external` was written assuming Traefik
+# terminated TLS in front of every service, which is no longer true for
+# `internal` tier — re-check this against the live chart (still unverified,
+# per the header above) before the first real sync: either switch to
+# `tls: rancher` (self-signed, Rancher terminates its own TLS) or accept
+# plain HTTP like every other internal-tier service's `url:`.
 #
 # No password is set below. Rancher generates a random bootstrap
 # password on first boot; retrieve it with:
@@ -40,7 +43,7 @@ spec:
     helm:
       releaseName: rancher
       values: |
-        hostname: rancher.home.arpa
+        hostname: 192.168.0.207
         replicas: 1
         ingress:
           enabled: false

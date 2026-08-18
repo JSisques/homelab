@@ -83,7 +83,7 @@ Git repository
 - Ansible should configure hosts and standalone services, not replace Argo CD for Kubernetes workloads.
 - Kubernetes stateful workloads must declare storage explicitly.
 - Secrets must be injected through the selected secret-management process and never committed in plaintext.
-- Public access terminates at the Cloudflare Tunnel (`services/cloudflared/`, deployed on its own LXC). It is the only ingress path for `tier: public` (`sisqueslabs.com`) and `tier: personal` (`jsisques.net`) services; `tier: internal` (`*.home.arpa`) services must never get an entry in its ingress config and stay reachable only over the LAN/VPN.
+- Public access terminates at the Cloudflare Tunnel (`services/cloudflared/`, deployed on its own LXC). It is the only ingress path for `tier: public` (`sisqueslabs.com`) and `tier: personal` (`jsisques.net`) services; `tier: internal` services (no domain, plain LAN `IP:port`) must never get an entry in its ingress config and stay reachable only over the LAN/VPN.
 
 ## Source of Truth
 

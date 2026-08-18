@@ -83,6 +83,10 @@ jobs:
       - name: Ansible Lint
         run: ansible-lint .
 
+      - name: Test AdGuard Home seed config
+        working-directory: .
+        run: ./scripts/validation/test-adguard-home-config.sh
+
   compose:
     name: Validate Docker Compose
     runs-on: ubuntu-latest

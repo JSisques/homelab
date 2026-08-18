@@ -87,14 +87,14 @@ The Ansible role (`ansible/roles/obsidian/`) mounts it at `/mnt/nas/obsidian` on
 
 ## Networking
 
-Obsidian's MCP endpoint is exposed through the homelab reverse proxy:
+Obsidian's MCP endpoint is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://obsidian.home.arpa/mcp   (Streamable HTTP)
-https://obsidian.home.arpa/sse   (SSE)
+http://192.168.0.213:4000/mcp   (Streamable HTTP)
+http://192.168.0.213:4000/sse   (SSE)
 ```
 
-Same trust model as `n8n`/`grafana`/other internal services: no auth in front of it beyond being on the LAN or WireGuard — see "Auth" below if that ever needs to change. The internal application port is `4000`; Traefik terminates TLS.
+Same trust model as `n8n`/`grafana`/other internal services: no auth in front of it beyond being on the LAN or WireGuard — see "Auth" below if that ever needs to change. The internal application port is `4000`.
 
 ## Auth
 

@@ -3,6 +3,10 @@
 # vars, Ansible inventory, Traefik routes, Prometheus/blackbox targets,
 # WireGuard's ALLOWEDIPS/PEERDNS) picks it up on the next `make generate`.
 # See config/README.md for the full resolution rules.
+#
+# Proxmox VMID for type: lxc / type: vm defaults to `octet` (it-tools
+# octet 214 → CT 214 at 192.168.0.214). Set `vmid:` only when they must
+# differ — Terraform always passes a pinned vm_id, never "next free ID".
 network:
   lan:
     prefix: "192.168.0"
@@ -16,7 +20,11 @@ hosts:
   proxmox:
     type: server
     platform: proxmox
-    address: TBD  # LAN IP not confirmed yet
+    # Proxmox API node_name (hostname). VMs used to default to "pve" in the
+    # generator and ignore terraform.tfvars — this is the SSOT for both LXC
+    # and VM node_name.
+    node: proxmox
+    octet: 157
     role:
       - hypervisor
 

@@ -2,8 +2,6 @@
 extends: default
 
 ignore: |
-  website/node_modules/
-  website/pnpm-lock.yaml
   .terraform/
 
 rules:

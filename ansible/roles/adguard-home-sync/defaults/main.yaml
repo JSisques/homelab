@@ -4,11 +4,11 @@ adguard_home_sync_app_dir: /opt/adguard-home-sync
 # Every 10 minutes by default.
 adguard_sync_cron: "*/10 * * * *"
 adguard_sync_api_port: 8080
+# Admin UI / API after the seeded config (wizard is skipped).
+adguard_sync_http_port: 80
 
-# Must match the admin credentials created through each instance's own
-# first-run setup wizard (see services/adguard-home/README.md) — AdGuard
-# Home has no config-as-code way to set these, so they can't be generated
-# here. Override via Ansible Vault or CI secrets. Never commit real values.
+# Must match the admin credentials seeded by ansible/roles/adguard-home
+# (ADGUARD_SYNC_ORIGIN_* / ADGUARD_SYNC_REPLICA_*). Never commit real values.
 adguard_sync_origin_username: changeme
 adguard_sync_origin_password: changeme
 adguard_sync_replica_username: changeme

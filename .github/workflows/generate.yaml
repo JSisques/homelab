@@ -7,6 +7,9 @@ on:
       - "scripts/generation/**"
       - "services/homepage/config/**"
       - "services/prometheus/prometheus.yml"
+      - "services/prometheus/blackbox-targets.yml"
+      - "services/traefik/dynamic/routes.yml"
+      - "services/cloudflared/config.yml"
       - "ansible/inventory/hosts.yml"
       - "terraform/proxmox/hosts.auto.tfvars.json"
   push:
@@ -17,6 +20,9 @@ on:
       - "scripts/generation/**"
       - "services/homepage/config/**"
       - "services/prometheus/prometheus.yml"
+      - "services/prometheus/blackbox-targets.yml"
+      - "services/traefik/dynamic/routes.yml"
+      - "services/cloudflared/config.yml"
       - "ansible/inventory/hosts.yml"
       - "terraform/proxmox/hosts.auto.tfvars.json"
 
@@ -71,6 +77,81 @@ jobs:
           if ! git diff --exit-code; then
             echo "::error::Generated Prometheus configuration is out of date."
             echo "Run generate-prometheus.sh locally and commit the changes."
+            exit 1
+          fi
+
+  blackbox:
+    name: Validate blackbox_exporter Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate blackbox_exporter targets
+        run: ./scripts/generation/generate-blackbox.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated blackbox_exporter targets are out of date."
+            echo "Run generate-blackbox.sh locally and commit the changes."
+            exit 1
+          fi
+
+  traefik:
+    name: Validate Traefik Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Traefik dynamic configuration
+        run: ./scripts/generation/generate-traefik.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Traefik configuration is out of date."
+            echo "Run generate-traefik.sh locally and commit the changes."
+            exit 1
+          fi
+
+  cloudflared:
+    name: Validate Cloudflared Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/generation/*.sh
+
+      - name: Generate Cloudflared ingress configuration
+        run: ./scripts/generation/generate-cloudflared.sh
+
+      - name: Check generated files
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Generated Cloudflared configuration is out of date."
+            echo "Run generate-cloudflared.sh locally and commit the changes."
             exit 1
           fi
 

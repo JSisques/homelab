@@ -1,9 +1,15 @@
+# `internal` services have no domain: url is LAN IP:port, linked from
+# Homepage, never routed through Traefik. `personal`/`public` services are
+# routed Cloudflared -> Traefik -> backend and need a `traefik: {enabled:
+# true, port: <n>}` block. A service that's internal day-to-day but also
+# needs a public alias (e.g. Jellyfin) adds an `external:` block instead of
+# changing its own tier — see jellyfin below and config/README.md.
 services:
   proxmox:
     name: Proxmox
     category: Infrastructure
     tier: internal
-    url: https://proxmox.home.arpa
+    url: https://192.168.0.157:8006
     icon: proxmox.png
 
     homepage:
@@ -19,16 +25,12 @@ services:
     name: Grafana
     category: Monitoring
     tier: internal
-    url: https://grafana.home.arpa
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
       enabled: true
       description: Monitoring dashboards
-
-    traefik:
-      enabled: true
-      port: 3000
 
     monitoring:
       enabled: true
@@ -39,16 +41,12 @@ services:
     name: Prometheus
     category: Monitoring
     tier: internal
-    url: https://prometheus.home.arpa
+    url: http://192.168.0.209:9090
     icon: prometheus.png
 
     homepage:
       enabled: true
       description: Metrics and monitoring
-
-    traefik:
-      enabled: true
-      port: 9090
 
     monitoring:
       enabled: true
@@ -74,7 +72,7 @@ services:
     tier: internal
 
     homepage:
-      enabled: false  # not routed through Traefik yet, no *.home.arpa URL
+      enabled: false  # no standalone UI, browsed through Grafana
 
     monitoring:
       enabled: true
@@ -124,7 +122,7 @@ services:
     name: Kafka
     category: Infrastructure
     tier: internal
-    url: https://kafka.home.arpa
+    url: http://192.168.0.207
     icon: kafka.png
 
     homepage:
@@ -140,16 +138,12 @@ services:
     name: Uptime Kuma
     category: Monitoring
     tier: internal
-    url: https://uptime.home.arpa
+    url: http://192.168.0.210:3001
     icon: uptime-kuma.png
 
     homepage:
       enabled: true
       description: Service monitoring
-
-    traefik:
-      enabled: true
-      port: 3001
 
     monitoring:
       enabled: true
@@ -160,16 +154,12 @@ services:
     name: Homepage
     category: Infrastructure
     tier: internal
-    url: https://home.home.arpa
+    url: http://192.168.0.205:3000
     icon: homepage.png
 
     homepage:
       enabled: false  # Homepage does not need to link to itself
       description: Central dashboard for homelab services
-
-    traefik:
-      enabled: true
-      port: 3000
 
     uptime:
       enabled: true
@@ -186,16 +176,12 @@ services:
     name: AdGuard Home (Primary)
     category: Networking
     tier: internal
-    url: https://adguard1.home.arpa
+    url: http://192.168.0.201
     icon: adguard-home.png
 
     homepage:
       enabled: true
       description: Primary DNS resolver and network-wide ad blocking
-
-    traefik:
-      enabled: true
-      port: 80
 
     uptime:
       enabled: true
@@ -212,16 +198,12 @@ services:
     name: AdGuard Home (Secondary)
     category: Networking
     tier: internal
-    url: https://adguard2.home.arpa
+    url: http://192.168.0.202
     icon: adguard-home.png
 
     homepage:
       enabled: true
       description: Secondary DNS resolver, kept in sync from the primary
-
-    traefik:
-      enabled: true
-      port: 80
 
     uptime:
       enabled: true
@@ -236,12 +218,12 @@ services:
     name: Traefik
     category: Networking
     tier: internal
-    url: https://traefik.home.arpa
+    url: http://192.168.0.204:8080
     icon: traefik.png
 
     homepage:
       enabled: true
-      description: Internal reverse proxy for *.home.arpa
+      description: Reverse proxy for personal/public tier services
 
     uptime:
       enabled: true
@@ -254,6 +236,9 @@ services:
   gardenia:
     name: Gardenia
     category: Applications
+    # Catalog-only: not deployed yet, no role/NodePort in config/hosts.yaml,
+    # so no `traefik:` block here either (generate-traefik.sh needs a
+    # resolvable backend address). Add both once it actually runs.
     tier: public  # deployed on Kubernetes, exposed via Cloudflare Tunnel
     url: https://gardenia.sisqueslabs.com
     icon: mdi-sprout
@@ -284,6 +269,10 @@ services:
       enabled: true
       description: Sisques Labs public landing page
 
+    traefik:
+      enabled: true
+      port: 30080
+
     uptime:
       enabled: true
 
@@ -312,6 +301,10 @@ services:
     homepage:
       enabled: true
       description: Vacation bridge calculator
+
+    traefik:
+      enabled: true
+      port: 30081
 
     uptime:
       enabled: true
@@ -344,6 +337,10 @@ services:
       enabled: true
       description: Personal blog
 
+    traefik:
+      enabled: true
+      port: 30083
+
     uptime:
       enabled: true
 
@@ -361,16 +358,12 @@ services:
     name: IT-Tools
     category: Utilities
     tier: internal
-    url: https://it-tools.home.arpa
+    url: http://192.168.0.214:8080
     icon: it-tools.png
 
     homepage:
       enabled: true
       description: Collection of useful developer tools
-
-    traefik:
-      enabled: true
-      port: 8080
 
     uptime:
       enabled: true
@@ -387,16 +380,12 @@ services:
     name: n8n
     category: Automation
     tier: internal  # exposed only via VPN/reverse proxy, see services/n8n
-    url: https://n8n.home.arpa
+    url: http://192.168.0.211:5678
     icon: n8n.png
 
     homepage:
       enabled: true
       description: Workflow automation platform
-
-    traefik:
-      enabled: true
-      port: 5678
 
     uptime:
       enabled: true
@@ -415,19 +404,16 @@ services:
     name: Cookidoo MCP
     category: Automation
     tier: internal  # exposes Cookidoo account credentials, LAN/VPN only
-    url: https://cookidoo-mcp.home.arpa
+    url: http://192.168.0.212:3000
     icon: mdi-chef-hat
 
     homepage:
       enabled: true
       description: MCP server exposing a Cookidoo account to AI agents
 
-    traefik:
-      enabled: true
-      port: 3000
-
     uptime:
-      enabled: true  # HTTP check should target GET /api/health, not "/"
+      # HTTP check should target GET /api/health, not "/"
+      enabled: true
 
     # No native /metrics — cookidoo-mcp only pushes OTLP metrics when
     # OTEL_EXPORTER_OTLP_ENDPOINT is set (see services/cookidoo-mcp). No
@@ -438,16 +424,12 @@ services:
     name: Obsidian
     category: Productivity
     tier: internal  # second-brain vault, AI-agent access only
-    url: https://obsidian.home.arpa
+    url: http://192.168.0.213:4000
     icon: obsidian.png
 
     homepage:
       enabled: false  # MCP/API only, no web UI, see services/obsidian
       description: Second-brain vault exposed to AI agents via MCP
-
-    traefik:
-      enabled: true
-      port: 4000
 
     uptime:
       enabled: true  # TCP monitor on :4000, HTTP 2xx isn't reliable here
@@ -455,19 +437,22 @@ services:
   jellyfin:
     name: Jellyfin
     category: Media
-    # LAN via Traefik; also on jellyfin.jsisques.net via Cloudflare
-    # Tunnel for remote access, see services/cloudflared/config.yml
+    # LAN by IP:port; also reachable remotely at jellyfin.jsisques.net via
+    # Cloudflared -> Traefik -> this same backend, see `external:` below.
     tier: internal
-    url: https://jellyfin.home.arpa
+    url: http://192.168.0.215:8096
     icon: jellyfin.png
 
     homepage:
       enabled: true
       description: Media streaming server
 
-    traefik:
-      enabled: true
-      port: 8096
+    external:
+      tier: personal
+      url: https://jellyfin.jsisques.net
+      traefik:
+        enabled: true
+        port: 8096
 
     uptime:
       enabled: true
@@ -488,16 +473,12 @@ services:
     # its traffic (not the WebUI, just torrent traffic) routes through the
     # VPN. WebUI itself is published on the host like any other service.
     tier: internal
-    url: https://qbittorrent.home.arpa
+    url: http://192.168.0.216:8080
     icon: qbittorrent.png
 
     homepage:
       enabled: true
       description: Torrent client (via VPN)
-
-    traefik:
-      enabled: true
-      port: 8080
 
     uptime:
       enabled: true
@@ -514,16 +495,12 @@ services:
     name: Prowlarr
     category: Downloads
     tier: internal
-    url: https://prowlarr.home.arpa
+    url: http://192.168.0.216:9696
     icon: prowlarr.png
 
     homepage:
       enabled: true
       description: Indexer manager for Sonarr/Radarr
-
-    traefik:
-      enabled: true
-      port: 9696
 
     uptime:
       enabled: true
@@ -538,16 +515,12 @@ services:
     name: Sonarr
     category: Downloads
     tier: internal
-    url: https://sonarr.home.arpa
+    url: http://192.168.0.216:8989
     icon: sonarr.png
 
     homepage:
       enabled: true
       description: TV series automation
-
-    traefik:
-      enabled: true
-      port: 8989
 
     uptime:
       enabled: true
@@ -562,16 +535,12 @@ services:
     name: Radarr
     category: Downloads
     tier: internal
-    url: https://radarr.home.arpa
+    url: http://192.168.0.216:7878
     icon: radarr.png
 
     homepage:
       enabled: true
       description: Movie automation
-
-    traefik:
-      enabled: true
-      port: 7878
 
     uptime:
       enabled: true
@@ -589,16 +558,12 @@ services:
     # the generic "give it a URL" downloader that isn't a torrent or a
     # video site.
     tier: internal
-    url: https://pyload.home.arpa
+    url: http://192.168.0.216:8000
     icon: pyload.png
 
     homepage:
       enabled: true
       description: Direct HTTP/FTP link downloader
-
-    traefik:
-      enabled: true
-      port: 8000
 
     uptime:
       enabled: true
@@ -615,16 +580,12 @@ services:
     # yt-dlp web UI: paste a YouTube (or any yt-dlp-supported site) URL,
     # it downloads the video/audio straight to the NAS.
     tier: internal
-    url: https://metube.home.arpa
+    url: http://192.168.0.216:8081
     icon: metube.png
 
     homepage:
       enabled: true
       description: YouTube/video downloader (yt-dlp)
-
-    traefik:
-      enabled: true
-      port: 8081
 
     uptime:
       enabled: true
@@ -678,19 +639,15 @@ services:
     # NAS over NFS (ansible/roles/rustfs/). Only the console (port 9001)
     # is routed here; the S3 API (port 9000) is reached directly by
     # other services over the LAN IP in config/hosts.yaml — same pattern
-    # as Prometheus scrape targets / Promtail→Loki, no *.home.arpa route
-    # for it.
+    # as Prometheus scrape targets / Promtail→Loki, no domain for it,
+    # internal tier only (IP:port).
     tier: internal
-    url: https://rustfs.home.arpa
+    url: http://192.168.0.208:9001
     icon: mdi-database
 
     homepage:
       enabled: true
       description: S3-compatible object storage
-
-    traefik:
-      enabled: true
-      port: 9001
 
     uptime:
       enabled: true
@@ -713,24 +670,20 @@ services:
     # sisqueslabs-landing/daysoff. Address resolves via the "rancher"
     # role on the k3s-server host in config/hosts.yaml.
     tier: internal
-    url: https://rancher.home.arpa
+    url: http://192.168.0.207:30082
     icon: rancher.png
 
     homepage:
       enabled: true
       description: Kubernetes cluster management
 
-    traefik:
-      enabled: true
-      port: 30082
-
     uptime:
       enabled: true
 
     # No native /metrics scraped here (would need the rancher-monitoring
     # stack, not deployed). Probed by blackbox_exporter instead, see
-    # services/blackbox-exporter/README.md. Traefik terminates TLS in
-    # front of it, so the NodePort itself is plain HTTP.
+    # services/blackbox-exporter/README.md. Internal tier only (IP:NodePort),
+    # not routed through Traefik/Cloudflared.
     blackbox:
       enabled: true
       port: 30082

@@ -67,19 +67,16 @@ In the homelab deployment, these come from Ansible Vault / CI secrets via the `c
 
 ## Networking
 
-cookidoo-mcp is exposed through the homelab reverse proxy:
+cookidoo-mcp is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://cookidoo-mcp.home.arpa
+http://192.168.0.212:3000
 ```
 
 Traffic flows through:
 
 ```text
 Client (MCP agent)
-      │
-      ▼
-Reverse Proxy
       │
       ▼
 cookidoo-mcp LXC
@@ -91,11 +88,11 @@ Docker
 cookidoo-mcp
 ```
 
-`tier: internal` — the server holds real Cookidoo credentials, so it is reachable only over LAN/WireGuard under `*.home.arpa`, never given a public Cloudflare Tunnel route.
+`tier: internal` — the server holds real Cookidoo credentials, so it is reachable only over LAN/WireGuard by IP:port, never given a public Cloudflare Tunnel route.
 
 ## Monitoring
 
-- **Uptime Kuma**: an HTTP monitor should target `GET https://cookidoo-mcp.home.arpa/api/health`, not `/` — the root path has no route and returns `404`, so a plain "is `/` 2xx" check would be a false negative. This is also why `config/services.yaml` doesn't set a `blackbox:` block for this service (`generate-blackbox.sh` always probes the bare host:port with no path).
+- **Uptime Kuma**: an HTTP monitor should target `GET http://192.168.0.212:3000/api/health`, not `/` — the root path has no route and returns `404`, so a plain "is `/` 2xx" check would be a false negative. This is also why `config/services.yaml` doesn't set a `blackbox:` block for this service (`generate-blackbox.sh` always probes the bare host:port with no path).
 - **OpenTelemetry**: traces, metrics, and logs are pushed via OTLP to the homelab's OTel Collector (`services/otel-collector/`, on the `monitoring` LXC at `192.168.0.209:4318`) — see `OTEL_EXPORTER_OTLP_ENDPOINT` in `compose.yml`. There is no native `/metrics` endpoint to scrape directly.
 
 ## Deployment

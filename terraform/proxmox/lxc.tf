@@ -2,6 +2,7 @@ resource "proxmox_virtual_environment_container" "lxc" {
   for_each = var.lxc_network
 
   node_name = var.proxmox_node
+  vm_id     = each.value.vm_id
 
   description = "Homelab ${each.key} service"
 

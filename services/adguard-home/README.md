@@ -18,25 +18,25 @@ services/adguard-home/
 └── compose.yaml
 ```
 
+`conf/AdGuardHome.yaml` is **not** in this directory. Ansible seeds it on the host once (see `ansible/roles/adguard-home/`) so the first-run wizard is skipped: admin credentials from `ADGUARD_SYNC_*` and UI on port `80`. After that, AdGuard owns the file and later deploys leave it alone.
+
 ## Configuration
 
-AdGuard Home has no declarative config file suitable for generation from `config/services.yaml` — like Uptime Kuma, its setup wizard and settings live entirely in its own persistent volumes (`adguard-work`, `adguard-conf`). First boot walks through a setup wizard on port `3000` (admin username/password, upstream DNS, which network interfaces to listen on, and which port the admin UI should use going forward).
+The seed covers only what Git must own (credentials, listen ports, the Traefik rewrite). Blocklists, clients, and other UI settings live in that host file and are copied from `adguard-home-1` to `adguard-home-2` by `adguard-home-sync`.
 
-**Important:** once the wizard is completed, AdGuard Home stops listening on `3000` and moves the admin UI to whatever port was chosen in that step — in this deployment, `80`. `compose.yaml` publishes both `3000` (needed for the first-run wizard on a fresh volume) and `80` (the ongoing admin UI) so neither case is locked out.
-
-Once that's done, add one DNS rewrite so `*.home.arpa` resolves to Traefik instead of nowhere — **Filters → DNS rewrites**, domain `*.home.arpa`, answer `192.168.0.204`. See `services/traefik/README.md`.
+`compose.yaml` still publishes `3000` so a local `docker compose up` without a seeded `conf/` can run the wizard. On a real host with the Ansible seed, the UI is on `80` from the first start.
 
 ## Networking
 
 - `53/tcp` + `53/udp` — DNS
-- `3000/tcp` — first-run setup wizard only; stops being used once the wizard completes
-- `80/tcp` — admin UI, once configured (the port chosen during the wizard)
+- `3000/tcp` — first-run setup wizard only (unused when `conf/AdGuardHome.yaml` already exists)
+- `80/tcp` — admin UI / API
 
 Point the router's DHCP-assigned DNS server, and/or each client, at this LXC's IP. Internal-only per the domain tiers in the root README — never exposed through the Cloudflare Tunnel.
 
 ## Deployment
 
-Terraform creates the `adguard-home` LXC (`terraform/proxmox/lxc.tf`). Ansible deploys this Compose file (see `ansible/roles/adguard-home/`).
+Terraform creates the `adguard-home` LXC (`terraform/proxmox/lxc.tf`). Ansible seeds the config and deploys this Compose file (see `ansible/roles/adguard-home/`).
 
 ## Local Development
 
@@ -45,4 +45,4 @@ cd services/adguard-home
 docker compose up -d
 ```
 
-AdGuard Home's setup wizard will be available at `http://localhost:3000`.
+Without a pre-seeded `conf/AdGuardHome.yaml`, AdGuard Home's setup wizard will be available at `http://localhost:3000`.

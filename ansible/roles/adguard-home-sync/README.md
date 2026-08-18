@@ -7,12 +7,12 @@ Terraform doesn't create a dedicated LXC for this — it runs alongside AdGuard 
 ## Responsibilities
 
 - Render `config.yaml` (origin/replica URLs + credentials) from Ansible variables — see `defaults/main.yaml` for the full list, all of which must be overridden with real secrets before deploying for real.
-- The origin URL is resolved automatically from the generated inventory (`hostvars['adguard-home-1']['ansible_host']`) — no hardcoded IP.
+- The origin URL is resolved automatically from the generated inventory (`hostvars['adguard-home-1']['ansible_host']`) — no hardcoded IP. The admin API is on port 80 (the seeded config skips the wizard's port 3000).
 - Deploy `services/adguard-home-sync/compose.yaml` and start it.
 
 ## Requirements
 
-`adguard-home-1` and `adguard-home-2` must already be deployed and have gone through AdGuard Home's first-run setup wizard (admin username/password) before this role can authenticate against either — see `services/adguard-home/README.md`.
+`adguard-home-1` and `adguard-home-2` must already be deployed with the seeded admin credentials (same `ADGUARD_SYNC_*` values this role uses) — see `ansible/roles/adguard-home/README.md`.
 
 ## Deployment
 

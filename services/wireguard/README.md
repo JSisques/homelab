@@ -1,12 +1,12 @@
 # WireGuard
 
-Self-hosted VPN gateway ([linuxserver/wireguard](https://docs.linuxserver.io/images/docker-wireguard/)) for remote, internal-only access to the homelab — this is how `tier: internal` (`*.home.arpa`) services get reached from outside the LAN without ever going through the Cloudflare Tunnel.
+Self-hosted VPN gateway ([linuxserver/wireguard](https://docs.linuxserver.io/images/docker-wireguard/)) for remote, internal-only access to the homelab — this is how `tier: internal` services (plain LAN `IP:port`, no domain) get reached from outside the LAN without ever going through the Cloudflare Tunnel.
 
 ## Responsibilities
 
 - Terminate WireGuard connections from road-warrior clients (phone, laptop)
-- Route those clients into the LAN subnet (`ALLOWEDIPS`, `config/hosts.yaml`'s `network.lan`) so they can reach every LXC on the LAN
-- Hand out both AdGuard Home instances as primary/secondary DNS (`PEERDNS`), so VPN clients resolve `*.home.arpa`, get ad-blocking, and keep resolving DNS even if one instance is down
+- Route those clients into the LAN subnet (`ALLOWEDIPS`, `config/hosts.yaml`'s `network.lan`) so they can reach every LXC on the LAN by IP:port
+- Hand out both AdGuard Home instances as primary/secondary DNS (`PEERDNS`), so VPN clients get ad-blocking and keep resolving DNS even if one instance is down
 
 ## Directory Structure
 

@@ -194,19 +194,16 @@ The dashboard should contain simple metrics such as:
 
 ## Networking
 
-Grafana is exposed through the homelab reverse proxy:
+Grafana is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://grafana.home.arpa
+http://192.168.0.209:3000
 ```
 
 Traffic flows through:
 
 ```text
 Client
-  │
-  ▼
-Reverse Proxy
   │
   ▼
 Grafana LXC

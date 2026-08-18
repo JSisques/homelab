@@ -6,7 +6,7 @@ Terraform creates the LXC (`terraform/proxmox/lxc.tf`). This role installs Docke
 
 ## Responsibilities
 
-- Deploy `services/cloudflared/compose.yaml` and `services/cloudflared/config.yml` (ingress rules — the single source of truth for routing)
+- Deploy `services/cloudflared/compose.yaml` and `services/cloudflared/config.yml` (ingress rules, generated from `config/services.yaml`/`config/hosts.yaml` — see `services/cloudflared/README.md`)
 - Write the tunnel credentials to `{{ cloudflared_app_dir }}/credentials.json` from the `cloudflared_credentials_json` variable
 - Start the tunnel with `community.docker.docker_compose_v2`
 

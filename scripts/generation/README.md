@@ -14,6 +14,7 @@ generation/
 ├── generate-prometheus.sh
 ├── generate-blackbox.sh
 ├── generate-traefik.sh
+├── generate-cloudflared.sh
 ├── generate-inventory.sh
 └── generate-terraform-vars.sh
 ```
@@ -37,7 +38,8 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
-    url: https://grafana.home.arpa
+    tier: internal
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
@@ -152,9 +154,19 @@ Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/prometheu
 ./scripts/generation/generate-traefik.sh
 ```
 
-Generates Traefik's dynamic routing config: one router + backend pair per service with a `traefik: {enabled: true, port: <n>}` block in `config/services.yaml`. The router's hostname comes from that service's `url:`; the backend LAN address comes from `config/hosts.yaml`, resolved by matching host key first, then by `role`.
+Generates Traefik's dynamic routing config: one router + backend pair per `personal`/`public` tier exposure with a `traefik: {enabled: true, port: <n>}` block — either a service's own top-level tier, or nested under its `external:` alias (a service that's internal day-to-day but also has a remote-access alias, e.g. Jellyfin — see `config/README.md#external`). `internal` services never get a router here; Traefik only fronts what Cloudflared forwards to it. The router's hostname comes from the exposure's `url:`; the backend LAN address comes from `config/hosts.yaml`, resolved by matching host key first, then by `role`.
 
 Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/traefik/dynamic/routes.yml`.
+
+### Cloudflared
+
+```bash
+./scripts/generation/generate-cloudflared.sh
+```
+
+Generates the Cloudflare Tunnel ingress list: one `hostname` entry per `personal`/`public` tier exposure (same set as Traefik's, above), every one pointing at Traefik's LAN address — never straight at the backend. Traefik does the actual per-service routing from the same catalog. The `tunnel:` ID (a one-time manual value from `cloudflared tunnel create`, see `services/cloudflared/README.md`) is preserved across regenerations if already set, since it isn't `config/`-owned data.
+
+Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/cloudflared/config.yml`.
 
 ### Ansible Inventory
 
@@ -172,7 +184,7 @@ Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
 ./scripts/generation/generate-terraform-vars.sh
 ```
 
-Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
+Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, Proxmox VMID (`vmid` or `octet`), sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
 
 Source: `config/hosts.yaml`. Output: `terraform/proxmox/hosts.auto.tfvars.json` (auto-loaded by Terraform, no `-var-file` needed).
 

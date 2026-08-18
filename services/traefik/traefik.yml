@@ -1,13 +1,6 @@
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-  websecure:
-    address: ":443"
   metrics:
     address: ":8082"
 
@@ -18,7 +11,7 @@ providers:
 
 api:
   dashboard: true
-  insecure: false
+  insecure: true
 
 metrics:
   prometheus:

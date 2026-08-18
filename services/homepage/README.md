@@ -132,19 +132,16 @@ The generated file should be treated as an artifact of the source configuration.
 
 ## Networking
 
-Homepage is exposed through the homelab reverse proxy:
+Homepage is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://home.home.arpa
+http://192.168.0.205:3000
 ```
 
 Traffic flows through:
 
 ```text
 Client
-  │
-  ▼
-Reverse Proxy
   │
   ▼
 Homepage LXC
@@ -251,10 +248,7 @@ docker compose down
                          Homepage
                               │
                               ▼
-                    Reverse Proxy
-                              │
-                              ▼
-                 https://home.home.arpa
+                 http://192.168.0.205:3000
 ```
 
 ## Source of Truth

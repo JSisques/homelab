@@ -68,7 +68,7 @@ Adjust `ansible/roles/jellyfin/defaults/main.yaml` if the real export paths on t
 
 Jellyfin is exposed two ways:
 
-- **LAN**: `https://jellyfin.home.arpa` through Traefik, same trust model as every other `tier: internal` service — no auth in front of it beyond being on the LAN/WireGuard (Jellyfin has its own login).
+- **LAN**: `http://192.168.0.215:8096` directly by IP:port, no Traefik, same trust model as every other `tier: internal` service — no auth in front of it beyond being on the LAN/WireGuard (Jellyfin has its own login).
 - **Remote**: `https://jellyfin.jsisques.net` through the existing Cloudflare Tunnel (`services/cloudflared/config.yml`), for access outside the home network. This is the personal-apps ingress path already used for `jsisques.net`, not the public `sisqueslabs.com` one.
 
 The internal application port is `8096` in both cases.

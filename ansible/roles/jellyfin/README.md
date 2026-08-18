@@ -71,8 +71,8 @@ jellyfin role
              ▼
         jellyfin/jellyfin (:8096)
              │
-             ├── Traefik → jellyfin.home.arpa (LAN)
-             └── Cloudflare Tunnel → jellyfin.jsisques.net (remote)
+             ├── LAN IP:port directly → 192.168.0.215:8096 (no Traefik)
+             └── Cloudflare Tunnel → Traefik → jellyfin.jsisques.net (remote)
 ```
 
 ## Related

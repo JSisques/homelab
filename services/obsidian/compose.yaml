@@ -12,7 +12,7 @@ services:
       - "4000:4000"
 
     environment:
-      - PUBLIC_HOST=https://obsidian.home.arpa
+      - PUBLIC_HOST=http://192.168.0.213:4000
       # TEST_MODE seeds a fresh vault (with the Local REST API plugin
       # installed) only the first time /vaults has no .obsidian directory,
       # then never touches it again. There is no git remote configured, so

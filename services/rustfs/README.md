@@ -51,13 +51,13 @@ In the homelab deployment these come from Ansible Vault / CI secrets via the `ru
 
 ## Networking
 
-The console is exposed through the homelab reverse proxy:
+The console is reached directly by its LAN `IP:port`, no reverse proxy in front of it:
 
 ```text
-https://rustfs.home.arpa   → :9001 (console)
+http://192.168.0.208:9001   (console)
 ```
 
-The S3 API (`:9000`) is **not** routed through Traefik — other services reach it directly by the `rustfs` LXC's LAN IP:port (`config/hosts.yaml`), the same way Prometheus reaches its scrape targets or Promtail reaches Loki. It's machine-to-machine traffic, not something a browser needs a `*.home.arpa` hostname for.
+The S3 API (`:9000`) is **not** routed through Traefik either — other services reach it directly by the `rustfs` LXC's LAN IP:port (`config/hosts.yaml`), the same way Prometheus reaches its scrape targets or Promtail reaches Loki. It's machine-to-machine traffic, not something a browser needs a hostname for.
 
 ## Backup
 

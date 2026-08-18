@@ -250,7 +250,7 @@ Uptime Kuma
 The service is expected to be available at:
 
 ```text
-https://n8n.home.arpa
+http://192.168.0.211:5678
 ```
 
 ## Related Components
@@ -350,8 +350,5 @@ terraform/proxmox/                   services/n8n/
                    n8n    PostgreSQL
                     │
                     ▼
-                 Traefik
-                    │
-                    ▼
-             n8n.home.arpa
+             192.168.0.211:5678 (LAN IP:port, no Traefik)
 ```
