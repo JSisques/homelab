@@ -10,7 +10,7 @@ Communicate with the human in Spanish. Code, comments, documentation, commit mes
 
 | File | Owns |
 | ---- | ---- |
-| `config/hosts.yaml` | Networks, machines, addresses (`octet` / `address`), LXC/VM sizing, `role` |
+| `config/hosts.yaml` | Networks, machines, addresses (`octet` / `address`), Proxmox VMID (`octet`, or `vmid:` override), LXC/VM sizing, `role` |
 | `config/services.yaml` | The service catalog: name, `category`, `tier`, URL, Homepage, Traefik, Prometheus, blackbox, Uptime Kuma |
 
 A service does not exist until it has an entry in `config/services.yaml`. A machine does not exist until it has an entry in `config/hosts.yaml`. Do not invent IPs, hostnames, ports, tiers, or URLs in Ansible, Terraform, Compose, Kubernetes, or docs — change `config/` and regenerate.
@@ -61,7 +61,7 @@ Do not hand-edit those outputs. Hand-authored files next to them (e.g. `services
 ## Adding a service
 
 1. Add the catalog entry in `config/services.yaml` (stable hyphenated key, `tier`, Homepage/Traefik/monitoring/blackbox as needed).
-2. If it needs a machine: add or update `config/hosts.yaml` (`type`/`octet`/`cpu`/`memory`/`disk`/`role`). Kubernetes workloads that share `k3s-server` get a `role` on that host so generators can resolve a LAN address — they do not get their own LXC.
+2. If it needs a machine: add or update `config/hosts.yaml` (`type`/`octet`/`cpu`/`memory`/`disk`/`role`). The Proxmox VMID defaults to `octet`; set `vmid:` only when they differ. Kubernetes workloads that share `k3s-server` get a `role` on that host so generators can resolve a LAN address — they do not get their own LXC.
 3. Implement it in exactly one place:
    - Docker on an LXC/VM → `services/<name>/` + `ansible/roles/<name>/` + playbook.
    - Kubernetes → `kubernetes/applications/<name>/` (or `kubernetes/infrastructure/`) + Argo CD `Application`.

@@ -89,6 +89,7 @@ yq --argjson resolved "${RESOLVED}" --argjson categories "${CATEGORIES}" '
         | map({
             (.key): {
               ip: $resolved[.key],
+              vm_id: (.value.vmid // .value.octet),
               cores: .value.cpu,
               memory: .value.memory,
               disk: .value.disk,
@@ -104,6 +105,7 @@ yq --argjson resolved "${RESOLVED}" --argjson categories "${CATEGORIES}" '
         | map({
             (.key): {
               proxmox_node: (.value.proxmox_node // "pve"),
+              vm_id: (.value.vmid // .value.octet),
               cpu: .value.cpu,
               memory: .value.memory,
               disk: .value.disk,

@@ -24,6 +24,6 @@ vm_template_id = 9000
 # automatically (the *.auto.tfvars.json naming convention) — no
 # -var-file flag needed, and no need to duplicate IPs/network config here.
 #
-# To change the LAN subnet, resize an LXC/VM, or add a new host, edit
-# config/hosts.yaml and re-run:
+# To change the LAN subnet, resize an LXC/VM, pin a Proxmox VMID, or add a
+# new host, edit config/hosts.yaml and re-run:
 #   ./scripts/generation/generate-terraform-vars.sh

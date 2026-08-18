@@ -73,6 +73,7 @@ variable "vm_nodes" {
 
   type = map(object({
     proxmox_node = string
+    vm_id        = number
     cpu          = number
     memory       = number
     disk         = number
@@ -88,6 +89,7 @@ variable "lxc_network" {
 
   type = map(object({
     ip     = string
+    vm_id  = number
     cores  = number
     memory = number
     disk   = number

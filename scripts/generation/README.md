@@ -172,7 +172,7 @@ Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
 ./scripts/generation/generate-terraform-vars.sh
 ```
 
-Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
+Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, Proxmox VMID (`vmid` or `octet`), sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
 
 Source: `config/hosts.yaml`. Output: `terraform/proxmox/hosts.auto.tfvars.json` (auto-loaded by Terraform, no `-var-file` needed).
 
