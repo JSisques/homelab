@@ -20,14 +20,17 @@ services/adguard-home/
 
 ## Configuration
 
-AdGuard Home has no declarative config file suitable for generation from `config/services.yaml` — like Uptime Kuma, its setup wizard and settings live entirely in its own persistent volumes (`adguard-work`, `adguard-conf`). First boot walks through a setup wizard on port `3000` (admin username/password, upstream DNS, which network interfaces to listen on).
+AdGuard Home has no declarative config file suitable for generation from `config/services.yaml` — like Uptime Kuma, its setup wizard and settings live entirely in its own persistent volumes (`adguard-work`, `adguard-conf`). First boot walks through a setup wizard on port `3000` (admin username/password, upstream DNS, which network interfaces to listen on, and which port the admin UI should use going forward).
+
+**Important:** once the wizard is completed, AdGuard Home stops listening on `3000` and moves the admin UI to whatever port was chosen in that step — in this deployment, `80`. `compose.yaml` publishes both `3000` (needed for the first-run wizard on a fresh volume) and `80` (the ongoing admin UI) so neither case is locked out.
 
 Once that's done, add one DNS rewrite so `*.home.arpa` resolves to Traefik instead of nowhere — **Filters → DNS rewrites**, domain `*.home.arpa`, answer `192.168.0.204`. See `services/traefik/README.md`.
 
 ## Networking
 
 - `53/tcp` + `53/udp` — DNS
-- `3000/tcp` — admin UI (also the first-run setup wizard)
+- `3000/tcp` — first-run setup wizard only; stops being used once the wizard completes
+- `80/tcp` — admin UI, once configured (the port chosen during the wizard)
 
 Point the router's DHCP-assigned DNS server, and/or each client, at this LXC's IP. Internal-only per the domain tiers in the root README — never exposed through the Cloudflare Tunnel.
 
