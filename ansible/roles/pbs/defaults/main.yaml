@@ -5,9 +5,9 @@ pbs_apt_repository: http://download.proxmox.com/debian/pbs
 pbs_apt_suite: bookworm
 pbs_apt_channel: pbs-no-subscription
 
-# Adjust to the NAS's real NFS export before running this role. The IP is
-# the "nas" host in config/hosts.yaml — update this if that host's
-# address ever changes.
-pbs_nas_export: "192.168.0.111:/export/pbs"
+# The IP resolves via hostvars from the "nas" host in config/hosts.yaml —
+# it updates automatically if that host's address ever changes. Adjust
+# the export path here if the NAS's folder layout changes.
+pbs_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/pbs"
 pbs_mount_path: /mnt/datastore/nas
 pbs_datastore_name: nas-backups

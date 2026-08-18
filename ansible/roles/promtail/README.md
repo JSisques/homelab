@@ -7,14 +7,15 @@ This is a **mandatory baseline** role, like `node-exporter` — see `ansible/REA
 ## Responsibilities
 
 - Add Grafana's APT repository and install `promtail`.
-- Render `/etc/promtail/config.yml` pointing at Loki (`promtail_loki_url`, default `http://192.168.0.209:3100/loki/api/v1/push` — the `monitoring` LXC).
+- Render `/etc/promtail/config.yml` pointing at Loki (`promtail_loki_url`, resolved from the `monitoring` host's LAN address in the generated inventory — see `config/hosts.yaml`).
 - Ship the systemd journal, labeled by host and unit.
 
 ## Variables
 
 ```yaml
-promtail_loki_url: http://192.168.0.209:3100/loki/api/v1/push
+promtail_loki_host: "{{ hostvars['monitoring'].ansible_host }}"
+promtail_loki_url: "http://{{ promtail_loki_host }}:3100/loki/api/v1/push"
 promtail_config_path: /etc/promtail/config.yml
 ```
 
-If Loki ever moves off the `monitoring` LXC's default address, override `promtail_loki_url` accordingly.
+`promtail_loki_url` tracks the `monitoring` host's address automatically — if Loki ever moves to a different host, update its `role` in `config/hosts.yaml` instead of overriding this variable by hand.

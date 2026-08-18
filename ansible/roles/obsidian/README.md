@@ -28,7 +28,7 @@ ansible/roles/obsidian/
 ```yaml
 obsidian_app_dir: /opt/obsidian
 
-obsidian_nas_export: "192.168.0.111:/export/obsidian"
+obsidian_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/obsidian"
 obsidian_vault_mount_path: /mnt/nas/obsidian
 ```
 

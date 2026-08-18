@@ -1,16 +1,18 @@
 ---
 downloads_app_dir: /opt/downloads
 
-# Adjust to the NAS's real NFS exports before running this role. The IP is
-# the "nas" host in config/hosts.yaml — update these if that host's
-# address or export layout ever changes.
+# Resolves via hostvars from the "nas" host in config/hosts.yaml — updates
+# automatically if that host's address ever changes. Adjust the export
+# paths below if the NAS's folder layout changes.
 #
 # Unlike Jellyfin's read-only media mounts, these must be writable: Sonarr/
 # Radarr import into the two Multimedia exports, and everything downloads
 # into the Downloads export.
-downloads_nas_export_downloads: "192.168.0.111:/export/Downloads"
-downloads_nas_export_peliculas: "192.168.0.111:/export/Multimedia/peliculas"
-downloads_nas_export_series: "192.168.0.111:/export/Multimedia/series"
+downloads_nas: "{{ hostvars['nas'].ansible_host }}"
+downloads_nas_export_downloads: "{{ downloads_nas }}:/export/Downloads"
+downloads_nas_export_peliculas: "{{ downloads_nas
+  }}:/export/Multimedia/peliculas"
+downloads_nas_export_series: "{{ downloads_nas }}:/export/Multimedia/series"
 
 downloads_mount_path: /mnt/nas/downloads
 downloads_media_mount_path: /mnt/nas/multimedia

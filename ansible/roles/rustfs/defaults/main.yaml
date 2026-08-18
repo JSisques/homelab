@@ -1,10 +1,10 @@
 ---
 rustfs_app_dir: /opt/rustfs
 
-# Adjust to the NAS's real NFS export before running this role. The IP is
-# the "nas" host in config/hosts.yaml — update this if that host's
-# address ever changes.
-rustfs_nas_export: "192.168.0.111:/export/rustfs"
+# The IP resolves via hostvars from the "nas" host in config/hosts.yaml —
+# it updates automatically if that host's address ever changes. Adjust
+# the export path here if the NAS's folder layout changes.
+rustfs_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/rustfs"
 rustfs_data_mount_path: /mnt/nas/rustfs
 
 # Root credentials for the S3 API / console. Must be provided via Ansible
