@@ -28,8 +28,9 @@ ansible/roles/jellyfin/
 ```yaml
 jellyfin_app_dir: /opt/jellyfin
 
-jellyfin_nas_export_peliculas: "192.168.0.111:/export/Multimedia/peliculas"
-jellyfin_nas_export_series: "192.168.0.111:/export/Multimedia/series"
+jellyfin_nas: "{{ hostvars['nas'].ansible_host }}"
+jellyfin_nas_export_peliculas: "{{ jellyfin_nas }}:/export/Multimedia/peliculas"
+jellyfin_nas_export_series: "{{ jellyfin_nas }}:/export/Multimedia/series"
 jellyfin_media_mount_path: /mnt/nas/multimedia
 ```
 

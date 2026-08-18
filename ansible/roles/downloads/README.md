@@ -31,9 +31,9 @@ ansible/roles/downloads/
 ```yaml
 downloads_app_dir: /opt/downloads
 
-downloads_nas_export_downloads: "192.168.0.111:/export/Downloads"
-downloads_nas_export_peliculas: "192.168.0.111:/export/Multimedia/peliculas"
-downloads_nas_export_series: "192.168.0.111:/export/Multimedia/series"
+downloads_nas_export_downloads: "{{ _nas }}:/export/Downloads"
+downloads_nas_export_peliculas: "{{ _nas }}:/export/Multimedia/peliculas"
+downloads_nas_export_series: "{{ _nas }}:/export/Multimedia/series"
 
 downloads_mount_path: /mnt/nas/downloads
 downloads_media_mount_path: /mnt/nas/multimedia

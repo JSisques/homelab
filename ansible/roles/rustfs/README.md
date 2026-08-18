@@ -56,7 +56,7 @@ Role defaults are defined in `defaults/main.yaml`:
 ```yaml
 rustfs_app_dir: /opt/rustfs
 
-rustfs_nas_export: "192.168.0.111:/export/rustfs"
+rustfs_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/rustfs"
 rustfs_data_mount_path: /mnt/nas/rustfs
 
 rustfs_access_key: ""

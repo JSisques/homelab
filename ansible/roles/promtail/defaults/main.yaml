@@ -1,8 +1,8 @@
 ---
-# The IP resolves via hostvars from the "monitoring" host in
-# config/hosts.yaml — it updates automatically if that host's address
-# ever changes.
-promtail_loki_url: "http://{{ hostvars['monitoring'].ansible_host }}:3100/loki/api/v1/push"
+# Resolves via hostvars from the "monitoring" host in config/hosts.yaml —
+# updates automatically if that host's address ever changes.
+promtail_loki_host: "{{ hostvars['monitoring'].ansible_host }}"
+promtail_loki_url: "http://{{ promtail_loki_host }}:3100/loki/api/v1/push"
 promtail_config_path: /etc/promtail/config.yml
 
 promtail_apt_keyring: /etc/apt/keyrings/grafana.gpg
