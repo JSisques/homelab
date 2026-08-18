@@ -3,11 +3,11 @@
 # TF_VAR_proxmox_api_token (see .github/workflows/terraform.yaml and
 # deploy.yaml), or a local terraform.tfvars that is never committed.
 
-proxmox_node    = "pve"
+proxmox_node    = "proxmox"
 lxc_storage     = "local-lvm"
 vm_storage      = "local-lvm"
 ssh_public_key  = "ssh-ed25519 AAAA... user@host"
-debian_template = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+debian_template = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
 vm_user         = "ansible"
 
 # VM ID of a cloud-init-ready template (Debian/Ubuntu cloud image, converted
