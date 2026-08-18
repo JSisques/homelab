@@ -1,9 +1,9 @@
 ---
 jellyfin_app_dir: /opt/jellyfin
 
-# Adjust to the NAS's real NFS exports before running this role. The IP is
-# the "nas" host in config/hosts.yaml — update these if that host's
-# address or export layout ever changes.
-jellyfin_nas_export_peliculas: "192.168.0.111:/export/Multimedia/peliculas"
-jellyfin_nas_export_series: "192.168.0.111:/export/Multimedia/series"
+# The IP resolves via hostvars from the "nas" host in config/hosts.yaml —
+# it updates automatically if that host's address ever changes. Adjust
+# the export paths here if the NAS's folder layout changes.
+jellyfin_nas_export_peliculas: "{{ hostvars['nas'].ansible_host }}:/export/Multimedia/peliculas"
+jellyfin_nas_export_series: "{{ hostvars['nas'].ansible_host }}:/export/Multimedia/series"
 jellyfin_media_mount_path: /mnt/nas/multimedia
