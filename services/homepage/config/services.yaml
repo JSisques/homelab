@@ -96,8 +96,7 @@ Networking:
   Traefik:
     href: http://192.168.0.204:8080
     icon: traefik.png
-    description: Reverse proxy for Cloudflared -> Traefik -> backend (personal/public
-      tiers only)
+    description: Reverse proxy for personal/public tier services
 Utilities:
   IT-Tools:
     href: http://192.168.0.214:8080

@@ -223,7 +223,7 @@ services:
 
     homepage:
       enabled: true
-      description: Reverse proxy for Cloudflared -> Traefik -> backend (personal/public tiers only)
+      description: Reverse proxy for personal/public tier services
 
     uptime:
       enabled: true
@@ -412,7 +412,8 @@ services:
       description: MCP server exposing a Cookidoo account to AI agents
 
     uptime:
-      enabled: true  # HTTP check should target GET /api/health, not "/"
+      # HTTP check should target GET /api/health, not "/"
+      enabled: true
 
     # No native /metrics — cookidoo-mcp only pushes OTLP metrics when
     # OTEL_EXPORTER_OTLP_ENDPOINT is set (see services/cookidoo-mcp). No

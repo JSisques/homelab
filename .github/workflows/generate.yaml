@@ -125,7 +125,7 @@ jobs:
       - name: Check generated files
         run: |
           if ! git diff --exit-code; then
-            echo "::error::Generated Traefik dynamic configuration is out of date."
+            echo "::error::Generated Traefik configuration is out of date."
             echo "Run generate-traefik.sh locally and commit the changes."
             exit 1
           fi
@@ -150,7 +150,7 @@ jobs:
       - name: Check generated files
         run: |
           if ! git diff --exit-code; then
-            echo "::error::Generated Cloudflared ingress configuration is out of date."
+            echo "::error::Generated Cloudflared configuration is out of date."
             echo "Run generate-cloudflared.sh locally and commit the changes."
             exit 1
           fi
