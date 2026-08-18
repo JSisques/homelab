@@ -12,8 +12,8 @@ services:
       - ./config/provisioning:/etc/grafana/provisioning:ro
 
     environment:
-      GF_SERVER_ROOT_URL: https://grafana.home.arpa
-      GF_SERVER_DOMAIN: grafana.home.arpa
+      GF_SERVER_ROOT_URL: http://192.168.0.209:3000
+      GF_SERVER_DOMAIN: 192.168.0.209
       GF_USERS_ALLOW_SIGN_UP: "false"
 
 volumes:

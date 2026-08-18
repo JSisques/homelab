@@ -11,4 +11,4 @@ services:
       - ./config:/app/config
 
     environment:
-      HOMEPAGE_ALLOWED_HOSTS: home.home.arpa
+      HOMEPAGE_ALLOWED_HOSTS: "*"

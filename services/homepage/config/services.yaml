@@ -17,88 +17,88 @@ Applications:
     description: Personal blog
 Automation:
   n8n:
-    href: https://n8n.home.arpa
+    href: http://192.168.0.211:5678
     icon: n8n.png
     description: Workflow automation platform
   Cookidoo MCP:
-    href: https://cookidoo-mcp.home.arpa
+    href: http://192.168.0.212:3000
     icon: mdi-chef-hat
     description: MCP server exposing a Cookidoo account to AI agents
 Downloads:
   qBittorrent:
-    href: https://qbittorrent.home.arpa
+    href: http://192.168.0.216:8080
     icon: qbittorrent.png
     description: Torrent client (via VPN)
   Prowlarr:
-    href: https://prowlarr.home.arpa
+    href: http://192.168.0.216:9696
     icon: prowlarr.png
     description: Indexer manager for Sonarr/Radarr
   Sonarr:
-    href: https://sonarr.home.arpa
+    href: http://192.168.0.216:8989
     icon: sonarr.png
     description: TV series automation
   Radarr:
-    href: https://radarr.home.arpa
+    href: http://192.168.0.216:7878
     icon: radarr.png
     description: Movie automation
   pyLoad:
-    href: https://pyload.home.arpa
+    href: http://192.168.0.216:8000
     icon: pyload.png
     description: Direct HTTP/FTP link downloader
   MeTube:
-    href: https://metube.home.arpa
+    href: http://192.168.0.216:8081
     icon: metube.png
     description: YouTube/video downloader (yt-dlp)
 Infrastructure:
   Proxmox:
-    href: https://proxmox.home.arpa
+    href: https://192.168.0.157:8006
     icon: proxmox.png
     description: Virtualization platform
   Kafka:
-    href: https://kafka.home.arpa
+    href: http://192.168.0.207
     icon: kafka.png
     description: Event streaming platform
   RustFS:
-    href: https://rustfs.home.arpa
+    href: http://192.168.0.208:9001
     icon: mdi-database
     description: S3-compatible object storage
   Rancher:
-    href: https://rancher.home.arpa
+    href: http://192.168.0.207:30082
     icon: rancher.png
     description: Kubernetes cluster management
 Media:
   Jellyfin:
-    href: https://jellyfin.home.arpa
+    href: http://192.168.0.215:8096
     icon: jellyfin.png
     description: Media streaming server
 Monitoring:
   Grafana:
-    href: https://grafana.home.arpa
+    href: http://192.168.0.209:3000
     icon: grafana.png
     description: Monitoring dashboards
   Prometheus:
-    href: https://prometheus.home.arpa
+    href: http://192.168.0.209:9090
     icon: prometheus.png
     description: Metrics and monitoring
   Uptime Kuma:
-    href: https://uptime.home.arpa
+    href: http://192.168.0.210:3001
     icon: uptime-kuma.png
     description: Service monitoring
 Networking:
   AdGuard Home (Primary):
-    href: https://adguard1.home.arpa
+    href: http://192.168.0.201
     icon: adguard-home.png
     description: Primary DNS resolver and network-wide ad blocking
   AdGuard Home (Secondary):
-    href: https://adguard2.home.arpa
+    href: http://192.168.0.202
     icon: adguard-home.png
     description: Secondary DNS resolver, kept in sync from the primary
   Traefik:
-    href: https://traefik.home.arpa
+    href: http://192.168.0.204:8082
     icon: traefik.png
-    description: Internal reverse proxy for *.home.arpa
+    description: Internal reverse proxy (unused while LAN is IP:port)
 Utilities:
   IT-Tools:
-    href: https://it-tools.home.arpa
+    href: http://192.168.0.214:8080
     icon: it-tools.png
     description: Collection of useful developer tools

@@ -14,7 +14,7 @@ ingress:
 
   # jsisques.net — personal apps (add entries here as they're deployed)
   - hostname: jellyfin.jsisques.net
-    service: http://jellyfin.home.arpa:8096
+    service: http://192.168.0.215:8096
   # Kubernetes-hosted (see kubernetes/applications/blog/), no in-cluster
   # ingress yet, so this forwards straight to the k3s-server node's
   # NodePort, same as landing/daysoff above.
