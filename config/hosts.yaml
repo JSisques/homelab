@@ -265,6 +265,22 @@ hosts:
     role:
       - rustfs
 
+  minecraft:
+    type: lxc
+    platform: proxmox
+    octet: 217
+    # PaperMC behind lazymc (services/minecraft/) — the JVM heap alone
+    # wants ~6G once plugins are added, so this leaves real headroom for
+    # the OS, Docker, lazymc, and the metrics exporter on top of it.
+    cpu: 3
+    memory: 8192
+    # World data lives on the NAS over NFS (ansible/roles/minecraft/),
+    # not on this LXC's own disk — disk here only needs the OS, Docker
+    # images, and the Paper server jar itself.
+    disk: 16
+    role:
+      - minecraft
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

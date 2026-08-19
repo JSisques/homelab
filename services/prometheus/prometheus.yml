@@ -88,6 +88,12 @@ scrape_configs:
           - "gardenia:3000"
         labels:
           instance: "gardenia"
+  - job_name: "minecraft"
+    static_configs:
+      - targets:
+          - "192.168.0.217:9150"
+        labels:
+          instance: "minecraft"
   - job_name: "node-exporter"
     static_configs:
       - targets:
@@ -158,6 +164,10 @@ scrape_configs:
           - "192.168.0.208:9100"
         labels:
           instance: "rustfs"
+      - targets:
+          - "192.168.0.217:9100"
+        labels:
+          instance: "minecraft"
   - job_name: "promtail"
     static_configs:
       - targets:
@@ -228,6 +238,10 @@ scrape_configs:
           - "192.168.0.208:9080"
         labels:
           instance: "rustfs"
+      - targets:
+          - "192.168.0.217:9080"
+        labels:
+          instance: "minecraft"
   - job_name: "blackbox"
     metrics_path: /probe
     file_sd_configs:

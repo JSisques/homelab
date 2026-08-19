@@ -5,7 +5,7 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail k3s-server rustfs
+SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail k3s-server rustfs minecraft
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
@@ -22,7 +22,10 @@ ANSIBLE_EXTRA_VARS := \
 	-e "adguard_sync_origin_username=$${ADGUARD_SYNC_ORIGIN_USERNAME}" \
 	-e "adguard_sync_origin_password=$${ADGUARD_SYNC_ORIGIN_PASSWORD}" \
 	-e "adguard_sync_replica_username=$${ADGUARD_SYNC_REPLICA_USERNAME}" \
-	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}"
+	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}" \
+	-e "minecraft_nas_username=$${MINECRAFT_NAS_USERNAME}" \
+	-e "minecraft_nas_password=$${MINECRAFT_NAS_PASSWORD}" \
+	-e "minecraft_rcon_password=$${MINECRAFT_RCON_PASSWORD}"
 
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \

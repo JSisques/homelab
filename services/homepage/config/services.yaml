@@ -66,6 +66,12 @@
         href: http://192.168.0.207:30082
         icon: rancher.png
         description: Kubernetes cluster management
+- Juegos:
+    - Minecraft (PaperMC):
+        href: http://192.168.0.217:25565
+        icon: minecraft.png
+        description: Servidor PaperMC — arranca solo al conectar, se apaga a los 10
+          min sin jugadores
 - Media:
     - Jellyfin:
         href: http://192.168.0.215:8096

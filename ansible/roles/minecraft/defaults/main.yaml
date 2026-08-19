@@ -1,0 +1,23 @@
+---
+minecraft_app_dir: /opt/minecraft
+
+# CIFS/SMB share (user's NAS, not NFS like rustfs) — the "proxmox" share
+# with a per-service "data/<name>" convention. The share and the
+# "data/minecraft" folder inside it must already exist on the NAS before
+# this role runs; nothing here creates them (same "manual, hardware-side
+# step" pattern as rustfs's NFS export). See services/minecraft/README.md.
+minecraft_nas_share: "//{{ hostvars['nas'].ansible_host }}/proxmox/data/minecraft"
+minecraft_data_mount_path: /mnt/nas/minecraft
+
+# NAS share credentials. Must be provided via Ansible Vault or CI
+# secrets — never commit real values. The role refuses to run without
+# them (see tasks/main.yaml).
+minecraft_nas_username: ""
+minecraft_nas_password: ""
+
+# RCON password — used by the Prometheus exporter to query TPS/player
+# stats, and for admin console access (`docker exec mc rcon-cli`).
+# lazymc-docker-proxy itself does not use RCON; it stops the server
+# container with SIGTERM. Same "refuses to run without it" treatment as
+# the NAS credentials above.
+minecraft_rcon_password: ""

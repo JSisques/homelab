@@ -1,0 +1,77 @@
+# lazymc proxies the public port and starts/stops the "mc" container on
+# demand (see lazymc.* labels below) — it needs its own bridge network
+# with static IPs (a lazymc-docker-proxy requirement, IPs must not
+# change) and the Docker socket to control the "mc" container's
+# lifecycle. See README.md.
+networks:
+  minecraft:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+services:
+  lazymc:
+    image: ghcr.io/joesturge/lazymc-docker-proxy:latest
+    container_name: lazymc
+    restart: unless-stopped
+
+    networks:
+      minecraft:
+        ipv4_address: 172.20.0.2
+
+    volumes:
+      - /mnt/nas/minecraft:/server:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    ports:
+      - "25565:25565"
+
+  mc:
+    image: itzg/minecraft-server:java25
+    container_name: minecraft-paper
+    # Managed entirely by lazymc (start/stop via the Docker socket
+    # above) — restart: unless-stopped would fight it every time it
+    # stops the container to sleep.
+    restart: "no"
+    tty: true
+    stdin_open: true
+
+    networks:
+      minecraft:
+        ipv4_address: 172.20.0.3
+
+    labels:
+      - lazymc.enabled=true
+      - lazymc.group=mc
+      - lazymc.server.address=mc:25565
+      - lazymc.time.sleep_after=600
+
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      MEMORY: "6G"
+      RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD}
+
+    volumes:
+      - /mnt/nas/minecraft:/data
+
+  mc-exporter:
+    image: ghcr.io/dirien/minecraft-exporter:latest
+    container_name: minecraft-exporter
+    restart: unless-stopped
+
+    networks:
+      - minecraft
+
+    environment:
+      MC_RCON_ADDRESS: "mc:25575"
+      MC_RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD}
+      MC_WORLD: /minecraft/world
+      MC_MOD_SERVER_STATS: papermc
+
+    volumes:
+      - /mnt/nas/minecraft:/minecraft:ro
+
+    ports:
+      - "9150:9150"

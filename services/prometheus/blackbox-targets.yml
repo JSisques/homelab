@@ -34,3 +34,7 @@
     - "https://192.168.0.207:6443"  # k3s-server
   labels:
     module: http_2xx_insecure
+- targets:
+    - "192.168.0.217:25565"  # minecraft
+  labels:
+    module: tcp_connect

@@ -709,3 +709,40 @@ services:
       port: 30082
       scheme: http
       module: http_2xx
+
+  minecraft:
+    name: Minecraft (PaperMC)
+    category: Juegos
+    tier: internal
+    # Not HTTP — this is the raw Minecraft protocol port, informational
+    # link only (paste IP:port into the Minecraft client, not a browser).
+    # Reachable via VPN only: a wg-easy client scoped to just this IP
+    # (Allowed IPs = 192.168.0.217/32), see services/minecraft/README.md
+    # — never port-forwarded on the router.
+    url: http://192.168.0.217:25565
+    icon: minecraft.png
+
+    homepage:
+      enabled: true
+      description: Servidor PaperMC — arranca solo al conectar, se apaga a los 10 min sin jugadores
+
+    uptime:
+      enabled: true
+
+    # lazymc (services/minecraft/) keeps this port listening even while
+    # the actual Paper server is asleep, so a plain TCP connect is the
+    # right up/down check — it reflects "can a player join at all",
+    # not whether the heavy server process happens to be awake right now.
+    blackbox:
+      enabled: true
+      port: 25565
+      module: tcp_connect
+
+    # dirien/minecraft-exporter (services/minecraft/), RCON-based, no
+    # in-game plugin needed. Only reachable while the Paper server is
+    # actually awake — up=0 while lazymc has it asleep is expected, not
+    # a fault. See services/minecraft/README.md.
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.0.217:9150/metrics
