@@ -1,24 +1,18 @@
 ---
 downloads_app_dir: /opt/downloads
 
-# Resolves via hostvars from the "nas" host in config/hosts.yaml — updates
-# automatically if that host's address ever changes. Adjust the export
-# paths below if the NAS's folder layout changes.
-#
-# Unlike Jellyfin's read-only media mounts, these must be writable: Sonarr/
-# Radarr import into the two Multimedia exports, and everything downloads
-# into the Downloads export.
-downloads_nas: "{{ hostvars['nas'].ansible_host }}"
-downloads_nas_export_downloads: "{{ downloads_nas }}:/export/Downloads"
-downloads_nas_export_peliculas: "{{ downloads_nas
-  }}:/export/Multimedia/peliculas"
-downloads_nas_export_series: "{{ downloads_nas }}:/export/Multimedia/series"
-
+# /mnt/nas/downloads and /mnt/nas/jellyfin (Sonarr/Radarr write into the
+# same folder Jellyfin reads read-only) both come from Proxmox-level
+# bind mounts, not something this role manages — unprivileged LXCs
+# can't mount CIFS/NFS themselves even with the `mount=cifs;nfs`
+# feature flag (kernel limitation, not just permissions). Same pattern
+# as ansible/roles/minecraft/, ansible/roles/rustfs/, and
+# ansible/roles/jellyfin/. See services/downloads/README.md for the
+# exact host-side setup commands.
 downloads_mount_path: /mnt/nas/downloads
-downloads_media_mount_path: /mnt/nas/multimedia
 
 # linuxserver.io images run as this UID/GID and chown their volumes
-# accordingly — must match a user that can write to the NAS exports above.
+# accordingly — must match the uid/gid the host-side CIFS mounts use.
 downloads_puid: 1000
 downloads_pgid: 1000
 downloads_timezone: Europe/Madrid
