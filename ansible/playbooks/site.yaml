@@ -55,3 +55,8 @@
 
 - name: Deploy Minecraft
   ansible.builtin.import_playbook: minecraft.yaml
+
+# Runs last: reads config/services.yaml's full catalog, so it wants
+# every other service's Terraform/Ansible state to already be current.
+- name: Sync Uptime Kuma monitors from config/services.yaml
+  ansible.builtin.import_playbook: uptime-kuma-sync.yaml

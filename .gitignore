@@ -11,6 +11,10 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Python bytecode cache (scripts/sync-uptime-kuma.py)
+__pycache__/
+*.pyc
+
 # JavaScript dependencies and logs
 node_modules/
 npm-debug.log*
