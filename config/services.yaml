@@ -233,6 +233,26 @@ services:
       type: prometheus
       endpoint: http://192.168.0.204:8082/metrics
 
+  wireguard:
+    name: WireGuard Easy
+    category: Networking
+    tier: internal
+    url: http://192.168.0.203:51821
+    icon: wireguard.png
+
+    homepage:
+      enabled: true
+      description: VPN gateway — client and peer management dashboard
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 51821
+      scheme: http
+      module: http_2xx
+
   gardenia:
     name: Gardenia
     category: Applications

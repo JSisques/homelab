@@ -5,12 +5,6 @@
     state: directory
     mode: "0755"
 
-- name: Deploy WireGuard environment file
-  ansible.builtin.template:
-    src: env.j2
-    dest: "{{ wireguard_app_dir }}/.env"
-    mode: "0644"
-
 - name: Deploy WireGuard Docker Compose file
   ansible.builtin.copy:
     src: "{{ services_dir }}/wireguard/compose.yaml"
