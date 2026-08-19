@@ -256,8 +256,9 @@ hosts:
     platform: proxmox
     octet: 208
     # S3-compatible object storage (https://rustfs.com/, see
-    # services/rustfs/README.md). Object data lives on the NAS over NFS
-    # (ansible/roles/rustfs/), not on this LXC's own disk — disk here
+    # services/rustfs/README.md). Object data lives on the NAS (CIFS,
+    # mounted on the Proxmox host and bind-mounted in — see
+    # services/rustfs/README.md), not on this LXC's own disk — disk here
     # only needs to hold the OS and the container image.
     cpu: 2
     memory: 1024
@@ -274,9 +275,10 @@ hosts:
     # the OS, Docker, lazymc, and the metrics exporter on top of it.
     cpu: 3
     memory: 8192
-    # World data lives on the NAS over NFS (ansible/roles/minecraft/),
-    # not on this LXC's own disk — disk here only needs the OS, Docker
-    # images, and the Paper server jar itself.
+    # World data lives on the NAS (CIFS, mounted on the Proxmox host and
+    # bind-mounted in — see services/minecraft/README.md), not on this
+    # LXC's own disk — disk here only needs the OS, Docker images, and
+    # the Paper server jar itself.
     disk: 16
     role:
       - minecraft

@@ -9,10 +9,11 @@ The role is responsible for configuring the host and deploying the application. 
 This role handles:
 
 - Docker installation (via the `docker` role dependency)
-- NFS client installation and mounting the NAS export that backs RustFS's object data
 - Credential injection (`RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY`)
 - Docker Compose deployment
 - Service startup and updates
+
+It does **not** mount the NAS — see "NAS Export" below.
 
 Terraform is responsible for creating the LXC container.
 
@@ -56,16 +57,15 @@ Role defaults are defined in `defaults/main.yaml`:
 ```yaml
 rustfs_app_dir: /opt/rustfs
 
-rustfs_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/rustfs"
-rustfs_data_mount_path: /mnt/nas/rustfs
-
 rustfs_access_key: ""
 rustfs_secret_key: ""
 ```
 
 ## NAS Export
 
-Unlike the app config above, object *data* never touches the LXC's own disk — see `services/rustfs/README.md` for the NAS-side prerequisite (creating the export, and why it must allow writes from UID/GID `10001:10001`, the fixed non-root user RustFS's container runs as).
+Object *data* never touches the LXC's own disk — `/mnt/nas/rustfs` inside the container comes from a **Proxmox-level bind mount**, not this role. Unprivileged LXCs (all of them in this repo) can't mount CIFS/NFS themselves, even with `features.mount = ["cifs", "nfs"]` set (`mount error(1): Operation not permitted` — a kernel limitation, confirmed while building `ansible/roles/minecraft/`, which hits the exact same issue and documents the full explanation).
+
+The NAS share is mounted on the **Proxmox host itself** (systemd mount unit + credentials file) and bind-mounted into the LXC via `pct set <vm_id> -mp0 ...` — both manual, one-time, host-level steps, not managed by this role or by Terraform (Proxmox requires `root@pam` for `mount_point`/`features` changes; this repo's API token is deliberately least-privilege). See `services/rustfs/README.md` for the exact commands, including why the mount needs UID/GID `110001` (RustFS's fixed non-root user `10001`, mapped through the LXC's unprivileged offset).
 
 ## Secrets
 

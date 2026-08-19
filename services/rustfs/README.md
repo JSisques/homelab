@@ -5,7 +5,7 @@
 ## Responsibilities
 
 - Serves an S3 API (bucket create/list, object put/get/delete, etc.) and a web console.
-- Keeps all object data on the NAS over NFS, not on the LXC's own disk — same pattern as Obsidian and Jellyfin.
+- Keeps all object data on the NAS, not on the LXC's own disk.
 
 RustFS is deployed as a Docker Compose application inside a dedicated LXC container, same as `obsidian`/`jellyfin`.
 
@@ -20,6 +20,17 @@ services/rustfs/
 ## Architecture
 
 ```text
+             Proxmox host (192.168.0.157)
+                        │
+          systemd mount unit (CIFS/SMB)
+                        │
+                        ▼
+        //<nas>/proxmox/data/rustfs
+          mounted at /mnt/pve/rustfs
+                        │
+        bind-mounted into the LXC as mp0
+                        │
+                        ▼
                    rustfs LXC
                         │
                  Docker Compose
@@ -29,19 +40,52 @@ services/rustfs/
                 :9000 (S3 API)
               :9001 (console)
                         │
-                     /data
-                        │
                         ▼
-                 NFS export on NAS
-              192.168.0.111:/export/rustfs
+              /data → /mnt/nas/rustfs
 ```
 
 ## NAS prerequisite (one-time, manual)
 
-Like Obsidian's and Jellyfin's, this export doesn't exist until it's created on the NAS itself:
+Object data lives on the NAS over **CIFS/SMB** (a `proxmox` share, `data/rustfs` subfolder — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — confirmed directly (`mount error(1): Operation not permitted`, even with Proxmox's `features.mount = ["cifs", "nfs"]` flag set) while working through the same issue for `services/minecraft/`; see `ansible/roles/minecraft/README.md` for the full explanation. `ansible/roles/rustfs/` does not manage this mount at all.
 
-1. Create an NFS export at `/export/rustfs` on the NAS (`192.168.0.111`), readable/writable from the `rustfs` LXC's address (`config/hosts.yaml`).
-2. RustFS's container runs as a fixed non-root user, UID/GID `10001:10001`, and needs write access to that export. The Ansible role (`ansible/roles/rustfs/`) `chown`s the mount point to `10001:10001` after mounting it, which only succeeds if the export doesn't map root to an unprivileged user (i.e. `no_root_squash`, or the export is already owned by `10001:10001` on the NAS side). Set that up on the NAS before the first run.
+Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `rustfs` LXC (`vm_id 208`) exists — create the `data/rustfs` folder inside the NAS's `proxmox` share first:
+
+```bash
+mkdir -p /mnt/pve/rustfs
+
+cat > /etc/pve-nas-rustfs-credentials <<'EOF'
+username=<your NAS username>
+password=<your NAS password>
+EOF
+chmod 600 /etc/pve-nas-rustfs-credentials
+
+cat > /etc/systemd/system/mnt-pve-rustfs.mount <<'EOF'
+[Unit]
+Description=CIFS mount for RustFS object data (proxmox/data/rustfs NAS share)
+After=network-online.target
+# Without this, pve-guests.service (which starts LXCs on boot) has no
+# ordering relative to this mount and can start the container before
+# the share is mounted, leaving the bind mount empty on that boot.
+Before=pve-guests.service
+Wants=network-online.target
+
+[Mount]
+What=//<nas-ip>/proxmox/data/rustfs
+Where=/mnt/pve/rustfs
+Type=cifs
+# uid/gid 110001 = RustFS's fixed non-root container user (10001)
+# mapped through the LXC's standard root:100000:65536 unprivileged
+# offset (check /etc/subuid if this LXC's mapping is non-default).
+Options=credentials=/etc/pve-nas-rustfs-credentials,uid=110001,gid=110001,vers=3.0,_netdev
+EOF
+
+systemctl daemon-reload
+systemctl enable --now mnt-pve-rustfs.mount
+
+pct set 208 -mp0 /mnt/pve/rustfs,mp=/mnt/nas/rustfs
+```
+
+The `pct set` step applies live to a running container (no reboot needed) but is **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo just that last `pct set` line (the systemd mount unit on the host survives on its own).
 
 ## Credentials
 
