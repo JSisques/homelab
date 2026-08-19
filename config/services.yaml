@@ -724,7 +724,7 @@ services:
 
     homepage:
       enabled: true
-      description: Servidor PaperMC — arranca solo al conectar, se apaga a los 10 min sin jugadores
+      description: PaperMC (arranca al conectar, duerme tras 10 min)
 
     uptime:
       enabled: true

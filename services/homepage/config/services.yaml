@@ -70,8 +70,7 @@
     - Minecraft (PaperMC):
         href: http://192.168.0.217:25565
         icon: minecraft.png
-        description: Servidor PaperMC — arranca solo al conectar, se apaga a los 10
-          min sin jugadores
+        description: PaperMC (arranca al conectar, duerme tras 10 min)
 - Media:
     - Jellyfin:
         href: http://192.168.0.215:8096
