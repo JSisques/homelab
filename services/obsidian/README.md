@@ -23,6 +23,17 @@ No `.env.example` — there are no secrets in the default (no-OAuth, no git-sync
 ## Architecture
 
 ```text
+             Proxmox host (192.168.0.157)
+                        │
+          systemd mount unit (CIFS/SMB)
+                        │
+                        ▼
+           //<nas>/proxmox/data/obsidian
+          mounted at /mnt/pve/obsidian
+                        │
+        bind-mounted into the LXC as mp0
+                        │
+                        ▼
                   obsidian LXC
                         │
                  Docker Compose
@@ -45,8 +56,7 @@ No `.env.example` — there are no secrets in the default (no-OAuth, no git-sync
               /vaults (bind mount)
                         │
                         ▼
-                 NFS export on NAS
-              192.168.0.111:/export/obsidian
+                 /mnt/nas/obsidian
 ```
 
 ## What this container is
@@ -70,20 +80,57 @@ Two volumes matter:
 
 | Path      | Backing                              | Contents                                                   |
 | --------- | ------------------------------------ | ------------------------------------------------------------ |
-| `/vaults` | NFS export on the NAS (bind mount)   | The actual vault: Markdown notes, attachments, plugin config |
+| `/vaults` | NAS share, bind-mounted (rw)         | The actual vault: Markdown notes, attachments, plugin config |
 | `/config` | Docker named volume `obsidian-config`| Obsidian app state (vault ID, trust/open flags)               |
 
 Only `/vaults` needs to be backed up — `/config` regenerates itself deterministically from `init-vault.sh` if lost.
 
-### NAS prerequisite
+### NAS prerequisite (one-time, manual)
 
-Before deploying, create an NFS export on the NAS for this service, following the same pattern as `ansible/roles/pbs/`:
+The vault lives on the NAS over **CIFS/SMB** (a `proxmox` share, `data/obsidian` subfolder — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — see `ansible/roles/minecraft/README.md` for the full explanation (kernel limitation, not a permissions gap).
 
-```text
-192.168.0.111:/export/obsidian
+Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `obsidian` LXC (`vm_id 213`) exists — create the `data/obsidian` folder inside the NAS's `proxmox` share first:
+
+```bash
+mkdir -p /mnt/pve/obsidian
+
+cat > /etc/pve-nas-obsidian-credentials <<'EOF'
+username=<your NAS username>
+password=<your NAS password>
+EOF
+chmod 600 /etc/pve-nas-obsidian-credentials
+
+cat > /etc/systemd/system/mnt-pve-obsidian.mount <<'EOF'
+[Unit]
+Description=CIFS mount for Obsidian vault (proxmox/data/obsidian NAS share)
+After=network-online.target
+# Without this, pve-guests.service (which starts LXCs on boot) has no
+# ordering relative to this mount and can start the container before
+# the share is mounted, leaving the bind mount empty on that boot.
+Before=pve-guests.service
+Wants=network-online.target
+
+[Mount]
+What=//<nas-ip>/proxmox/data/obsidian
+Where=/mnt/pve/obsidian
+Type=cifs
+# uid/gid 100911 = obsidian-remote's default container user (911, the
+# linuxserver.io convention) mapped through the LXC's standard
+# root:100000:65536 unprivileged offset (check /etc/subuid if this
+# LXC's mapping is non-default).
+Options=credentials=/etc/pve-nas-obsidian-credentials,uid=100911,gid=100911,vers=3.0,_netdev
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now mnt-pve-obsidian.mount
+
+pct set 213 -mp0 /mnt/pve/obsidian,mp=/mnt/nas/obsidian
 ```
 
-The Ansible role (`ansible/roles/obsidian/`) mounts it at `/mnt/nas/obsidian` on the LXC and `compose.yaml` bind-mounts that into the container at `/vaults`.
+The `pct set` step applies live to a running container (no reboot needed) but is **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo just that last `pct set` line (the systemd mount unit on the host survives on its own).
 
 ## Networking
 
@@ -133,7 +180,7 @@ make deploy-obsidian
 ```bash
 cd services/obsidian
 
-mkdir -p /tmp/obsidian-vault   # stand-in for the NAS mount
+mkdir -p /mnt/nas/obsidian   # stand-in for the bind-mounted NAS folder
 
 docker compose up -d --build
 ```
@@ -146,4 +193,4 @@ Obsidian should be monitored by Uptime Kuma as a **TCP** monitor on port `4000`,
 
 ## Source of Truth
 
-Terraform manages the LXC (existence, CPU, memory, disk, network). Ansible manages host configuration, the NFS mount, and Docker Compose deployment. This directory manages the Compose definition and application configuration.
+Terraform manages the LXC (existence, CPU, memory, disk, network). The Proxmox host mounts the NAS share and bind-mounts it into the LXC (manual, see "NAS prerequisite" above). Ansible manages host configuration and Docker Compose deployment. This directory manages the Compose definition and application configuration.
