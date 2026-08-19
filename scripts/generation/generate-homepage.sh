@@ -44,11 +44,9 @@ yq -y '
                 | with_entries(select(.value != null))
               )
             })
-            | add
           )
         }
     )
-  | add
 ' "${SOURCE}" > "${OUTPUT}"
 
 echo ""
