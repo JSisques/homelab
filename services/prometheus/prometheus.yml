@@ -168,6 +168,10 @@ scrape_configs:
           - "192.168.0.217:9100"
         labels:
           instance: "minecraft"
+      - targets:
+          - "192.168.0.218:9100"
+        labels:
+          instance: "stirling-pdf"
   - job_name: "promtail"
     static_configs:
       - targets:
@@ -242,6 +246,10 @@ scrape_configs:
           - "192.168.0.217:9080"
         labels:
           instance: "minecraft"
+      - targets:
+          - "192.168.0.218:9080"
+        labels:
+          instance: "stirling-pdf"
   - job_name: "blackbox"
     metrics_path: /probe
     file_sd_configs:

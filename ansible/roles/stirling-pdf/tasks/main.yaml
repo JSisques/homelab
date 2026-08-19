@@ -1,0 +1,17 @@
+---
+- name: Create Stirling PDF application directory
+  ansible.builtin.file:
+    path: "{{ stirling_pdf_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Stirling PDF Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/stirling-pdf/compose.yaml"
+    dest: "{{ stirling_pdf_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Stirling PDF
+  community.docker.docker_compose_v2:
+    project_src: "{{ stirling_pdf_app_dir }}"
+    state: present
