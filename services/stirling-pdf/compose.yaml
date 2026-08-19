@@ -1,0 +1,31 @@
+services:
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # Built-in login (default admin/stirling, changed via its own UI)
+      # is on by default — off here to match every other tier: internal
+      # service in this repo: LAN/VPN is the trust boundary, not a
+      # per-app login. DISABLE_ADDITIONAL_FEATURES=true alongside it
+      # matches Stirling-PDF's own documented no-login example compose.
+      - DISABLE_ADDITIONAL_FEATURES=true
+      - SECURITY_ENABLELOGIN=false
+      # Reject uploads over 100MB instead of silently struggling.
+      - SYSTEM_MAXFILESIZE=100
+
+    volumes:
+      - stirling-pdf-tessdata:/usr/share/tessdata
+      - stirling-pdf-config:/configs
+      - stirling-pdf-logs:/logs
+      - stirling-pdf-pipeline:/pipeline
+
+volumes:
+  stirling-pdf-tessdata:
+  stirling-pdf-config:
+  stirling-pdf-logs:
+  stirling-pdf-pipeline:

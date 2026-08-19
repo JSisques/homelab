@@ -111,3 +111,7 @@
         href: http://192.168.0.214:8080
         icon: it-tools.png
         description: Collection of useful developer tools
+    - Stirling PDF:
+        href: http://192.168.0.218:8080
+        icon: stirling-pdf.png
+        description: Merge, split, convert, OCR, and edit PDFs

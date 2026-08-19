@@ -291,6 +291,19 @@ hosts:
     role:
       - minecraft
 
+  stirling-pdf:
+    type: lxc
+    platform: proxmox
+    octet: 218
+    # Standard image (not -fat/-ultra-lite, see services/stirling-pdf/
+    # README.md) — stateless per request (no NAS mount needed), disk
+    # here only needs the OS, Docker, and the image itself.
+    cpu: 2
+    memory: 2048
+    disk: 6
+    role:
+      - stirling-pdf
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi
