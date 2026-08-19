@@ -1,39 +1,50 @@
 services:
-  wireguard:
-    image: lscr.io/linuxserver/wireguard:latest
-    container_name: wireguard
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
     restart: unless-stopped
+
+    # v15 refuses plain HTTP unless told otherwise — the dashboard is
+    # tier: internal (LAN-only, no Traefik/TLS in front of it), so this
+    # has to be set. WG_HOST/admin password/DNS/allowed IPs are no
+    # longer environment variables in v15 — they're set once through
+    # the web UI's onboarding wizard on first visit. See README.md.
+    environment:
+      - INSECURE=true
 
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
 
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Madrid
-      - SERVERURL=vpn.jsisques.net  # REPLACE_WITH_REAL_ENDPOINT — see README
-      - SERVERPORT=51820
-      - PEERS=5
-      # PEERDNS/ALLOWEDIPS come from .env, rendered by the Ansible role
-      # (ansible/roles/wireguard/templates/env.j2) from the Ansible
-      # inventory's lan_cidr and both adguard-home-1/adguard-home-2
-      # addresses — all ultimately derived from config/hosts.yaml's
-      # `network:` block, so a LAN subnet change doesn't leave the VPN
-      # routing clients into the old one. See README.md.
-      - PEERDNS=${PEERDNS}
-      - INTERNAL_SUBNET=10.13.13.0
-      - ALLOWEDIPS=${ALLOWEDIPS}
+    networks:
+      wg:
+        ipv4_address: 10.42.42.42
+        ipv6_address: fdcc:ad94:bacf:61a3::2a
+
+    volumes:
+      - etc_wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
 
     ports:
       - "51820:51820/udp"
-
-    volumes:
-      - wireguard-config:/config
-      - /lib/modules:/lib/modules:ro
+      - "51821:51821/tcp"
 
     sysctls:
+      - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.default.forwarding=1
+
+networks:
+  wg:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.42.42.0/24
+        - subnet: fdcc:ad94:bacf:61a3::/64
 
 volumes:
-  wireguard-config:
+  etc_wireguard:

@@ -97,6 +97,10 @@
         href: http://192.168.0.204:8080
         icon: traefik.png
         description: Reverse proxy for personal/public tier services
+    - WireGuard Easy:
+        href: http://192.168.0.203:51821
+        icon: wireguard.png
+        description: VPN gateway — client and peer management dashboard
 - Utilities:
     - IT-Tools:
         href: http://192.168.0.214:8080
