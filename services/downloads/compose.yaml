@@ -130,6 +130,12 @@ services:
     environment:
       - UID=${PUID}
       - GID=${PGID}
+      # YouTube changes its anti-bot mechanisms often enough that fixes
+      # regularly land in yt-dlp's nightly builds well before the next
+      # stable release — stable alone means every "HTTP Error 403:
+      # Forbidden" download failure sits broken until stable catches up.
+      # Switches to nightly and auto-updates+restarts daily at 04:00.
+      - YTDL_NIGHTLY_UPDATE_TIME=04:00
 
     volumes:
       - /mnt/nas/downloads/youtube:/downloads

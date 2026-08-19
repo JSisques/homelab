@@ -6,9 +6,9 @@ The homelab's "give it a URL and it lands on the NAS" stack. It covers the three
 
 - **qBittorrent** — torrent client. Its traffic (only its traffic) is routed through a VPN via **gluetun**, so the homelab's real IP is never exposed to other peers.
 - **Prowlarr** — indexer manager, feeds search results to Sonarr/Radarr.
-- **Sonarr** / **Radarr** — watch for wanted TV episodes/movies, send them to qBittorrent, then rename and move the finished files into the same NFS exports Jellyfin reads from (`/mnt/nas/multimedia/series`, `/mnt/nas/multimedia/peliculas`).
+- **Sonarr** / **Radarr** — watch for wanted TV episodes/movies, send them to qBittorrent, then rename and move the finished files into the same NAS folder Jellyfin reads from (`/mnt/nas/jellyfin/series`, `/mnt/nas/jellyfin/movies`).
 - **pyLoad** — paste a direct HTTP/FTP link, it downloads straight to the NAS. The generic case: no indexer, no torrent, no video site — just a file behind a URL.
-- **MeTube** — paste a YouTube (or any [yt-dlp](https://github.com/yt-dlp/yt-dlp)-supported site) link, it downloads the video/audio straight to the NAS.
+- **MeTube** — paste a YouTube (or any [yt-dlp](https://github.com/yt-dlp/yt-dlp)-supported site) link, it downloads the video/audio straight to the NAS. Tracks yt-dlp's nightly channel (`YTDL_NIGHTLY_UPDATE_TIME` in `compose.yaml`, auto-updates daily) rather than stable — YouTube's anti-bot changes are usually patched in nightly well before the next stable release, and a stable-only yt-dlp means every `HTTP Error 403: Forbidden` download failure just sits broken until stable catches up.
 
 All seven containers are deployed together as one Docker Compose application inside a dedicated LXC (`downloads`), same pattern as `jellyfin`, `n8n`, and the `monitoring` stack (multiple related containers, one LXC).
 
