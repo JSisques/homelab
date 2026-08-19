@@ -84,6 +84,30 @@ No secret is ever committed. Roles that need one read it from a variable with an
 
 Provide real values via Ansible Vault, or as `-e`/`--extra-vars` from CI secrets — see each role's README.
 
+## SSH access
+
+Ansible connects as the `ansible_user` from the inventory (usually `root`) using the private key matching `ssh_public_key` in `terraform/proxmox/terraform.tfvars` — that's the key Terraform bakes into every LXC/VM at creation time (`terraform/proxmox/lxc.tf`, `vms.tf`).
+
+If that private key has a passphrase, SSH can't prompt for it during a non-interactive `ansible-playbook`/`make deploy-*` run: publickey auth fails silently and falls through to password auth, which also fails. The symptom is `Permission denied (publickey,password)` even though the key and host are otherwise fine. Load the key into your local `ssh-agent` first:
+
+```bash
+ssh-add ~/.ssh/id_ed25519_homelab   # path from your terraform.tfvars
+```
+
+`ssh-agent` identities don't survive a reboot or a fresh login session, so on a plain setup you'll need to re-run `ssh-add` each session. To make it persistent on macOS, store the passphrase in Keychain once and let SSH reload it automatically:
+
+```bash
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519_homelab
+```
+
+and add to `~/.ssh/config`:
+
+```
+Host 192.168.0.*
+  UseKeychain yes
+  AddKeysToAgent yes
+```
+
 ## Running
 
 Prefer the root `Makefile` (`make deploy`, `make deploy-<service>`, `make ping`, ...). Run Ansible directly when you need more control:
