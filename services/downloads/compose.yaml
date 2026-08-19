@@ -79,7 +79,7 @@ services:
     volumes:
       - sonarr-config:/config
       - /mnt/nas/downloads/torrents:/downloads
-      - /mnt/nas/multimedia/series:/tv
+      - /mnt/nas/jellyfin/series:/tv
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -97,7 +97,7 @@ services:
     volumes:
       - radarr-config:/config
       - /mnt/nas/downloads/torrents:/downloads
-      - /mnt/nas/multimedia/peliculas:/movies
+      - /mnt/nas/jellyfin/movies:/movies
 
   # Generic "paste a direct HTTP/FTP link" downloader — the non-torrent,
   # non-video-site case.

@@ -24,10 +24,22 @@ services/downloads/
 ## Architecture
 
 ```text
-                              downloads LXC
-                                    │
-                             Docker Compose
-                                    │
+             Proxmox host (192.168.0.157)
+                        │
+          systemd mount units (CIFS/SMB)
+                        │
+        ┌───────────────┴───────────────┐
+        ▼                                ▼
+//<nas>/proxmox/data/downloads   //<nas>/proxmox/data/jellyfin
+  /mnt/pve/downloads (rw)          /mnt/pve/jellyfin (rw)
+        │                                │
+        │            bind-mounted into both the downloads LXC (rw, mp0/mp1)
+        │            and the jellyfin LXC (ro there — see ansible/roles/jellyfin/)
+        ▼                                ▼
+                     downloads LXC
+                           │
+                    Docker Compose
+                           │
       ┌───────────┬───────────┬────┴────┬───────────┬───────────┐
       │           │           │         │           │           │
   gluetun     prowlarr     sonarr    radarr      pyload      metube
@@ -46,47 +58,86 @@ services/downloads/
                                         │
                         ┌───────────────┴───────────────┐
                         ▼                                ▼
-              /mnt/nas/multimedia/series      /mnt/nas/multimedia/peliculas
-             (same exports Jellyfin reads)     (same exports Jellyfin reads)
+              /mnt/nas/jellyfin/series        /mnt/nas/jellyfin/movies
+           (same folder Jellyfin reads,     (same folder Jellyfin reads,
+                  read-only there)                 read-only there)
 
 pyload   → /mnt/nas/downloads/direct
 metube   → /mnt/nas/downloads/youtube
-```
-
-```text
-192.168.0.111:/export/Downloads              → /mnt/nas/downloads      (rw)
-192.168.0.111:/export/Multimedia/peliculas    → /mnt/nas/multimedia/peliculas (rw)
-192.168.0.111:/export/Multimedia/series       → /mnt/nas/multimedia/series    (rw)
 ```
 
 ## Persistence
 
 | Path                            | Backing                              | Contents                                             |
 | -------------------------------- | ------------------------------------- | ----------------------------------------------------- |
-| `/mnt/nas/downloads/torrents`    | NFS export on the NAS (rw)             | qBittorrent's active + finished torrent data           |
-| `/mnt/nas/downloads/direct`      | NFS export on the NAS (rw)             | pyLoad's finished downloads                            |
-| `/mnt/nas/downloads/youtube`     | NFS export on the NAS (rw)             | MeTube's finished downloads                            |
-| `/mnt/nas/multimedia/peliculas`  | NFS export on the NAS (rw)             | Radarr's organized movie library — same path Jellyfin reads (read-only there) |
-| `/mnt/nas/multimedia/series`     | NFS export on the NAS (rw)             | Sonarr's organized TV library — same path Jellyfin reads (read-only there) |
+| `/mnt/nas/downloads/torrents`    | NAS share, bind-mounted (rw)           | qBittorrent's active + finished torrent data           |
+| `/mnt/nas/downloads/direct`      | NAS share, bind-mounted (rw)           | pyLoad's finished downloads                            |
+| `/mnt/nas/downloads/youtube`     | NAS share, bind-mounted (rw)           | MeTube's finished downloads                            |
+| `/mnt/nas/jellyfin/movies`       | NAS share, bind-mounted (rw)           | Radarr's organized movie library — same path Jellyfin reads (read-only there) |
+| `/mnt/nas/jellyfin/series`       | NAS share, bind-mounted (rw)           | Sonarr's organized TV library — same path Jellyfin reads (read-only there) |
 | `gluetun-config`, `*-config`     | Docker named volumes                   | App state: VPN state, WebUI settings, indexer/download-client wiring, watch lists, history |
 
-Every `*-config` volume is worth backing up (indexer config, download-client wiring, watch/wanted lists); the NAS paths are the actual media, backed up (or not) as part of whatever NAS-level backup policy applies to `/export`.
+Every `*-config` volume is worth backing up (indexer config, download-client wiring, watch/wanted lists); the NAS paths are the actual media, backed up (or not) as part of whatever NAS-level backup policy applies to the NAS itself.
 
 ### Why Sonarr/Radarr copy instead of hardlink
 
-Sonarr/Radarr can do an instant, zero-extra-space "hardlink" import instead of a copy, but only when the download folder and the final library folder are on the **same filesystem**. Here they're two separate NFS exports, so imports are a copy-then-delete-source instead — slower and briefly doubles disk usage for the file being moved, but correct. If this becomes a real bottleneck, the fix is putting `/downloads/torrents` and the library folders under one shared NAS export instead of three separate ones.
+Sonarr/Radarr can do an instant, zero-extra-space "hardlink" import instead of a copy, but only when the download folder and the final library folder are on the **same filesystem**. Here they're two separate bind mounts (even though both ultimately live on the same NAS), so imports are a copy-then-delete-source instead — slower and briefly doubles disk usage for the file being moved, but correct. If this becomes a real bottleneck, the fix is putting `/downloads/torrents` and the library folders under one shared NAS folder instead of two separate ones.
 
-### NAS prerequisite
+### NAS prerequisite (one-time, manual)
 
-Before deploying, the following must exist on the NAS:
+Downloads staging and the media library live on the NAS over **CIFS/SMB** (a `proxmox` share, `data/downloads` and `data/jellyfin/{movies,series}` subfolders — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — see `ansible/roles/minecraft/README.md` for the full explanation (kernel limitation, not a permissions gap).
 
-```text
-192.168.0.111:/export/Downloads          (new export, read-write to the downloads LXC)
-192.168.0.111:/export/Multimedia/peliculas  (existing Jellyfin export — add read-write access for the downloads LXC's IP; Jellyfin itself keeps mounting it read-only)
-192.168.0.111:/export/Multimedia/series     (same as above)
+`data/jellyfin` is the **same NAS folder** `ansible/roles/jellyfin/` already bind-mounts — its own bind into the `jellyfin` LXC stays read-only there (`pct set ... ro=1`), while this LXC needs read-write, so the underlying host-side CIFS mount itself has to be read-write (with permissive `file_mode`/`dir_mode` so both LXCs' UIDs can access it — see below).
+
+Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `downloads` LXC (`vm_id 216`) exists — create the `data/downloads` folder inside the NAS's `proxmox` share first (`data/jellyfin/{movies,series}` should already exist from the Jellyfin deploy):
+
+```bash
+mkdir -p /mnt/pve/downloads
+
+cat > /etc/pve-nas-downloads-credentials <<'EOF'
+username=<your NAS username>
+password=<your NAS password>
+EOF
+chmod 600 /etc/pve-nas-downloads-credentials
+
+cat > /etc/systemd/system/mnt-pve-downloads.mount <<'EOF'
+[Unit]
+Description=CIFS mount for downloads staging (proxmox/data/downloads NAS share)
+After=network-online.target
+Before=pve-guests.service
+Wants=network-online.target
+
+[Mount]
+What=//<nas-ip>/proxmox/data/downloads
+Where=/mnt/pve/downloads
+Type=cifs
+# uid/gid 101000 = PUID/PGID 1000 (linuxserver.io images) mapped through
+# the LXC's standard root:100000:65536 unprivileged offset.
+Options=credentials=/etc/pve-nas-downloads-credentials,uid=101000,gid=101000,vers=3.0,_netdev
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now mnt-pve-downloads.mount
+
+pct set 216 -mp0 /mnt/pve/downloads,mp=/mnt/nas/downloads
+pct set 216 -mp1 /mnt/pve/jellyfin,mp=/mnt/nas/jellyfin
 ```
 
-Adjust `ansible/roles/downloads/defaults/main.yaml` if the real export paths differ. The Ansible role mounts them at `/mnt/nas/downloads` and `/mnt/nas/multimedia/{peliculas,series}` on the LXC.
+If `mnt-pve-jellyfin.mount` (from the Jellyfin deploy) is still mounted read-only at the CIFS level, switch it to read-write here too — Jellyfin's own access stays read-only via its `ro=1` bind flag regardless:
+
+```bash
+# In /etc/systemd/system/mnt-pve-jellyfin.mount, change:
+#   uid=100000,gid=100000,vers=3.0,ro,_netdev
+# to:
+#   uid=101000,gid=101000,vers=3.0,file_mode=0664,dir_mode=0775,_netdev
+systemctl daemon-reload
+systemctl restart mnt-pve-jellyfin.mount
+```
+
+Both `pct set` steps apply live to a running container (no reboot needed) but are **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo those lines (the systemd mount units on the host survive on their own).
 
 ## VPN (gluetun)
 

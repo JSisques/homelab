@@ -92,12 +92,15 @@ Wants=network-online.target
 What=//<nas-ip>/proxmox/data/jellyfin
 Where=/mnt/pve/jellyfin
 Type=cifs
-# uid/gid 100000 = the LXC's unprivileged root (container UID 0), since
-# the official jellyfin/jellyfin image always runs as root and ignores
-# PUID/PGID — mapped through the standard root:100000:65536 offset
-# (check /etc/subuid if this LXC's mapping is non-default). Read-only
-# mount, so this only needs to be readable, not writable.
-Options=credentials=/etc/pve-nas-jellyfin-credentials,uid=100000,gid=100000,vers=3.0,ro,_netdev
+# uid/gid 101000: read-write at the host level, because
+# services/downloads/ (Sonarr/Radarr) also bind-mounts this same folder
+# to write organized imports into it — see services/downloads/README.md.
+# Jellyfin's own access stays read-only via the `ro=1` bind flag below,
+# not via the mount itself. file_mode/dir_mode allow the LXC's
+# unprivileged root (uid 100000, since the official jellyfin/jellyfin
+# image always runs as root and ignores PUID/PGID) to read even though
+# it isn't the mount's nominal owner.
+Options=credentials=/etc/pve-nas-jellyfin-credentials,uid=101000,gid=101000,vers=3.0,file_mode=0664,dir_mode=0775,_netdev
 
 [Install]
 WantedBy=multi-user.target
@@ -110,6 +113,8 @@ pct set 215 -mp0 /mnt/pve/jellyfin,mp=/mnt/nas/jellyfin,ro=1
 ```
 
 The `pct set` step applies live to a running container (no reboot needed) but is **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo just that last `pct set` line (the systemd mount unit on the host survives on its own).
+
+If you deploy Jellyfin **before** `services/downloads/`, the mount above can start read-only (`uid=100000,gid=100000,...,ro,_netdev` — Jellyfin doesn't need write access on its own) and get switched to the read-write form above later, when `downloads` needs to share it. See `services/downloads/README.md`'s NAS prerequisite for that switch.
 
 ## Networking
 
