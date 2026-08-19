@@ -1,104 +1,104 @@
-Applications:
-  Gardenia:
-    href: https://gardenia.sisqueslabs.com
-    icon: mdi-sprout
-    description: Garden management platform
-  Sisques Labs Landing:
-    href: https://landing.sisqueslabs.com
-    icon: mdi-web
-    description: Sisques Labs public landing page
-  Days Off:
-    href: https://daysoff.sisqueslabs.com
-    icon: mdi-beach
-    description: Vacation bridge calculator
-  Blog:
-    href: https://blog.jsisques.net
-    icon: mdi-post-outline
-    description: Personal blog
-Automation:
-  n8n:
-    href: http://192.168.0.211:5678
-    icon: n8n.png
-    description: Workflow automation platform
-  Cookidoo MCP:
-    href: http://192.168.0.212:3000
-    icon: mdi-chef-hat
-    description: MCP server exposing a Cookidoo account to AI agents
-Downloads:
-  qBittorrent:
-    href: http://192.168.0.216:8080
-    icon: qbittorrent.png
-    description: Torrent client (via VPN)
-  Prowlarr:
-    href: http://192.168.0.216:9696
-    icon: prowlarr.png
-    description: Indexer manager for Sonarr/Radarr
-  Sonarr:
-    href: http://192.168.0.216:8989
-    icon: sonarr.png
-    description: TV series automation
-  Radarr:
-    href: http://192.168.0.216:7878
-    icon: radarr.png
-    description: Movie automation
-  pyLoad:
-    href: http://192.168.0.216:8000
-    icon: pyload.png
-    description: Direct HTTP/FTP link downloader
-  MeTube:
-    href: http://192.168.0.216:8081
-    icon: metube.png
-    description: YouTube/video downloader (yt-dlp)
-Infrastructure:
-  Proxmox:
-    href: https://192.168.0.157:8006
-    icon: proxmox.png
-    description: Virtualization platform
-  Kafka:
-    href: http://192.168.0.207
-    icon: kafka.png
-    description: Event streaming platform
-  RustFS:
-    href: http://192.168.0.208:9001
-    icon: mdi-database
-    description: S3-compatible object storage
-  Rancher:
-    href: http://192.168.0.207:30082
-    icon: rancher.png
-    description: Kubernetes cluster management
-Media:
-  Jellyfin:
-    href: http://192.168.0.215:8096
-    icon: jellyfin.png
-    description: Media streaming server
-Monitoring:
-  Grafana:
-    href: http://192.168.0.209:3000
-    icon: grafana.png
-    description: Monitoring dashboards
-  Prometheus:
-    href: http://192.168.0.209:9090
-    icon: prometheus.png
-    description: Metrics and monitoring
-  Uptime Kuma:
-    href: http://192.168.0.210:3001
-    icon: uptime-kuma.png
-    description: Service monitoring
-Networking:
-  AdGuard Home (Primary):
-    href: http://192.168.0.201
-    icon: adguard-home.png
-    description: Primary DNS resolver and network-wide ad blocking
-  AdGuard Home (Secondary):
-    href: http://192.168.0.202
-    icon: adguard-home.png
-    description: Secondary DNS resolver, kept in sync from the primary
-  Traefik:
-    href: http://192.168.0.204:8080
-    icon: traefik.png
-    description: Reverse proxy for personal/public tier services
-Utilities:
-  IT-Tools:
-    href: http://192.168.0.214:8080
-    icon: it-tools.png
-    description: Collection of useful developer tools
+- Applications:
+    - Gardenia:
+        href: https://gardenia.sisqueslabs.com
+        icon: mdi-sprout
+        description: Garden management platform
+    - Sisques Labs Landing:
+        href: https://landing.sisqueslabs.com
+        icon: mdi-web
+        description: Sisques Labs public landing page
+    - Days Off:
+        href: https://daysoff.sisqueslabs.com
+        icon: mdi-beach
+        description: Vacation bridge calculator
+    - Blog:
+        href: https://blog.jsisques.net
+        icon: mdi-post-outline
+        description: Personal blog
+- Automation:
+    - n8n:
+        href: http://192.168.0.211:5678
+        icon: n8n.png
+        description: Workflow automation platform
+    - Cookidoo MCP:
+        href: http://192.168.0.212:3000
+        icon: mdi-chef-hat
+        description: MCP server exposing a Cookidoo account to AI agents
+- Downloads:
+    - qBittorrent:
+        href: http://192.168.0.216:8080
+        icon: qbittorrent.png
+        description: Torrent client (via VPN)
+    - Prowlarr:
+        href: http://192.168.0.216:9696
+        icon: prowlarr.png
+        description: Indexer manager for Sonarr/Radarr
+    - Sonarr:
+        href: http://192.168.0.216:8989
+        icon: sonarr.png
+        description: TV series automation
+    - Radarr:
+        href: http://192.168.0.216:7878
+        icon: radarr.png
+        description: Movie automation
+    - pyLoad:
+        href: http://192.168.0.216:8000
+        icon: pyload.png
+        description: Direct HTTP/FTP link downloader
+    - MeTube:
+        href: http://192.168.0.216:8081
+        icon: metube.png
+        description: YouTube/video downloader (yt-dlp)
+- Infrastructure:
+    - Proxmox:
+        href: https://192.168.0.157:8006
+        icon: proxmox.png
+        description: Virtualization platform
+    - Kafka:
+        href: http://192.168.0.207
+        icon: kafka.png
+        description: Event streaming platform
+    - RustFS:
+        href: http://192.168.0.208:9001
+        icon: mdi-database
+        description: S3-compatible object storage
+    - Rancher:
+        href: http://192.168.0.207:30082
+        icon: rancher.png
+        description: Kubernetes cluster management
+- Media:
+    - Jellyfin:
+        href: http://192.168.0.215:8096
+        icon: jellyfin.png
+        description: Media streaming server
+- Monitoring:
+    - Grafana:
+        href: http://192.168.0.209:3000
+        icon: grafana.png
+        description: Monitoring dashboards
+    - Prometheus:
+        href: http://192.168.0.209:9090
+        icon: prometheus.png
+        description: Metrics and monitoring
+    - Uptime Kuma:
+        href: http://192.168.0.210:3001
+        icon: uptime-kuma.png
+        description: Service monitoring
+- Networking:
+    - AdGuard Home (Primary):
+        href: http://192.168.0.201
+        icon: adguard-home.png
+        description: Primary DNS resolver and network-wide ad blocking
+    - AdGuard Home (Secondary):
+        href: http://192.168.0.202
+        icon: adguard-home.png
+        description: Secondary DNS resolver, kept in sync from the primary
+    - Traefik:
+        href: http://192.168.0.204:8080
+        icon: traefik.png
+        description: Reverse proxy for personal/public tier services
+- Utilities:
+    - IT-Tools:
+        href: http://192.168.0.214:8080
+        icon: it-tools.png
+        description: Collection of useful developer tools
