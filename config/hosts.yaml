@@ -104,7 +104,15 @@ hosts:
     # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
     # so this can't be trimmed as far as the other LXCs.
     memory: 2048
-    disk: 8
+    # The obsidian-remote image bundles a full desktop + Chromium — the
+    # docker build step alone needs more than 8G of scratch space to
+    # extract layers (confirmed live: "no space left on device" with
+    # only ~2G free at 76% usage on an 8G disk). Unlike memory, a disk
+    # size change on this Terraform resource forces destroy+recreate
+    # (not in-place) — applied the 8->20 bump live via `pct resize 213
+    # rootfs 20G` on the Proxmox host instead, so this value now matches
+    # the LXC's actual size without Terraform ever having applied it.
+    disk: 20
     role:
       - obsidian
 
