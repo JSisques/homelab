@@ -61,7 +61,7 @@ hosts:
     platform: proxmox
     octet: 205
     cpu: 1
-    memory: 256
+    memory: 512
     disk: 4
     role:
       - homepage
