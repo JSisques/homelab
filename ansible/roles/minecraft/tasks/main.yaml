@@ -1,0 +1,33 @@
+---
+- name: Assert RCON password is provided
+  ansible.builtin.assert:
+    that:
+      - minecraft_rcon_password | length > 0
+    fail_msg: >-
+      minecraft_rcon_password is not set. Provide a real value via
+      Ansible Vault or CI secrets before running this role (see
+      services/minecraft/README.md).
+
+- name: Create Minecraft application directory
+  ansible.builtin.file:
+    path: "{{ minecraft_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Minecraft environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ minecraft_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy Minecraft Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/minecraft/compose.yaml"
+    dest: "{{ minecraft_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Minecraft
+  community.docker.docker_compose_v2:
+    project_src: "{{ minecraft_app_dir }}"
+    state: present

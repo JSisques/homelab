@@ -166,7 +166,11 @@ homelab/
 
 The root `Makefile` wraps Terraform, Ansible, and the `config/` generators behind a small set of targets — run `make help` for the full list.
 
+Every target that touches a service needing secrets (`deploy`, `deploy-<service>`) reads them from your shell environment via `$$VAR` — the `Makefile` never reads a file itself. The standard way to provide them locally is a gitignored `.env` at the repo root (`KEY='value'` per line, one file holding every service's secret — see [Secrets](#secrets) below), loaded into the shell **before** invoking `make`:
+
 ```bash
+set -a && source .env && set +a
+
 make generate           # regenerate everything derived from config/ (inventory, Terraform vars, Homepage, Prometheus)
 make plan                # terraform plan
 make apply                # terraform apply — provisions/updates every LXC and VM
@@ -177,7 +181,9 @@ make validate              # Terraform + Ansible + YAML + shell + Compose checks
 make status                # show current Terraform-managed infrastructure
 ```
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home-1`, `adguard-home-2`, `adguard-home-sync`, `traefik`, `wireguard`, `pbs`, `k3s-server`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, and `downloads` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`); see the matching role's README.
+`set -a` marks every variable `source .env` sets as exported for the rest of the shell session, so a plain `source .env` without it would leave the variables shell-local and invisible to the `make`/`ansible-playbook` subprocess — `set +a` afterwards just turns that auto-export back off again for anything you type next. Skipping this step is the most common cause of a role's `ansible.builtin.assert` failing with "not set" even though `.env` looks right.
+
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `cookidoo-mcp`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home-1`, `adguard-home-2`, `adguard-home-sync`, `traefik`, `wireguard`, `pbs`, `k3s-server`, `rustfs`, `minecraft`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, `downloads`, `rustfs`, `adguard-home-*`, and `minecraft` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`, `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY`, `ADGUARD_SYNC_ORIGIN_*`/`ADGUARD_SYNC_REPLICA_*`, `MINECRAFT_RCON_PASSWORD` — Minecraft's NAS mount is a manual Proxmox-host step, not an Ansible secret, see `services/minecraft/README.md`); see the matching role's README.
 
 ## Configuration
 
@@ -334,11 +340,11 @@ Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-pat
 
 ## Secrets
 
-Secrets should never be committed in plaintext. Sensitive configuration will use mechanisms such as SOPS, Age, Ansible Vault, Kubernetes Secrets, or External Secrets. Public configuration remains in Git while sensitive values remain encrypted or externally referenced.
+Secrets are never committed in plaintext. In CI (`deploy.yaml`, self-hosted runner), they come from repository/organization secrets passed as `-e`/`--extra-vars`. Locally, the convention is a single gitignored `.env` file at the repo root — `KEY='value'` per line, one entry per service (see [Deployment](#deployment) above for how it's loaded). There's no template to copy from; add a new service's variable names to `.env` yourself as you configure it, following the existing lines' style. Longer-term this may move to SOPS/Age/Ansible Vault for values that need to live *in* Git (encrypted) rather than only in an untracked local file — not needed yet since every secret-consuming role already fails loudly (`ansible.builtin.assert`) rather than silently deploying with an insecure default when a value is missing.
 
 ## Roadmap / Planned Services
 
-Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard, AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD. The next priorities:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard (wg-easy), AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD, RustFS, a Minecraft (PaperMC) server that starts on join and sleeps after 10 minutes idle (`services/minecraft/`). The next priorities:
 
 * **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
 * **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.

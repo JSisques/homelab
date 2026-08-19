@@ -65,7 +65,16 @@ TARGET_GROUPS="$(yq -r --argjson addrs "${ADDR_MAP}" '
     | {
         name: $name,
         module: .value.blackbox.module,
-        target: "\(.value.blackbox.scheme // "http")://\($addrs[$name]):\(.value.blackbox.port)"
+        # tcp_connect (and any other non-HTTP module) wants a bare
+        # "host:port" target, no URL scheme — only prefix one when the
+        # service actually declares a scheme (http/https probes).
+        target: (
+          if .value.blackbox.scheme then
+            "\(.value.blackbox.scheme)://\($addrs[$name]):\(.value.blackbox.port)"
+          else
+            "\($addrs[$name]):\(.value.blackbox.port)"
+          end
+        )
       }
   ]
   | group_by(.module)

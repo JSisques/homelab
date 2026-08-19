@@ -52,3 +52,6 @@
 
 - name: Deploy RustFS
   ansible.builtin.import_playbook: rustfs.yaml
+
+- name: Deploy Minecraft
+  ansible.builtin.import_playbook: minecraft.yaml
