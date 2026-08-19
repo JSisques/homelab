@@ -1,45 +1,12 @@
 ---
-- name: Assert NAS credentials and RCON password are provided
+- name: Assert RCON password is provided
   ansible.builtin.assert:
     that:
-      - minecraft_nas_username | length > 0
-      - minecraft_nas_password | length > 0
       - minecraft_rcon_password | length > 0
     fail_msg: >-
-      minecraft_nas_username / minecraft_nas_password / minecraft_rcon_password
-      are not all set. Provide real values via Ansible Vault or CI
-      secrets before running this role (see services/minecraft/README.md).
-
-- name: Install CIFS client utilities
-  ansible.builtin.apt:
-    name: cifs-utils
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-
-- name: Create NFS/CIFS mount point for world data
-  ansible.builtin.file:
-    path: "{{ minecraft_data_mount_path }}"
-    state: directory
-    mode: "0755"
-
-- name: Deploy CIFS credentials file
-  ansible.builtin.template:
-    src: cifs-credentials.j2
-    dest: /etc/minecraft-nas-credentials
-    mode: "0600"
-  no_log: true
-
-- name: Mount the NAS CIFS share
-  ansible.posix.mount:
-    path: "{{ minecraft_data_mount_path }}"
-    src: "{{ minecraft_nas_share }}"
-    fstype: cifs
-    # uid/gid 1000 matches itzg/minecraft-server's default UID/GID (see
-    # services/minecraft/README.md) — CIFS presents this ownership to
-    # the client directly, no separate chown step needed like NFS.
-    opts: "credentials=/etc/minecraft-nas-credentials,uid=1000,gid=1000,vers=3.0,iocharset=utf8,file_mode=0664,dir_mode=0775"
-    state: mounted
+      minecraft_rcon_password is not set. Provide a real value via
+      Ansible Vault or CI secrets before running this role (see
+      services/minecraft/README.md).
 
 - name: Create Minecraft application directory
   ansible.builtin.file:

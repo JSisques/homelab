@@ -61,8 +61,13 @@ services:
     container_name: minecraft-exporter
     restart: unless-stopped
 
+    # Explicit IP, not just attached to the network — otherwise Docker's
+    # auto-assignment can grab .2 (reserved for lazymc below) depending
+    # on container start order, and lazymc fails with "address already
+    # in use".
     networks:
-      - minecraft
+      minecraft:
+        ipv4_address: 172.20.0.4
 
     environment:
       MC_RCON_ADDRESS: "mc:25575"

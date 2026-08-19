@@ -23,8 +23,6 @@ ANSIBLE_EXTRA_VARS := \
 	-e "adguard_sync_origin_password=$${ADGUARD_SYNC_ORIGIN_PASSWORD}" \
 	-e "adguard_sync_replica_username=$${ADGUARD_SYNC_REPLICA_USERNAME}" \
 	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}" \
-	-e "minecraft_nas_username=$${MINECRAFT_NAS_USERNAME}" \
-	-e "minecraft_nas_password=$${MINECRAFT_NAS_PASSWORD}" \
 	-e "minecraft_rcon_password=$${MINECRAFT_RCON_PASSWORD}"
 
 .PHONY: help init fmt validate plan apply destroy \
