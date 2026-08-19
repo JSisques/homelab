@@ -10,35 +10,6 @@
       role (see services/rustfs/README.md) — never deploy with RustFS's
       default rustfsadmin/rustfsadmin credentials.
 
-- name: Install NFS client utilities
-  ansible.builtin.apt:
-    name: nfs-common
-    state: present
-    update_cache: true
-    cache_valid_time: 3600
-
-- name: Create NFS mount point for object data
-  ansible.builtin.file:
-    path: "{{ rustfs_data_mount_path }}"
-    state: directory
-    mode: "0755"
-
-- name: Mount the NAS NFS export
-  ansible.posix.mount:
-    path: "{{ rustfs_data_mount_path }}"
-    src: "{{ rustfs_nas_export }}"
-    fstype: nfs
-    opts: rw,sync,hard,intr
-    state: mounted
-
-- name: Ensure the mount is writable by the RustFS container user
-  ansible.builtin.file:
-    path: "{{ rustfs_data_mount_path }}"
-    state: directory
-    owner: "10001"
-    group: "10001"
-    mode: "0755"
-
 - name: Create RustFS application directory
   ansible.builtin.file:
     path: "{{ rustfs_app_dir }}"

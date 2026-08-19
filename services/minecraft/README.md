@@ -29,6 +29,10 @@ Three containers:
    [Unit]
    Description=CIFS mount for Minecraft world data (proxmox/data/minecraft NAS share)
    After=network-online.target
+   # Without this, pve-guests.service (which starts LXCs on boot) has no
+   # ordering relative to this mount and can start the container before
+   # the share is mounted, leaving the bind mount empty on that boot.
+   Before=pve-guests.service
    Wants=network-online.target
 
    [Mount]
