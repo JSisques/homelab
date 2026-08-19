@@ -1,0 +1,9 @@
+---
+uptime_kuma_url: "http://{{ hostvars['uptime-kuma'].ansible_host }}:3001"
+
+# Admin credentials for the already-deployed Uptime Kuma instance (its
+# own first-run wizard creates the account — this role never seeds it).
+# Must be provided via Ansible Vault or CI secrets. Never commit real
+# values. The role refuses to run without them (see tasks/main.yaml).
+uptime_kuma_username: ""
+uptime_kuma_password: ""
