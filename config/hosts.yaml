@@ -191,7 +191,7 @@ hosts:
     platform: proxmox
     octet: 203
     cpu: 1
-    memory: 256
+    memory: 512
     disk: 4
     role:
       - wireguard
