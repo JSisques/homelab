@@ -20,90 +20,214 @@ scrape_configs:
     static_configs:
       - targets:
           - "prometheus-pve-exporter:9221"
+        labels:
+          instance: "proxmox"
   - job_name: "grafana"
     static_configs:
       - targets:
           - "grafana:3000"
+        labels:
+          instance: "grafana"
   - job_name: "prometheus"
     static_configs:
       - targets:
           - "prometheus:9090"
+        labels:
+          instance: "prometheus"
   - job_name: "loki"
     static_configs:
       - targets:
           - "loki:3100"
+        labels:
+          instance: "loki"
   - job_name: "alertmanager"
     static_configs:
       - targets:
           - "alertmanager:9093"
+        labels:
+          instance: "alertmanager"
   - job_name: "otel-collector"
     static_configs:
       - targets:
           - "otel-collector:8889"
+        labels:
+          instance: "otel-collector"
   - job_name: "tempo"
     static_configs:
       - targets:
           - "tempo:3200"
+        labels:
+          instance: "tempo"
   - job_name: "cloudflared"
     static_configs:
       - targets:
           - "192.168.0.200:20241"
+        labels:
+          instance: "cloudflared"
   - job_name: "kafka"
     static_configs:
       - targets:
           - "kafka-exporter:9308"
+        labels:
+          instance: "kafka"
   - job_name: "uptime-kuma"
     static_configs:
       - targets:
           - "uptime-kuma:3001"
+        labels:
+          instance: "uptime-kuma"
   - job_name: "traefik"
     static_configs:
       - targets:
           - "192.168.0.204:8082"
+        labels:
+          instance: "traefik"
   - job_name: "gardenia"
     static_configs:
       - targets:
           - "gardenia:3000"
+        labels:
+          instance: "gardenia"
   - job_name: "node-exporter"
     static_configs:
       - targets:
           - "192.168.0.209:9100"
+        labels:
+          instance: "monitoring"
+      - targets:
           - "192.168.0.205:9100"
+        labels:
+          instance: "homepage"
+      - targets:
           - "192.168.0.210:9100"
+        labels:
+          instance: "uptime-kuma"
+      - targets:
           - "192.168.0.214:9100"
+        labels:
+          instance: "it-tools"
+      - targets:
           - "192.168.0.211:9100"
+        labels:
+          instance: "n8n"
+      - targets:
           - "192.168.0.213:9100"
+        labels:
+          instance: "obsidian"
+      - targets:
           - "192.168.0.215:9100"
+        labels:
+          instance: "jellyfin"
+      - targets:
           - "192.168.0.216:9100"
+        labels:
+          instance: "downloads"
+      - targets:
           - "192.168.0.200:9100"
+        labels:
+          instance: "cloudflared"
+      - targets:
           - "192.168.0.201:9100"
+        labels:
+          instance: "adguard-home-1"
+      - targets:
           - "192.168.0.202:9100"
+        labels:
+          instance: "adguard-home-2"
+      - targets:
           - "192.168.0.204:9100"
+        labels:
+          instance: "traefik"
+      - targets:
           - "192.168.0.203:9100"
+        labels:
+          instance: "wireguard"
+      - targets:
           - "192.168.0.206:9100"
+        labels:
+          instance: "pbs"
+      - targets:
           - "192.168.0.207:9100"
+        labels:
+          instance: "k3s-server"
+      - targets:
           - "192.168.0.212:9100"
+        labels:
+          instance: "cookidoo-mcp"
+      - targets:
           - "192.168.0.208:9100"
+        labels:
+          instance: "rustfs"
   - job_name: "promtail"
     static_configs:
       - targets:
           - "192.168.0.209:9080"
+        labels:
+          instance: "monitoring"
+      - targets:
           - "192.168.0.205:9080"
+        labels:
+          instance: "homepage"
+      - targets:
           - "192.168.0.210:9080"
+        labels:
+          instance: "uptime-kuma"
+      - targets:
           - "192.168.0.214:9080"
+        labels:
+          instance: "it-tools"
+      - targets:
           - "192.168.0.211:9080"
+        labels:
+          instance: "n8n"
+      - targets:
           - "192.168.0.213:9080"
+        labels:
+          instance: "obsidian"
+      - targets:
           - "192.168.0.215:9080"
+        labels:
+          instance: "jellyfin"
+      - targets:
           - "192.168.0.216:9080"
+        labels:
+          instance: "downloads"
+      - targets:
           - "192.168.0.200:9080"
+        labels:
+          instance: "cloudflared"
+      - targets:
           - "192.168.0.201:9080"
+        labels:
+          instance: "adguard-home-1"
+      - targets:
           - "192.168.0.202:9080"
+        labels:
+          instance: "adguard-home-2"
+      - targets:
           - "192.168.0.204:9080"
+        labels:
+          instance: "traefik"
+      - targets:
           - "192.168.0.203:9080"
+        labels:
+          instance: "wireguard"
+      - targets:
           - "192.168.0.206:9080"
+        labels:
+          instance: "pbs"
+      - targets:
           - "192.168.0.207:9080"
+        labels:
+          instance: "k3s-server"
+      - targets:
           - "192.168.0.212:9080"
+        labels:
+          instance: "cookidoo-mcp"
+      - targets:
           - "192.168.0.208:9080"
+        labels:
+          instance: "rustfs"
   - job_name: "blackbox"
     metrics_path: /probe
     file_sd_configs:

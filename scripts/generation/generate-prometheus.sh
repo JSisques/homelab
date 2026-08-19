@@ -54,7 +54,10 @@ rule_files:
 scrape_configs:
 EOF
 
-# Per-service metrics, declared in config/services.yaml.
+# Per-service metrics, declared in config/services.yaml. Each target gets
+# an explicit `instance` label set to the service key, overriding
+# Prometheus's default of the raw "IP:port" — otherwise every dashboard
+# and query has to translate IPs back to service names by hand.
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 yq -r '
   .services
@@ -62,39 +65,45 @@ yq -r '
   | select(.value.monitoring.enabled == true)
   | select(.value.monitoring.type == "prometheus")
   | (.value.monitoring.endpoint | sub("^https?://"; "") | sub("/metrics$"; "") | sub("/pve$"; "")) as $target
-  | "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets:\n          - \"\($target)\""
+  | "  - job_name: \"\(.key)\"\n    static_configs:\n      - targets:\n          - \"\($target)\"\n        labels:\n          instance: \"\(.key)\""
 ' "${SERVICES_SOURCE}" >> "${OUTPUT}"
 
 # Host-level agents (node-exporter, promtail) run on every LXC/VM as a
 # mandatory Ansible baseline (see ansible/README.md) regardless of which
 # application is deployed there, so they're scraped from config/hosts.yaml
-# directly rather than from a per-service monitoring block.
+# directly rather than from a per-service monitoring block. Same
+# `instance` labeling as above — one static_configs entry per host (rather
+# than one entry sharing a target list) so each can carry its own label.
 RESOLVED="$(resolve_addresses "${HOSTS_SOURCE}")"
 
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
-HOST_IPS="$(yq -r --argjson resolved "${RESOLVED}" '
+HOST_ENTRIES="$(yq -r --argjson resolved "${RESOLVED}" '
   .hosts
   | to_entries[]
   | select(.value.type == "lxc" or .value.type == "vm")
   | select($resolved[.key] != "TBD")
-  | $resolved[.key]
+  | "\(.key) \($resolved[.key])"
 ' "${HOSTS_SOURCE}")"
 
-if [[ -n "${HOST_IPS}" ]]; then
+if [[ -n "${HOST_ENTRIES}" ]]; then
     {
         echo "  - job_name: \"node-exporter\""
         echo "    static_configs:"
-        echo "      - targets:"
-        while IFS= read -r ip; do
+        while IFS=' ' read -r name ip; do
+            echo "      - targets:"
             echo "          - \"${ip}:9100\""
-        done <<<"${HOST_IPS}"
+            echo "        labels:"
+            echo "          instance: \"${name}\""
+        done <<<"${HOST_ENTRIES}"
 
         echo "  - job_name: \"promtail\""
         echo "    static_configs:"
-        echo "      - targets:"
-        while IFS= read -r ip; do
+        while IFS=' ' read -r name ip; do
+            echo "      - targets:"
             echo "          - \"${ip}:9080\""
-        done <<<"${HOST_IPS}"
+            echo "        labels:"
+            echo "          instance: \"${name}\""
+        done <<<"${HOST_ENTRIES}"
     } >> "${OUTPUT}"
 fi
 
