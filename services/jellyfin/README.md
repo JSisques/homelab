@@ -23,6 +23,17 @@ No `.env.example` — there are no secrets in this deployment; Jellyfin's admin 
 ## Architecture
 
 ```text
+             Proxmox host (192.168.0.157)
+                        │
+          systemd mount unit (CIFS/SMB)
+                        │
+                        ▼
+           //<nas>/proxmox/data/jellyfin
+          mounted at /mnt/pve/jellyfin
+                        │
+        bind-mounted into the LXC as mp0
+                        │
+                        ▼
                   jellyfin LXC
                         │
                  Docker Compose
@@ -32,12 +43,11 @@ No `.env.example` — there are no secrets in this deployment; Jellyfin's admin 
                         │
         ┌───────────────┴───────────────┐
         │                               │
-  /media/peliculas               /media/series
+   /media/movies                  /media/series
   (bind mount, ro)                (bind mount, ro)
         │                               │
         ▼                               ▼
-        192.168.0.111:/export/Multimedia/{peliculas,series}
-                   NFS exports on the NAS
+/mnt/nas/jellyfin/movies      /mnt/nas/jellyfin/series
 ```
 
 ## Persistence
@@ -46,23 +56,60 @@ Three paths matter:
 
 | Path               | Backing                                | Contents                                      |
 | ------------------- | --------------------------------------- | ---------------------------------------------- |
-| `/media/peliculas`  | NFS export on the NAS (bind mount, ro)  | Movie library files                            |
-| `/media/series`     | NFS export on the NAS (bind mount, ro)  | TV show library files                          |
+| `/media/movies`     | NAS share (bind mount, ro)              | Movie library files                            |
+| `/media/series`     | NAS share (bind mount, ro)              | TV show library files                          |
 | `/config`           | Docker named volume `jellyfin-config`   | Server config, users, watched-state, metadata  |
 | `/cache`            | Docker named volume `jellyfin-cache`    | Transcoding scratch space, image cache (regenerable) |
 
 The media mounts are read-only: Jellyfin only needs to read the library, not write into it. `/config` is the one volume worth backing up (library setup, user accounts, playback history) — `/cache` is disposable.
 
-### NAS prerequisite
+### NAS prerequisite (one-time, manual)
 
-Before deploying, the following NFS exports must exist on the NAS, following the same pattern as `ansible/roles/obsidian/`:
+Media lives on the NAS over **CIFS/SMB** (a `proxmox` share, `data/jellyfin/{movies,series}` subfolders — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — see `ansible/roles/minecraft/README.md` for the full explanation (kernel limitation, not a permissions gap).
 
-```text
-192.168.0.111:/export/Multimedia/peliculas
-192.168.0.111:/export/Multimedia/series
+Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `jellyfin` LXC (`vm_id 215`) exists — this mounts the whole `data/jellyfin` folder (covering `movies` and `series`, and any future subfolder added under it later — no extra host-side setup needed for those):
+
+```bash
+mkdir -p /mnt/pve/jellyfin
+
+cat > /etc/pve-nas-jellyfin-credentials <<'EOF'
+username=<your NAS username>
+password=<your NAS password>
+EOF
+chmod 600 /etc/pve-nas-jellyfin-credentials
+
+cat > /etc/systemd/system/mnt-pve-jellyfin.mount <<'EOF'
+[Unit]
+Description=CIFS mount for Jellyfin media library (proxmox/data/jellyfin NAS share)
+After=network-online.target
+# Without this, pve-guests.service (which starts LXCs on boot) has no
+# ordering relative to this mount and can start the container before
+# the share is mounted, leaving the bind mount empty on that boot.
+Before=pve-guests.service
+Wants=network-online.target
+
+[Mount]
+What=//<nas-ip>/proxmox/data/jellyfin
+Where=/mnt/pve/jellyfin
+Type=cifs
+# uid/gid 100000 = the LXC's unprivileged root (container UID 0), since
+# the official jellyfin/jellyfin image always runs as root and ignores
+# PUID/PGID — mapped through the standard root:100000:65536 offset
+# (check /etc/subuid if this LXC's mapping is non-default). Read-only
+# mount, so this only needs to be readable, not writable.
+Options=credentials=/etc/pve-nas-jellyfin-credentials,uid=100000,gid=100000,vers=3.0,ro,_netdev
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now mnt-pve-jellyfin.mount
+
+pct set 215 -mp0 /mnt/pve/jellyfin,mp=/mnt/nas/jellyfin,ro=1
 ```
 
-Adjust `ansible/roles/jellyfin/defaults/main.yaml` if the real export paths on the NAS differ from this placeholder — the Ansible role mounts them at `/mnt/nas/multimedia/{peliculas,series}` on the LXC, and `compose.yaml` bind-mounts those into the container.
+The `pct set` step applies live to a running container (no reboot needed) but is **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo just that last `pct set` line (the systemd mount unit on the host survives on its own).
 
 ## Networking
 
@@ -104,7 +151,7 @@ make deploy-jellyfin
 ```bash
 cd services/jellyfin
 
-mkdir -p /tmp/jellyfin-media/{peliculas,series}   # stand-in for the NAS mounts
+mkdir -p /mnt/nas/jellyfin/{movies,series}   # stand-in for the bind-mounted NAS folders
 
 docker compose up -d
 ```
@@ -117,4 +164,4 @@ Jellyfin has no native Prometheus `/metrics` endpoint, so it's probed by `blackb
 
 ## Source of Truth
 
-Terraform manages the LXC (existence, CPU, memory, disk, network). Ansible manages host configuration, the NFS mounts, and Docker Compose deployment. This directory manages the Compose definition and application configuration.
+Terraform manages the LXC (existence, CPU, memory, disk, network). The Proxmox host mounts the NAS share and bind-mounts it into the LXC (manual, see "NAS prerequisite" above). Ansible manages host configuration and Docker Compose deployment. This directory manages the Compose definition and application configuration.

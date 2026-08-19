@@ -1,12 +1,13 @@
 # Jellyfin Ansible Role
 
-Prepares an LXC container and deploys Jellyfin (see `services/jellyfin/README.md`) using Docker Compose, with its media libraries mounted from NFS exports on the NAS.
+Prepares an LXC container and deploys Jellyfin (see `services/jellyfin/README.md`) using Docker Compose, with its media libraries mounted from a NAS share.
 
 ## Responsibilities
 
-- Install NFS client utilities and mount the NAS exports (`jellyfin_nas_export_peliculas`, `jellyfin_nas_export_series`, **adjust the defaults to your real export paths**) at `jellyfin_media_mount_path`.
 - Create the application directory and deploy `services/jellyfin/compose.yaml` to it.
 - Start the stack with Docker Compose.
+
+It does **not** mount the NAS — see "NAS Export" below.
 
 Terraform is responsible for creating the LXC container.
 
@@ -27,14 +28,15 @@ ansible/roles/jellyfin/
 
 ```yaml
 jellyfin_app_dir: /opt/jellyfin
-
-jellyfin_nas: "{{ hostvars['nas'].ansible_host }}"
-jellyfin_nas_export_peliculas: "{{ jellyfin_nas }}:/export/Multimedia/peliculas"
-jellyfin_nas_export_series: "{{ jellyfin_nas }}:/export/Multimedia/series"
-jellyfin_media_mount_path: /mnt/nas/multimedia
 ```
 
 No secrets — Jellyfin's admin account is created through its own first-run setup wizard, so there is nothing to inject via Vault.
+
+## NAS Export
+
+Media never touches the LXC's own disk — `/mnt/nas/jellyfin/{movies,series}` inside the container comes from a **Proxmox-level bind mount**, not this role. Unprivileged LXCs (all of them in this repo) can't mount CIFS/NFS themselves, even with `features.mount = ["cifs", "nfs"]` set (`mount error(1): Operation not permitted` — a kernel limitation, confirmed while building `ansible/roles/minecraft/` and `ansible/roles/rustfs/`, which hit the exact same issue).
+
+The whole `data/jellyfin` folder (covering both `movies` and `series`, and any future subfolder added under it — no extra host-side setup needed for those) is mounted on the **Proxmox host itself** (systemd mount unit + credentials file) and bind-mounted into the LXC via `pct set <vm_id> -mp0 ...` — both manual, one-time steps, not managed by this role or by Terraform (Proxmox requires `root@pam` for `mount_point`/`features` changes; this repo's API token is deliberately least-privilege). See `services/jellyfin/README.md` for the exact commands.
 
 ## Deployment
 
@@ -63,8 +65,6 @@ Ansible
     ▼
 jellyfin role
     │
-    ├── Install nfs-common
-    ├── Mount NAS exports at /mnt/nas/multimedia/{peliculas,series}
     ├── Create /opt/jellyfin
     ├── Deploy compose.yaml
     └── docker compose up -d
@@ -76,8 +76,10 @@ jellyfin role
              └── Cloudflare Tunnel → Traefik → jellyfin.jsisques.net (remote)
 ```
 
+(media at `/mnt/nas/jellyfin/{movies,series}` comes from a Proxmox-host-level bind mount set up before any of this runs — see "NAS Export" above.)
+
 ## Related
 
 - `terraform/proxmox/lxc.tf` — creates the `jellyfin` LXC.
 - `services/jellyfin/` — Compose definition and application-level documentation.
-- `ansible/roles/obsidian/` — same NFS-mount-from-NAS pattern, used as the model for this role.
+- `ansible/roles/minecraft/`, `ansible/roles/rustfs/` — same host-mount + bind-mount pattern, used as the model for this role.
