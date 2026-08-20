@@ -230,6 +230,12 @@ Every host resolves to a full IPv4 address one of three ways, in order:
 
 This means changing your home network's subnet — `192.168.0.0/24` today, `10.0.0.0/24` tomorrow — is a one-line change to `network.lan.prefix` (and `network.lan.gateway`), not 25 hand-edited IPs. `cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
 
+### `swap` (LXC only)
+
+`swap: <MB>` is an optional field on `type: lxc` hosts (defaults to `0`, i.e. none). It's a cgroup swap limit backed by the Proxmox *host's* own swap device — unlike disk-based guest swap, it costs no space on the container's own `disk`, so it's safe to add even to hosts with a tight `disk` allocation. It's not available for `type: vm`: a VM's swap would have to live inside the guest (a swapfile/partition on its own disk), which this repo doesn't provision.
+
+Only add `swap` where a service has a real, bursty memory pattern (e.g. `n8n` workflow executions, `minecraft`'s JVM GC headroom, the `downloads` stack under load) — not blanket across every LXC. Most single-purpose containers here are already sized close to their steady-state usage (see the sizing comments throughout `hosts.yaml`); swap is a safety net for spikes, not a substitute for correct `memory` sizing.
+
 ### Proxmox VMID
 
 Terraform always sets a pinned Proxmox ID (`vm_id`) so a lost state file cannot spawn a second CT/VM with "the next free ID". The ID is `vmid:` if set, otherwise `octet` — so `it-tools` at `octet: 214` is CT `214` at `192.168.0.214`. Set `vmid:` only when the Proxmox ID must differ from the last IP octet (for example when adopting a guest that was created by hand with another ID).

@@ -92,6 +92,11 @@ hosts:
     octet: 211
     cpu: 2
     memory: 2560
+    # Workflow executions can spike above the dedicated allocation
+    # (e.g. large payloads through a Function/Code node). This is a
+    # cgroup swap limit backed by the Proxmox host's own swap device —
+    # it costs no LXC disk space, see config/README.md#swap.
+    swap: 1024
     disk: 16
     role:
       - n8n
@@ -140,6 +145,11 @@ hosts:
     # services/downloads/README.md).
     cpu: 4
     memory: 4096
+    # gluetun + qBittorrent + the *arr stack under load (large imports,
+    # simultaneous downloads) can burst past the dedicated allocation.
+    # Cgroup swap limit backed by the Proxmox host's own swap device —
+    # costs no LXC disk space, see config/README.md#swap.
+    swap: 1024
     disk: 24
     role:
       - qbittorrent
@@ -283,6 +293,11 @@ hosts:
     # the OS, Docker, lazymc, and the metrics exporter on top of it.
     cpu: 3
     memory: 8192
+    # Headroom for the JVM's GC to avoid an OOM-kill mid-game when
+    # plugins push heap usage right up against the dedicated
+    # allocation. Cgroup swap limit backed by the Proxmox host's own
+    # swap device — costs no LXC disk space, see config/README.md#swap.
+    swap: 2048
     # World data lives on the NAS (CIFS, mounted on the Proxmox host and
     # bind-mounted in — see services/minecraft/README.md), not on this
     # LXC's own disk — disk here only needs the OS, Docker images, and
