@@ -1,4 +1,40 @@
 ---
+- name: Check the downloads LXC's current bind mount configuration
+  ansible.builtin.command:
+    cmd: "pct config {{ downloads_lxc_vmid }}"
+  delegate_to: proxmox
+  become: false
+  register: downloads_lxc_pct_config
+  changed_when: false
+
+- name: Bind-mount the NAS downloads share into the downloads LXC
+  ansible.builtin.command:
+    cmd: >-
+      pct set {{ downloads_lxc_vmid }}
+      -mp0 {{ downloads_nas_source_path }},mp={{ downloads_mount_path }}
+  delegate_to: proxmox
+  become: false
+  register: downloads_mp0_result
+  changed_when: true
+  when: >-
+    (downloads_nas_source_path ~ ',mp=' ~ downloads_mount_path)
+    not in downloads_lxc_pct_config.stdout
+
+- name: Bind-mount the NAS Jellyfin share into the downloads LXC
+  ansible.builtin.command:
+    cmd: >-
+      pct set {{ downloads_lxc_vmid }} -mp1
+      {{ downloads_jellyfin_nas_source_path
+         ~ ',mp=' ~ downloads_jellyfin_mount_path }}
+  delegate_to: proxmox
+  become: false
+  register: downloads_mp1_result
+  changed_when: true
+  when: >-
+    (downloads_jellyfin_nas_source_path
+     ~ ',mp=' ~ downloads_jellyfin_mount_path)
+    not in downloads_lxc_pct_config.stdout
+
 - name: Create download library subdirectories
   ansible.builtin.file:
     path: "{{ downloads_mount_path }}/{{ item }}"
@@ -29,7 +65,437 @@
     dest: "{{ downloads_app_dir }}/compose.yaml"
     mode: "0644"
 
+- name: Deploy downloads helper scripts
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/downloads/scripts/"
+    dest: "{{ downloads_app_dir }}/scripts/"
+    mode: "0755"
+
 - name: Start the downloads stack
   community.docker.docker_compose_v2:
     project_src: "{{ downloads_app_dir }}"
     state: present
+
+- name: Restart containers that read the NAS mounts, if a mount just changed
+  community.docker.docker_compose_v2:
+    project_src: "{{ downloads_app_dir }}"
+    state: restarted
+    services:
+      - sonarr
+      - radarr
+      - qbittorrent
+      - pyload
+      - metube
+      - clamav-scanner
+  when: downloads_mp0_result is changed or downloads_mp1_result is changed
+
+- name: Wait for the qBittorrent WebUI to accept connections
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 8080
+    timeout: 60
+  delegate_to: localhost
+  become: false
+
+- name: Ensure qBittorrent's WebUI has a permanent username/password
+  no_log: true
+  become: false
+  block:
+    - name: Check whether the permanent qBittorrent credentials already work
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+        body_format: form-urlencoded
+        body:
+          username: "{{ downloads_qbittorrent_username }}"
+          password: "{{ downloads_qbittorrent_password }}"
+        status_code: [200, 204, 403]
+      register: downloads_qbt_permanent_login
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Read qBittorrent's temporary WebUI password from the container log
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail
+          && docker logs qbittorrent 2>&1
+          | grep -oP 'temporary password is provided for this session: \K\S+'
+          | tail -n1
+        executable: /bin/bash
+      register: downloads_qbt_temp_password
+      changed_when: false
+      when: downloads_qbt_permanent_login.status not in [200, 204]
+
+    - name: Log in with the temporary password and set the permanent credentials
+      when:
+        - downloads_qbt_permanent_login.status not in [200, 204]
+        - downloads_qbt_temp_password.stdout | default('') | length > 0
+      delegate_to: localhost
+      block:
+        - name: Log in to qBittorrent with the temporary password
+          ansible.builtin.uri:
+            url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+            method: POST
+            headers:
+              Referer: "http://{{ ansible_host }}:8080"
+            body_format: form-urlencoded
+            body:
+              username: admin
+              password: "{{ downloads_qbt_temp_password.stdout }}"
+            status_code: [200, 204]
+          register: downloads_qbt_temp_login
+          changed_when: false
+
+        - name: Set the permanent qBittorrent WebUI username/password
+          ansible.builtin.uri:
+            url: "http://{{ ansible_host }}:8080/api/v2/app/setPreferences"
+            method: POST
+            headers:
+              Referer: "http://{{ ansible_host }}:8080"
+              Cookie: "{{ downloads_qbt_temp_login.set_cookie }}"
+            body_format: form-urlencoded
+            body:
+              json: >-
+                {{ {
+                  'web_ui_username': downloads_qbittorrent_username,
+                  'web_ui_password': downloads_qbittorrent_password,
+                } | to_json }}
+            status_code: [200]
+          changed_when: true
+
+# qBittorrent's API has no schedule-based pause/resume, only the
+# Alternative Speed Limits scheduler — see downloads_qbittorrent_scheduler_*
+# in defaults/main.yaml for what "night-only" means in practice here.
+- name: Configure qBittorrent's night-only download schedule
+  no_log: true
+  become: false
+  when: downloads_qbittorrent_scheduler_enabled | bool
+  block:
+    - name: Log in to qBittorrent with the permanent credentials
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+        body_format: form-urlencoded
+        body:
+          username: "{{ downloads_qbittorrent_username }}"
+          password: "{{ downloads_qbittorrent_password }}"
+        status_code: [200, 204]
+      register: downloads_qbt_scheduler_login
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Check qBittorrent's current scheduler preferences
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/app/preferences"
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+          Cookie: "{{ downloads_qbt_scheduler_login.set_cookie }}"
+        return_content: true
+      register: downloads_qbt_prefs
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Set qBittorrent's Alternative Speed Limits schedule
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/app/setPreferences"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+          Cookie: "{{ downloads_qbt_scheduler_login.set_cookie }}"
+        body_format: form-urlencoded
+        body:
+          json: >-
+            {{ {
+              'scheduler_enabled': true,
+              'schedule_from_hour': downloads_qbittorrent_throttle_from_hour,
+              'schedule_from_min':
+                downloads_qbittorrent_throttle_from_minute,
+              'schedule_to_hour': downloads_qbittorrent_throttle_to_hour,
+              'schedule_to_min': downloads_qbittorrent_throttle_to_minute,
+              'scheduler_days': downloads_qbittorrent_throttle_days,
+              'alt_dl_limit': downloads_qbittorrent_throttle_speed_kib * 1024,
+              'alt_up_limit': downloads_qbittorrent_throttle_speed_kib * 1024,
+            } | to_json }}
+        status_code: [200]
+      delegate_to: localhost
+      when: >-
+        not downloads_qbt_prefs.json.scheduler_enabled
+        or downloads_qbt_prefs.json.schedule_from_hour
+           != downloads_qbittorrent_throttle_from_hour
+        or downloads_qbt_prefs.json.schedule_from_min
+           != downloads_qbittorrent_throttle_from_minute
+        or downloads_qbt_prefs.json.schedule_to_hour
+           != downloads_qbittorrent_throttle_to_hour
+        or downloads_qbt_prefs.json.schedule_to_min
+           != downloads_qbittorrent_throttle_to_minute
+        or downloads_qbt_prefs.json.scheduler_days
+           != downloads_qbittorrent_throttle_days
+        or downloads_qbt_prefs.json.alt_dl_limit
+           != (downloads_qbittorrent_throttle_speed_kib * 1024)
+        or downloads_qbt_prefs.json.alt_up_limit
+           != (downloads_qbittorrent_throttle_speed_kib * 1024)
+
+- name: Wait for Sonarr, Radarr, and Prowlarr to accept connections
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ item }}"
+    timeout: 60
+  loop: [8989, 7878, 9696]
+  delegate_to: localhost
+  become: false
+
+# Wires Sonarr/Radarr/Prowlarr together the same way the "First-run
+# configuration" section of services/downloads/README.md describes doing
+# by hand — idempotent, so it's a no-op once already configured (by this
+# role or manually) and self-heals if the LXC is ever recreated.
+# Indexers themselves are NOT touched here: which trackers to use is a
+# personal choice this role has no business making — add those in
+# Prowlarr's WebUI once, they live in prowlarr-config after that.
+- name: Wire up Sonarr, Radarr, and Prowlarr
+  no_log: true
+  become: false
+  block:
+    - name: Read Sonarr's API key from its config
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail
+          && docker exec sonarr cat /config/config.xml
+          | grep -oP '(?<=<ApiKey>)[^<]+'
+        executable: /bin/bash
+      register: downloads_sonarr_api_key
+      changed_when: false
+      retries: 10
+      delay: 3
+      until: downloads_sonarr_api_key.stdout | length > 0
+
+    - name: Read Radarr's API key from its config
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail
+          && docker exec radarr cat /config/config.xml
+          | grep -oP '(?<=<ApiKey>)[^<]+'
+        executable: /bin/bash
+      register: downloads_radarr_api_key
+      changed_when: false
+      retries: 10
+      delay: 3
+      until: downloads_radarr_api_key.stdout | length > 0
+
+    - name: Read Prowlarr's API key from its config
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail
+          && docker exec prowlarr cat /config/config.xml
+          | grep -oP '(?<=<ApiKey>)[^<]+'
+        executable: /bin/bash
+      register: downloads_prowlarr_api_key
+      changed_when: false
+      retries: 10
+      delay: 3
+      until: downloads_prowlarr_api_key.stdout | length > 0
+
+    - name: Check Radarr's configured root folders
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:7878/api/v3/rootfolder"
+        headers:
+          X-Api-Key: "{{ downloads_radarr_api_key.stdout }}"
+        return_content: true
+      delegate_to: localhost
+      register: downloads_radarr_rootfolders
+      changed_when: false
+
+    - name: Ensure Radarr's /movies root folder exists
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:7878/api/v3/rootfolder"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_radarr_api_key.stdout }}"
+        body_format: json
+        body:
+          path: /movies
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        '/movies' not in (downloads_radarr_rootfolders.json
+        | default([]) | map(attribute='path') | list)
+
+    - name: Check Sonarr's configured root folders
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8989/api/v3/rootfolder"
+        headers:
+          X-Api-Key: "{{ downloads_sonarr_api_key.stdout }}"
+        return_content: true
+      delegate_to: localhost
+      register: downloads_sonarr_rootfolders
+      changed_when: false
+
+    - name: Ensure Sonarr's /tv root folder exists
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8989/api/v3/rootfolder"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_sonarr_api_key.stdout }}"
+        body_format: json
+        body:
+          path: /tv
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        '/tv' not in (downloads_sonarr_rootfolders.json
+        | default([]) | map(attribute='path') | list)
+
+    - name: Check Radarr's configured download clients
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:7878/api/v3/downloadclient"
+        headers:
+          X-Api-Key: "{{ downloads_radarr_api_key.stdout }}"
+        return_content: true
+      delegate_to: localhost
+      register: downloads_radarr_downloadclients
+      changed_when: false
+
+    - name: Ensure Radarr has qBittorrent as a download client
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:7878/api/v3/downloadclient"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_radarr_api_key.stdout }}"
+        body_format: json
+        body:
+          enable: true
+          protocol: torrent
+          priority: 1
+          removeCompletedDownloads: true
+          removeFailedDownloads: true
+          name: qBittorrent
+          implementation: QBittorrent
+          implementationName: qBittorrent
+          configContract: QBittorrentSettings
+          fields:
+            - name: host
+              value: gluetun
+            - name: port
+              value: 8080
+            - name: useSsl
+              value: false
+            - name: username
+              value: "{{ downloads_qbittorrent_username }}"
+            - name: password
+              value: "{{ downloads_qbittorrent_password }}"
+            - name: movieCategory
+              value: radarr
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        'qBittorrent' not in (downloads_radarr_downloadclients.json
+        | default([]) | map(attribute='name') | list)
+
+    - name: Check Sonarr's configured download clients
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8989/api/v3/downloadclient"
+        headers:
+          X-Api-Key: "{{ downloads_sonarr_api_key.stdout }}"
+        return_content: true
+      delegate_to: localhost
+      register: downloads_sonarr_downloadclients
+      changed_when: false
+
+    - name: Ensure Sonarr has qBittorrent as a download client
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8989/api/v3/downloadclient"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_sonarr_api_key.stdout }}"
+        body_format: json
+        body:
+          enable: true
+          protocol: torrent
+          priority: 1
+          removeCompletedDownloads: true
+          removeFailedDownloads: true
+          name: qBittorrent
+          implementation: QBittorrent
+          implementationName: qBittorrent
+          configContract: QBittorrentSettings
+          fields:
+            - name: host
+              value: gluetun
+            - name: port
+              value: 8080
+            - name: useSsl
+              value: false
+            - name: username
+              value: "{{ downloads_qbittorrent_username }}"
+            - name: password
+              value: "{{ downloads_qbittorrent_password }}"
+            - name: tvCategory
+              value: sonarr
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        'qBittorrent' not in (downloads_sonarr_downloadclients.json
+        | default([]) | map(attribute='name') | list)
+
+    - name: Check Prowlarr's configured applications
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:9696/api/v1/applications"
+        headers:
+          X-Api-Key: "{{ downloads_prowlarr_api_key.stdout }}"
+        return_content: true
+      delegate_to: localhost
+      register: downloads_prowlarr_apps
+      changed_when: false
+
+    - name: Ensure Prowlarr has Radarr as a connected app
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:9696/api/v1/applications"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_prowlarr_api_key.stdout }}"
+        body_format: json
+        body:
+          name: Radarr
+          implementation: Radarr
+          configContract: RadarrSettings
+          syncLevel: fullSync
+          fields:
+            - name: prowlarrUrl
+              value: "http://prowlarr:9696"
+            - name: baseUrl
+              value: "http://radarr:7878"
+            - name: apiKey
+              value: "{{ downloads_radarr_api_key.stdout }}"
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        'Radarr' not in (downloads_prowlarr_apps.json
+        | default([]) | map(attribute='name') | list)
+
+    - name: Ensure Prowlarr has Sonarr as a connected app
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:9696/api/v1/applications"
+        method: POST
+        headers:
+          X-Api-Key: "{{ downloads_prowlarr_api_key.stdout }}"
+        body_format: json
+        body:
+          name: Sonarr
+          implementation: Sonarr
+          configContract: SonarrSettings
+          syncLevel: fullSync
+          fields:
+            - name: prowlarrUrl
+              value: "http://prowlarr:9696"
+            - name: baseUrl
+              value: "http://sonarr:8989"
+            - name: apiKey
+              value: "{{ downloads_sonarr_api_key.stdout }}"
+        status_code: [201]
+      delegate_to: localhost
+      when: >-
+        'Sonarr' not in (downloads_prowlarr_apps.json
+        | default([]) | map(attribute='name') | list)

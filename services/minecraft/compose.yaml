@@ -64,7 +64,9 @@ services:
       # fail hard and the whole container refuses to start, taking down
       # every other plugin with it. Optional: missing/incompatible ones
       # just log a warning and startup continues.
+      # yamllint disable-line rule:line-length
       MODRINTH_PROJECTS: "luckperms?,essentialsx?,coreprotect?,griefprevention?,spark?,chunky?,placeholderapi?"
+      # yamllint disable-line rule:line-length
       PLUGINS: "https://github.com/MilkBowl/Vault/releases/latest/download/Vault.jar"
 
     volumes:

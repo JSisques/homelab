@@ -140,11 +140,15 @@ hosts:
     octet: 216
     # gluetun + qBittorrent (torrents, routed through VPN) + Prowlarr +
     # Sonarr/Radarr (indexing/organizing into Jellyfin's library) + pyLoad
-    # (direct HTTP/FTP links) + MeTube (yt-dlp web UI). All app state is
-    # local; actual downloaded files live on the NAS (see
+    # (direct HTTP/FTP links) + MeTube (yt-dlp web UI) + ClamAV (scans
+    # everything landing in /mnt/nas/downloads). All app state is local;
+    # actual downloaded files live on the NAS (see
     # services/downloads/README.md).
     cpu: 4
-    memory: 4096
+    # 4096 was enough for the *arr stack alone; ClamAV's clamd (virus
+    # databases loaded in memory, ~300-700MB depending on signature set
+    # size) pushed it too close to the edge, so bumped to 6144.
+    memory: 6144
     # gluetun + qBittorrent + the *arr stack under load (large imports,
     # simultaneous downloads) can burst past the dedicated allocation.
     # Cgroup swap limit backed by the Proxmox host's own swap device —

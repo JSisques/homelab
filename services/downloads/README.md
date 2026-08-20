@@ -9,8 +9,9 @@ The homelab's "give it a URL and it lands on the NAS" stack. It covers the three
 - **Sonarr** / **Radarr** — watch for wanted TV episodes/movies, send them to qBittorrent, then rename and move the finished files into the same NAS folder Jellyfin reads from (`/mnt/nas/jellyfin/series`, `/mnt/nas/jellyfin/movies`).
 - **pyLoad** — paste a direct HTTP/FTP link, it downloads straight to the NAS. The generic case: no indexer, no torrent, no video site — just a file behind a URL.
 - **MeTube** — paste a YouTube (or any [yt-dlp](https://github.com/yt-dlp/yt-dlp)-supported site) link, it downloads the video/audio straight to the NAS. Tracks yt-dlp's nightly channel (`YTDL_NIGHTLY_UPDATE_TIME` in `compose.yaml`, auto-updates daily) rather than stable — YouTube's anti-bot changes are usually patched in nightly well before the next stable release, and a stable-only yt-dlp means every `HTTP Error 403: Forbidden` download failure just sits broken until stable catches up.
+- **ClamAV** (`clamav` + `clamav-scanner`) — scans everything that lands in `/mnt/nas/downloads`, independently of which of the above put it there. See "Virus scanning" below.
 
-All seven containers are deployed together as one Docker Compose application inside a dedicated LXC (`downloads`), same pattern as `jellyfin`, `n8n`, and the `monitoring` stack (multiple related containers, one LXC).
+All nine containers are deployed together as one Docker Compose application inside a dedicated LXC (`downloads`), same pattern as `jellyfin`, `n8n`, and the `monitoring` stack (multiple related containers, one LXC).
 
 ## Directory Structure
 
@@ -64,6 +65,10 @@ services/downloads/
 
 pyload   → /mnt/nas/downloads/direct
 metube   → /mnt/nas/downloads/youtube
+
+clamav-scanner polls all of /mnt/nas/downloads (read-only) and reports
+to clamav:3310 — independent of qBittorrent/pyLoad/MeTube, so it covers
+whatever any of them writes.
 ```
 
 ## Persistence
@@ -83,9 +88,11 @@ Every `*-config` volume is worth backing up (indexer config, download-client wir
 
 Sonarr/Radarr can do an instant, zero-extra-space "hardlink" import instead of a copy, but only when the download folder and the final library folder are on the **same filesystem**. Here they're two separate bind mounts (even though both ultimately live on the same NAS), so imports are a copy-then-delete-source instead — slower and briefly doubles disk usage for the file being moved, but correct. If this becomes a real bottleneck, the fix is putting `/downloads/torrents` and the library folders under one shared NAS folder instead of two separate ones.
 
-### NAS prerequisite (one-time, manual)
+### NAS prerequisite (mostly one-time, partly automated)
 
-Downloads staging and the media library live on the NAS over **CIFS/SMB** (a `proxmox` share, `data/downloads` and `data/jellyfin/{movies,series}` subfolders — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — see `ansible/roles/minecraft/README.md` for the full explanation (kernel limitation, not a permissions gap).
+Downloads staging and the media library live on the NAS over **CIFS/SMB** (a `proxmox` share, `data/downloads` and `data/jellyfin/{movies,series}` subfolders — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**. Unprivileged LXCs (this one included) can't mount CIFS/NFS themselves — see `ansible/roles/minecraft/README.md` for the full explanation (kernel limitation, not a permissions gap).
+
+The CIFS mount on the Proxmox host (below) is still a one-time manual step. Binding it into the LXC (`pct set -mp0/-mp1`) is **not** manual — the `downloads` Ansible role does this itself on every deploy (delegating to the `proxmox` inventory host over SSH, since `pct set` needs `root@pam` and this repo's Terraform API token is deliberately least-privilege — see `ansible/roles/downloads/README.md#nas-bind-mounts`). It's idempotent and self-heals if the LXC is ever destroyed and recreated (the systemd mount units on the Proxmox host survive on their own regardless).
 
 `data/jellyfin` is the **same NAS folder** `ansible/roles/jellyfin/` already bind-mounts — its own bind into the `jellyfin` LXC stays read-only there (`pct set ... ro=1`), while this LXC needs read-write, so the underlying host-side CIFS mount itself has to be read-write (with permissive `file_mode`/`dir_mode` so both LXCs' UIDs can access it — see below).
 
@@ -121,10 +128,9 @@ EOF
 
 systemctl daemon-reload
 systemctl enable --now mnt-pve-downloads.mount
-
-pct set 216 -mp0 /mnt/pve/downloads,mp=/mnt/nas/downloads
-pct set 216 -mp1 /mnt/pve/jellyfin,mp=/mnt/nas/jellyfin
 ```
+
+The `pct set -mp0/-mp1` binds into the LXC itself are handled by the Ansible role from here on — no need to run them by hand (see above).
 
 If `mnt-pve-jellyfin.mount` (from the Jellyfin deploy) is still mounted read-only at the CIFS level, switch it to read-write here too — Jellyfin's own access stays read-only via its `ro=1` bind flag regardless:
 
@@ -137,7 +143,7 @@ systemctl daemon-reload
 systemctl restart mnt-pve-jellyfin.mount
 ```
 
-Both `pct set` steps apply live to a running container (no reboot needed) but are **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo those lines (the systemd mount units on the host survive on their own).
+`pct set` applies live to a running container, no reboot needed, and isn't tracked by Terraform (see above) — but is tracked and reapplied by Ansible, so a recreated LXC gets its NAS mounts back on the next `make deploy-downloads` without anyone having to remember this.
 
 ## VPN (gluetun)
 
@@ -157,6 +163,19 @@ These are passed in the same way `n8n_postgres_password` is today — as environ
 
 gluetun needs `/dev/net/tun` and `NET_ADMIN` to bring up the WireGuard interface *inside* the container, which in turn needs the **Proxmox host** to expose `/dev/net/tun` into the (unprivileged) `downloads` LXC. This is a manual, one-time Proxmox-side step the same way the Cloudflare Tunnel credentials and AdGuard's first-run wizard are — it isn't expressed in `terraform/proxmox/lxc.tf` today. If gluetun fails to create the WireGuard interface after deploying, this is the first thing to check.
 
+## Virus scanning
+
+VirusTotal was considered and rejected as the primary mechanism: its public API caps uploads at 650MB and 4 requests/minute, and a movie or a good-quality TV episode routinely exceeds that — the file just doesn't fit.
+
+Instead, **ClamAV** (`clamav` + `clamav-scanner` in `compose.yaml`) scans locally, with no size limit and no API key:
+
+- `clamav` runs `clamd` — the AV engine and virus database, reachable only at `clamav:3310` on this Compose network. No ports published to the host or LAN; clamd's wire protocol is unencrypted, so nothing outside this stack should ever talk to it.
+- `clamav-scanner` (`scripts/clamav-scan-watch.sh`) polls `/mnt/nas/downloads` (read-only) every 60s for files that are new and have stopped growing (i.e. not still mid-download), and scans each one against `clamav` over TCP. It's independent of qBittorrent/pyLoad/MeTube, so it covers whatever any of them writes, not just torrents.
+- Size limits are raised well past clamd's email-oriented defaults (`StreamMaxLength`/`MaxFileSize`/`MaxScanSize` default to 25-100MB) via `CLAMD_CONF_*` env vars — see `compose.yaml`. Files larger than 8GB (an oversized 4K remux, say) are skipped rather than scanned; that's a deliberate homelab-scale tradeoff, not an oversight.
+- Infected files are **logged, not deleted or quarantined automatically** — `docker exec downloads-clamav-scanner cat /state/infected.log`. Sonarr/Radarr import on their own schedule and don't know about this scanner, so automatically deleting mid-import felt riskier than a manual check.
+
+A verified-known-file hash lookup against VirusTotal (no upload, no size limit, free) would be a reasonable complement to add later, but isn't implemented — ClamAV's local signature scan is the one actually running.
+
 ## Networking
 
 Every service in this stack is `tier: internal` — reached directly by LAN `IP:port`, no Traefik. None of it is routed through the Cloudflare Tunnel: a torrent client and download automation have no business being reachable from the public internet.
@@ -170,9 +189,11 @@ Every service in this stack is `tier: internal` — reached directly by LAN `IP:
 | pyLoad      | `192.168.0.216:8000`    |
 | MeTube      | `192.168.0.216:8081`    |
 
+`clamav` and `clamav-scanner` publish no ports at all — nothing outside this Compose stack needs to reach clamd, and its wire protocol is unencrypted, so it stays off both the LAN and the host's own network namespace.
+
 ## Resource sizing
 
-4 vCPU / 4GB RAM, 24GB disk (image layers + `*-config` volumes only — all downloaded/media data is on the NAS). Seven containers share this budget; Sonarr/Radarr/Prowlarr are the heavier ones (.NET, moderate idle memory). Revisit (`config/hosts.yaml`) if imports start queueing up or the WebUIs feel sluggish under load.
+4 vCPU / 6GB RAM, 24GB disk (image layers + `*-config` volumes only — all downloaded/media data is on the NAS). Nine containers share this budget; Sonarr/Radarr/Prowlarr (.NET) and ClamAV's virus databases (~300-700MB loaded in memory) are the heavier ones. Revisit (`config/hosts.yaml`) if imports start queueing up or the WebUIs feel sluggish under load.
 
 ## Deployment
 
@@ -199,14 +220,37 @@ export DOWNLOADS_VPN_WIREGUARD_ADDRESSES=...
 make deploy-downloads
 ```
 
-## First-run configuration (manual, one-time)
+## First-run configuration
 
-Docker Compose brings up the containers; wiring them together is still a manual first-run step, same as Jellyfin's setup wizard:
+Most of the wiring a fresh Jellyfin-style setup wizard would normally make you click through by hand is done automatically by the `downloads` Ansible role, on every deploy, idempotently — see `ansible/roles/downloads/README.md#app-wiring`:
 
-1. **qBittorrent** — log in (default `admin`/`adminadmin`, linuxserver.io prints the real generated password to the container log on first start — change it immediately), set the default save path to `/downloads`.
-2. **Prowlarr** — add indexers, then add qBittorrent, Sonarr, and Radarr as connected apps (`Settings → Apps`), using each container's Docker Compose service name as the host (e.g. `http://qbittorrent:8080` won't resolve since qBittorrent has no network of its own — use the `gluetun` service name instead: `http://gluetun:8080`).
-3. **Sonarr/Radarr** — add qBittorrent as a download client (host `gluetun`, port `8080`), set root folders to `/tv` and `/movies` respectively, and sync indexers from Prowlarr.
-4. **pyLoad/MeTube** — no wiring needed; open the WebUI and paste a link.
+- **qBittorrent** — permanent WebUI username/password (`downloads_qbittorrent_username`/`downloads_qbittorrent_password`), since there's no env var for this upstream. Also configured to only run at full speed overnight (23:00-08:00 by default, throttled to a trickle the rest of the day) via its Alternative Speed Limits scheduler — see `ansible/roles/downloads/README.md#qbittorrent-night-only-schedule` to change the hours or turn it off (`downloads_qbittorrent_scheduler_enabled: false`).
+- **Radarr** — root folder `/movies`, qBittorrent as its download client.
+- **Sonarr** — root folder `/tv`, qBittorrent as its download client.
+- **Prowlarr** — Radarr and Sonarr added as connected apps (`Settings → Apps`), so any indexer added to Prowlarr propagates to both automatically.
+
+**Not automated, and never will be** — this is the one genuinely manual step left: add your indexers in Prowlarr (`Settings → Indexers → Add Indexer`, public or private trackers, with your own credentials for private ones). Which indexers to use is a personal choice this role has no business making; they live in the `prowlarr-config` volume once added, and survive redeploys same as everything else in `*-config`.
+
+pyLoad and MeTube need no wiring at all — open the WebUI and paste a link.
+
+## Usage
+
+### Requesting a TV show
+
+Sonarr (`:8989`) → **Series → Add New**, search the title, pick what to monitor (everything, only future episodes, current season only, …), and add it. If the show is still airing, Sonarr watches the RSS feed and grabs new episodes on its own from then on.
+
+### Requesting a movie
+
+Radarr (`:7878`) → **Movies → Add New**, search, add with a quality profile and the `/movies` root folder. Radarr searches Prowlarr's indexers, sends the best result to qBittorrent, and renames + imports the finished file into `/movies` once it lands.
+
+Either way, the file shows up in Jellyfin on its next library scan (or trigger one by hand from Jellyfin's admin panel if you don't want to wait).
+
+### Direct link or video
+
+These two skip Prowlarr and the VPN entirely — paste a link and it downloads:
+
+- **pyLoad** (`:8000`) — a direct HTTP/FTP link, not a torrent or a video site, lands in `/mnt/nas/downloads/direct`.
+- **MeTube** (`:8081`) — a YouTube (or any yt-dlp-supported site) link, lands in `/mnt/nas/downloads/youtube`.
 
 ## Local Development
 

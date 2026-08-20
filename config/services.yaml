@@ -777,7 +777,9 @@ services:
     icon: mdi-robot
 
     homepage:
-      enabled: false  # :38765 is the backend API, not a browsable dashboard — the real UI is the desktop GUI client, see services/soulfire/README.md
+      # :38765 is the backend API, not a browsable dashboard — the real
+      # UI is the desktop GUI client, see services/soulfire/README.md
+      enabled: false
 
     # Deliberately unmonitored: this LXC is meant to be off between test
     # sessions (see services/minecraft/README.md#load-testing), so an
