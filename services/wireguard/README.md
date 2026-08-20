@@ -19,7 +19,16 @@ services/wireguard/
 ## Before deploying this — things only you can do
 
 1. **Port-forward UDP 51820** on your router to this LXC's address (`config/hosts.yaml`). Do **not** forward TCP 51821 (the dashboard) — it's plain HTTP with no TLS in front of it, LAN-only by design (`tier: internal`).
-2. Have a hostname that resolves to your home's public IP ready (Dynamic DNS if your ISP doesn't give you a static one) — you'll enter it during first-run setup, not in this repo.
+2. Have a hostname that resolves to your home's public IP ready (Dynamic DNS if your ISP doesn't give you a static one — see below) — you'll enter it during first-run setup, not in this repo.
+
+## Dynamic DNS
+
+Most residential ISPs hand out a dynamic public IP, so a plain IP in wg-easy's `Host` setting will eventually go stale and silently break every client (they keep trying to reach an address that's no longer yours). Point wg-easy at a DDNS hostname instead so it survives an IP change:
+
+1. Create a free hostname with a DDNS provider your router supports (e.g. [No-IP](https://www.noip.com/) — `DDNS y acceso remoto` → `DNS Records` → `Crear nombre de host`, type `A`, pointing at your current public IP). Tick **Enable Dynamic DNS** on the record so it accepts updates.
+2. On the router, configure the matching DDNS client (`DNS & DDNS` on Sercomm/Vodafone routers): provider, the hostname from step 1, and the DDNS account credentials. Apply, and confirm the status shows as updated — this is what keeps the record in sync automatically when your IP changes.
+3. In the wg-easy dashboard (`Configuración` → `Host`), set the hostname from step 1 instead of a raw IP.
+4. Re-download (or re-scan the QR for) every existing client peer so its `Endpoint` picks up the new hostname — peers created before this change keep whatever `Host` was set at the time.
 
 ## First-run setup
 
@@ -37,6 +46,8 @@ None of this can be automated from here — it's a one-time interactive step tie
 `compose.yaml` gives the container its own bridge network (`10.42.42.0/24` / `fdcc:ad94:bacf:61a3::/64`) per wg-easy's own recommendation, plus `NET_ADMIN`/`SYS_MODULE` and the sysctls it needs to forward traffic. `INSECURE=true` is required because the dashboard is served over plain HTTP on the LAN (`tier: internal`) — v15 refuses to serve the UI over HTTP without it.
 
 This is the piece most likely to need hands-on debugging on real hardware — if VPN clients can reach the WireGuard host but nothing else on the LAN, check that IPv4 forwarding is on (already set via sysctls) and that the Proxmox firewall isn't blocking forwarded traffic from the LXC.
+
+If a client never connects at all (`docker exec wg-easy wg show` reports `latest handshake: (none)` for its peer), no UDP packet is reaching the container — that's upstream of Docker/WireGuard entirely. Check in this order: the router's port-forward rule is UDP (not TCP) 51820 → the wireguard LXC; the `Host` in wg-easy's `Configuración` matches your actual current public IP (see Dynamic DNS above); the client's `Endpoint` was generated after `Host` was set correctly (re-download the config otherwise). If all of that checks out and it's still stuck, try the client on a different network — some mobile carriers throttle or block outbound UDP on non-standard ports.
 
 ## Deployment
 
