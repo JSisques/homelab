@@ -55,4 +55,12 @@ resource "proxmox_virtual_environment_container" "lxc" {
   tags = each.value.tags
 
   started = true
+
+  lifecycle {
+    # Some containers (jellyfin, obsidian, rustfs) get a NAS bind mount
+    # added on the Proxmox host via `pct set -mpN ...` outside Terraform
+    # (see commits 668f35f, ab87d64) — undeclared here on purpose, so
+    # Terraform must not try to strip it and force-replace the container.
+    ignore_changes = [mount_point]
+  }
 }
