@@ -63,9 +63,22 @@ variable "vm_user" {
   default     = "ansible"
 }
 
-variable "vm_template_id" {
-  description = "Proxmox VM ID of the cloud-init-ready template that every managed VM is cloned from"
-  type        = number
+variable "vm_cloud_image_url" {
+  description = "URL of the cloud-init-ready qcow2 image imported as the disk of every managed VM (replaces cloning a hand-built Proxmox template)"
+  type        = string
+  default     = "https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2"
+}
+
+variable "vm_cloud_image_file_name" {
+  description = "File name the downloaded cloud image is stored as on the Proxmox datastore"
+  type        = string
+  default     = "debian-12-generic-amd64.qcow2"
+}
+
+variable "vm_image_datastore_id" {
+  description = "Proxmox datastore that stores the downloaded VM cloud image (must support the 'import' content type, e.g. 'local')"
+  type        = string
+  default     = "local"
 }
 
 variable "vm_nodes" {

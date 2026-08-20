@@ -121,7 +121,7 @@ Ansible
 
 Virtual machines are defined generically in `vms.tf`, the same way LXCs are: one `resource "proxmox_virtual_environment_vm" "vm"` with `for_each = var.vm_nodes`, generated from every `type: vm` host in `config/hosts.yaml` via `generate-terraform-vars.sh`.
 
-Every VM is **cloned** from an existing Proxmox template (`clone { vm_id = var.vm_template_id }`) — Terraform doesn't install an OS, it clones one. Create that template once (a cloud-init-ready Debian/Ubuntu image converted to a template VM) and set its VM ID as `vm_template_id`.
+Every VM's disk is **imported** from a cloud image: `proxmox_download_file.vm_cloud_image` downloads a cloud-init-ready qcow2 (Debian by default, `var.vm_cloud_image_url`) into a Proxmox datastore once, and each VM's `disk { import_from = ... }` imports it — no hand-built Proxmox template to create or keep in sync. Terraform doesn't install an OS from scratch; it imports a pre-built cloud image, the same way the old clone-from-template approach did, just without the manual one-time template step.
 
 `vm_nodes` currently provisions:
 
@@ -140,31 +140,16 @@ Every LXC container and VM gets Proxmox `tags` set automatically, so they can be
 
 ## Proxmox-side Setup (one-time, outside Terraform)
 
-Terraform clones VMs and calls the Proxmox API — it does not create the template it clones from, nor the account it authenticates as. Both need to exist in Proxmox before the first `terraform apply`.
+Terraform downloads the VM cloud image itself (`vm_cloud_image_url` / `vm_image_datastore_id`) and calls the Proxmox API — there's no template to pre-build by hand. The one thing that still needs to exist in Proxmox before the first `terraform apply` is the service account.
 
-### VM template (`vm_template_id`)
-
-`vms.tf` clones `var.vm_template_id` and relies on an `initialization` block (cloud-init) to set IP/user/SSH key, so the template must be built from a **cloud image**, not an installer ISO converted to a template (that path has no cloud-init drive and the `initialization` block has nothing to configure):
-
-```bash
-wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
-qm create 9000 --name debian-12-cloudinit --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
-qm importdisk 9000 debian-12-generic-amd64.qcow2 local-lvm
-qm set 9000 --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-9000-disk-0
-qm set 9000 --ide2 local-lvm:cloudinit
-qm set 9000 --boot c --bootdisk scsi0
-qm set 9000 --serial0 socket --vga serial0
-qm template 9000
-```
-
-Use that VM ID as `vm_template_id`. This is unrelated to `debian_template` (the LXC `.tar.zst`, fetched via `pveam`).
+VM cloud-init still works the same way it did with the old clone-from-template setup, since `vm_cloud_image_url` points at a genuine cloud image (not an installer ISO), and the `initialization` block sets IP/user/SSH key on top of it. This is unrelated to `debian_template` (the LXC `.tar.zst`, fetched via `pveam`).
 
 ### Service account and API token
 
 Authenticate as a dedicated `terraform` user with a least-privilege role, not `root@pam`. Create, on the Proxmox side:
 
 1. A user `terraform@pve`.
-2. A role (e.g. `TerraformProvision`) with: `Datastore.AllocateSpace`, `Datastore.Audit`, `Pool.Allocate`, `SDN.Use`, `Sys.Audit`, `Sys.Console`, `Sys.Modify`, `Sys.PowerMgmt`, `VM.Allocate`, `VM.Audit`, `VM.Clone`, `VM.Config.CDROM`, `VM.Config.CPU`, `VM.Config.Cloudinit`, `VM.Config.Disk`, `VM.Config.HWType`, `VM.Config.Memory`, `VM.Config.Network`, `VM.Config.Options`, `VM.Migrate`, `VM.Monitor`, `VM.PowerMgmt`.
+2. A role (e.g. `TerraformProvision`) with: `Datastore.AllocateSpace`, `Datastore.AllocateTemplate`, `Datastore.Audit`, `Pool.Allocate`, `SDN.Use`, `Sys.Audit`, `Sys.Console`, `Sys.Modify`, `Sys.PowerMgmt`, `VM.Allocate`, `VM.Audit`, `VM.Config.CDROM`, `VM.Config.CPU`, `VM.Config.Cloudinit`, `VM.Config.Disk`, `VM.Config.HWType`, `VM.Config.Memory`, `VM.Config.Network`, `VM.Config.Options`, `VM.Migrate`, `VM.Monitor`, `VM.PowerMgmt`. `Datastore.AllocateTemplate` is required for the VM cloud image download; `VM.Clone` is no longer needed since VMs import a disk instead of cloning a template.
 3. A group `terraform`, with that role assigned at path `/` (propagated).
 4. The `terraform` user added to the `terraform` group.
 5. An API token on that user (privilege separation off, so the token inherits the group's role).
