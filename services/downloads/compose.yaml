@@ -147,6 +147,47 @@ services:
     volumes:
       - /mnt/nas/downloads/youtube:/downloads
 
+  # AV engine — reachable at clamav:3310 on this Compose network. No
+  # ports published to the host or LAN: nothing outside this stack needs
+  # to reach it, and clamd traffic is unencrypted.
+  clamav:
+    image: clamav/clamav:stable
+    container_name: downloads-clamav
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+      # No mail server here — skip the milter listener entirely.
+      - CLAMAV_NO_MILTERD=true
+      # Defaults (StreamMaxLength 25M, MaxFileSize 25M, MaxScanSize 100M)
+      # are sized for email attachments, not movie files. CLAMD_CONF_* is
+      # this image's documented way to set arbitrary clamd.conf
+      # directives without replacing the whole (entrypoint-managed) file.
+      - CLAMD_CONF_StreamMaxLength=8000M
+      - CLAMD_CONF_MaxFileSize=8000M
+      - CLAMD_CONF_MaxScanSize=8000M
+    volumes:
+      - clamav-db:/var/lib/clamav
+
+  # Polls /mnt/nas/downloads and reports hits to clamav — covers
+  # qBittorrent, pyLoad, and MeTube alike, independently of any one of
+  # them. See scripts/clamav-scan-watch.sh for what it does and why it
+  # doesn't quarantine/delete automatically.
+  clamav-scanner:
+    image: alpine:3.20
+    container_name: downloads-clamav-scanner
+    restart: unless-stopped
+    depends_on:
+      - clamav
+    environment:
+      - CLAMD_HOST=clamav
+      - CLAMD_PORT=3310
+      - SCAN_DIR=/scan
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache clamav-clamdscan >/dev/null && exec /clamav-scan-watch.sh"]
+    volumes:
+      - /mnt/nas/downloads:/scan:ro
+      - clamav-scanner-state:/state
+      - ./scripts/clamav-scan-watch.sh:/clamav-scan-watch.sh:ro
+
 volumes:
   gluetun-config:
   qbittorrent-config:
@@ -154,3 +195,5 @@ volumes:
   sonarr-config:
   radarr-config:
   pyload-config:
+  clamav-db:
+  clamav-scanner-state:

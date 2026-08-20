@@ -4,12 +4,14 @@ Prepares an LXC container and deploys the downloads stack (see `services/downloa
 
 ## Responsibilities
 
-- Create the `torrents`/`direct`/`youtube` subdirectories the compose stack writes into (under `downloads_mount_path`, which itself comes from a Proxmox-level bind mount — see "NAS Export" below).
+- Bind the NAS shares into the LXC (`pct set -mp0/-mp1`, delegated to the `proxmox` host) — see "NAS bind mounts" below.
+- Create the `torrents`/`direct`/`youtube` subdirectories the compose stack writes into (under `downloads_mount_path`).
 - Template the `.env` file (VPN credentials, PUID/PGID/TZ) and deploy `services/downloads/compose.yaml`.
 - Start the stack with Docker Compose.
 - Give qBittorrent's WebUI a permanent username/password via its REST API (it has no env var for this — see "qBittorrent WebUI credentials" below).
+- Wire Sonarr, Radarr, and Prowlarr together via their REST APIs — root folders, the qBittorrent download client, Prowlarr's connected apps — see "App wiring" below.
 
-It does **not** mount the NAS — see "NAS Export" below.
+It does **not** create the underlying CIFS mounts on the Proxmox host itself — that's a one-time manual step, see `services/downloads/README.md#nas-prerequisite-mostly-one-time-partly-automated`.
 
 Terraform is responsible for creating the LXC container.
 
@@ -34,6 +36,10 @@ ansible/roles/downloads/
 downloads_app_dir: /opt/downloads
 
 downloads_mount_path: /mnt/nas/downloads
+downloads_jellyfin_mount_path: /mnt/nas/jellyfin
+downloads_nas_source_path: /mnt/pve/downloads
+downloads_jellyfin_nas_source_path: /mnt/pve/jellyfin
+downloads_lxc_vmid: 216
 
 downloads_puid: 1000
 downloads_pgid: 1000
@@ -48,11 +54,21 @@ downloads_qbittorrent_username: changeme
 downloads_qbittorrent_password: changeme
 ```
 
-## NAS Export
+## NAS bind mounts
 
-Neither download staging nor the media library touch the LXC's own disk — `/mnt/nas/downloads` and `/mnt/nas/jellyfin` inside the container both come from **Proxmox-level bind mounts**, not this role. Unprivileged LXCs (all of them in this repo) can't mount CIFS/NFS themselves, even with `features.mount = ["cifs", "nfs"]` set (`mount error(1): Operation not permitted` — a kernel limitation, confirmed while building `ansible/roles/minecraft/`).
+Neither download staging nor the media library touch the LXC's own disk — `/mnt/nas/downloads` and `/mnt/nas/jellyfin` inside the container both come from **Proxmox-level bind mounts**. Unprivileged LXCs (all of them in this repo) can't mount CIFS/NFS themselves, even with `features.mount = ["cifs", "nfs"]` set (`mount error(1): Operation not permitted` — a kernel limitation, confirmed while building `ansible/roles/minecraft/`).
 
-`/mnt/nas/jellyfin` is the same NAS folder `ansible/roles/jellyfin/` bind-mounts read-only into the `jellyfin` LXC — Sonarr/Radarr need to write into it (organized imports), so the underlying host-side CIFS mount is read-write; Jellyfin's own read-only-ness comes from its `pct set ... ro=1` bind flag, not from the mount itself. See `services/downloads/README.md` for the exact host-side commands, including why the mounts use uid/gid `101000` (PUID/PGID `1000` mapped through the LXC's unprivileged offset).
+`/mnt/nas/jellyfin` is the same NAS folder `ansible/roles/jellyfin/` bind-mounts read-only into the `jellyfin` LXC — Sonarr/Radarr need to write into it (organized imports), so the underlying host-side CIFS mount is read-write; Jellyfin's own read-only-ness comes from its `pct set ... ro=1` bind flag, not from the mount itself. See `services/downloads/README.md` for the exact host-side CIFS setup, including why the mounts use uid/gid `101000` (PUID/PGID `1000` mapped through the LXC's unprivileged offset).
+
+The role's first three tasks bind those already-mounted host paths into the LXC:
+
+1. `pct config {{ downloads_lxc_vmid }}` (delegated to the `proxmox` inventory host) to read the LXC's current `mp0`/`mp1` lines.
+2. `pct set {{ downloads_lxc_vmid }} -mp0 {{ downloads_nas_source_path }},mp={{ downloads_mount_path }}` — only if that exact mount isn't already there.
+3. Same for `-mp1` / `downloads_jellyfin_*`.
+
+This needs `root@pam` on the Proxmox side (`pct set` isn't exposed to API tokens), which is why it goes through Ansible's SSH connection to the `proxmox` host (`ansible_user: root` there) instead of Terraform's least-privilege API token. If either mount just changed, the role also restarts the containers that read them (`sonarr`, `radarr`, `qbittorrent`, `pyload`, `metube`) — a bind mount added under a path a container already has open doesn't show up inside it without a restart.
+
+Because this now runs on every deploy, a destroyed-and-recreated `downloads` LXC gets its NAS mounts back automatically on the next `make deploy-downloads` — no manual `pct set` step to remember.
 
 ### Secrets
 
@@ -77,6 +93,16 @@ To make this idempotent, the role's last task:
 2. Otherwise, reads the current temporary password from `docker logs qbittorrent`, logs in with it, and calls the WebUI API (`/api/v2/app/setPreferences`) to set the permanent username/password.
 
 This runs from the Ansible controller (`delegate_to: localhost`) against the LXC's LAN IP, since the minimal Debian image the LXC runs doesn't have `curl` and this avoids needing it.
+
+## App wiring
+
+Sonarr, Radarr, and Prowlarr each expose a REST API authenticated with a per-app key (auto-generated on first start, written to `/config/config.xml` inside each container). The role's last block reads those three keys (`docker exec <app> cat /config/config.xml | grep -oP ...`, retried until present — config.xml isn't written the instant the port opens) and, for each of the following, checks first and only `POST`s if missing:
+
+- Radarr: root folder `/movies`, qBittorrent as a download client (host `gluetun`, port `8080`, category `radarr`).
+- Sonarr: root folder `/tv`, qBittorrent as a download client (host `gluetun`, port `8080`, category `sonarr`).
+- Prowlarr: Radarr and Sonarr added as connected apps (`syncLevel: fullSync`), so indexers added in Prowlarr propagate to both.
+
+This mirrors exactly what `services/downloads/README.md`'s former "First-run configuration" steps had you click through by hand — same field values, just idempotent and applied through each app's `/api/v3/...` (Prowlarr: `/api/v1/...`) endpoints instead of the WebUI. **Indexers themselves are deliberately not touched** — which trackers to use is a personal choice, not something this role should decide; add those once in Prowlarr's WebUI and they persist in the `prowlarr-config` volume.
 
 ## Deployment
 
@@ -110,21 +136,25 @@ Ansible
     ▼
 downloads role
     │
+    ├── pct set -mp0/-mp1 on the proxmox host (NAS bind mounts)
     ├── Create /opt/downloads and template .env
-    ├── Deploy compose.yaml
-    └── docker compose up -d
-             │
-             ├── gluetun (VPN) ── qbittorrent  :8080  (torrents, via VPN)
-             ├── prowlarr                       :9696  (indexers)
-             ├── sonarr                         :8989  (TV automation)
-             ├── radarr                         :7878  (movie automation)
-             ├── pyload                         :8000  (direct HTTP/FTP links)
-             └── metube                         :8081  (yt-dlp video links)
-                      │
-                      └── reached by LAN IP:port directly (no Traefik, no Cloudflare route)
+    ├── Deploy compose.yaml + scripts/
+    ├── docker compose up -d
+    │        │
+    │        ├── gluetun (VPN) ── qbittorrent  :8080  (torrents, via VPN)
+    │        ├── prowlarr                       :9696  (indexers)
+    │        ├── sonarr                         :8989  (TV automation)
+    │        ├── radarr                         :7878  (movie automation)
+    │        ├── pyload                         :8000  (direct HTTP/FTP links)
+    │        ├── metube                         :8081  (yt-dlp video links)
+    │        └── clamav + clamav-scanner               (no published ports)
+    │                 │
+    │                 └── reached by LAN IP:port directly (no Traefik, no Cloudflare route)
+    ├── qBittorrent: set permanent WebUI credentials via its API
+    └── Sonarr/Radarr/Prowlarr: root folders, download client, connected apps via their APIs
 ```
 
-(NAS mounts at `/mnt/nas/downloads` and `/mnt/nas/jellyfin` come from Proxmox-host-level bind mounts set up before any of this runs — see "NAS Export" above.)
+(The underlying CIFS mounts on the Proxmox host itself are set up once, manually — see `services/downloads/README.md`. Everything from `pct set` down runs on every deploy.)
 
 ## Related
 
