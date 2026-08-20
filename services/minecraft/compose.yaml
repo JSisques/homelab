@@ -57,7 +57,14 @@ services:
       # Add/remove slugs here (see https://modrinth.com/plugin/<slug>), no
       # separate step needed. Vault isn't on Modrinth, so it's fetched via
       # PLUGINS from its GitHub release instead.
-      MODRINTH_PROJECTS: "luckperms,essentialsx,coreprotect,griefprevention,spark,chunky,placeholderapi"
+      #
+      # Every slug is marked optional (trailing `?`) — without it, a
+      # single plugin with no build yet for the server's Minecraft
+      # version (happened with EssentialsX on 26.2) makes mc-image-helper
+      # fail hard and the whole container refuses to start, taking down
+      # every other plugin with it. Optional: missing/incompatible ones
+      # just log a warning and startup continues.
+      MODRINTH_PROJECTS: "luckperms?,essentialsx?,coreprotect?,griefprevention?,spark?,chunky?,placeholderapi?"
       PLUGINS: "https://github.com/MilkBowl/Vault/releases/latest/download/Vault.jar"
 
     volumes:
