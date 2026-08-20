@@ -78,6 +78,77 @@ Once on the VPN, point the Minecraft client at `192.168.0.217:25565`. The first 
 - **Grafana** (`homelab-minecraft` dashboard, provisioned automatically) — TPS, tick time, online players, per-player health/food/XP, active entity counts. Populated only while `mc` is actually running.
 - **Host-level** (CPU/mem/disk of the LXC itself) — the existing `homelab-host-detail` dashboard, pick `minecraft` from the instance selector.
 
+## Load testing
+
+Not a permanent part of the stack — a manual procedure to run occasionally, using [SoulFire](https://github.com/soulfiremc-com/SoulFire), a bot framework that runs real client code so bots behave like real players at the protocol level (unlike scripted-packet tools). Uses `spark` (already in `MODRINTH_PROJECTS`, see [Plugins](#plugins)) to read the impact.
+
+### 1. Prerequisites
+
+- Run the SoulFire container from a machine on the WireGuard VPN or LAN — `mc` is `tier: internal`, only reachable at `192.168.0.217:25565` (see [Before deploying this](#before-deploying-this--things-only-you-can-do), point 4).
+- Check the server's Minecraft version first (`docker logs minecraft-paper | grep -i "Minecraft Server"` on the `minecraft` LXC, or `/version` in-game) — SoulFire's bots need to speak the same protocol version.
+
+### 2. Temporarily allow offline (non-Microsoft) bot accounts
+
+The `mc` service doesn't set `ONLINE_MODE`, so it defaults to `TRUE` (real Microsoft-authenticated accounts required to join). SoulFire can auto-generate fake accounts for load testing, but only if the server accepts offline auth — real per-bot Microsoft accounts aren't practical at the scale needed to find a breaking point.
+
+This is a **manual, temporary edit on the LXC, not a repo change** — do not commit `ONLINE_MODE: "FALSE"` to `compose.yaml`, it would leave the production server open to username spoofing (low risk given VPN-only exposure, but no reason to leave it that way outside a test window):
+
+```bash
+ssh <user>@192.168.0.217
+sudo sed -i '/RCON_PASSWORD/a\      ONLINE_MODE: "FALSE"' /opt/minecraft/compose.yaml
+cd /opt/minecraft && sudo docker compose up -d mc
+```
+
+Revert the same way after testing (remove the added line, `docker compose up -d mc` again) — or just rerun the Ansible playbook, since `ONLINE_MODE` isn't in the tracked `compose.yaml` and won't be reintroduced.
+
+### 3. Run SoulFire
+
+From the VPN-connected machine, as a throwaway container (no need to add this to any `compose.yaml` — it's not part of the stack):
+
+```bash
+docker run -d --name soulfire-stress-test --rm -p 38765:38765 ghcr.io/soulfiremc-com/soulfire
+```
+
+Open `http://<that machine's IP>:38765`, create the admin account on first visit, then create an instance with:
+
+- **Bot address**: `192.168.0.217:25565`
+- **Protocol version**: matching what you checked in step 1
+- **Accounts**: leave empty — SoulFire generates offline accounts automatically since `ONLINE_MODE` is now `FALSE`
+- **Bot amount**: start at `10` (see ramp-up plan below)
+- **Join delay min/max**: keep the defaults (1000–3000 ms) — a burst of simultaneous cold connections can confuse lazymc's wake-up handling and skew results
+
+Join with **one real client first** to wake `mc` via lazymc before starting bots, so the lazymc startup delay doesn't pollute the first measurement.
+
+### 4. Ramp up and measure
+
+Don't jump straight to hundreds of bots — that only proves "it crashes," not where the limit is. Step through bot counts, holding each level 10–15 min, recording metrics before moving on:
+
+| Step | Bots | What to check |
+| ---- | ---- | -------------- |
+| 0 | 0 (baseline) | `/spark tps` on an idle, awake server |
+| 1 | 10 | |
+| 2 | 25 | |
+| 3 | 50 | |
+| 4 | 100 | |
+| 5 | 200+ | until TPS degrades |
+
+Metrics, via `spark` (RCON console or in-game):
+
+- `/spark tps` — **TPS** (target 20; below 15 = severe lag) and **MSPT** (healthy under 40 ms, 45 ms+ = near the limit)
+- `/spark profiler start` / `/spark profiler stop` — find what's actually consuming tick time at a given bot count
+- Grafana `homelab-minecraft` dashboard (see [Monitoring](#monitoring)) — same metrics over time, plus entity counts
+- Grafana `homelab-host-detail` (`minecraft` instance) — LXC-level CPU/memory; sustained >80% CPU means no headroom for real-player spikes
+
+Optional: a spike test (burst-connect 50 more bots on top of an already-stable 10) to simulate an event-driven joins, and an endurance run (50–75% of the found capacity for 4–8h) to catch plugin memory leaks — CoreProtect and GriefPrevention both accumulate in-memory state over a session.
+
+### 5. Clean up
+
+```bash
+docker stop soulfire-stress-test   # --rm already removes the container
+```
+
+Then revert `ONLINE_MODE` on the LXC (step 2) so the production server goes back to requiring real Microsoft accounts.
+
 ## Deployment
 
 Terraform creates the `minecraft` LXC (`terraform/proxmox/lxc.tf`). The NAS mount is a one-time manual step on the Proxmox host (see above). Ansible just deploys this Compose file (see `ansible/roles/minecraft/`).
