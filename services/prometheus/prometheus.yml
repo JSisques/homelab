@@ -172,6 +172,10 @@ scrape_configs:
           - "192.168.0.218:9100"
         labels:
           instance: "stirling-pdf"
+      - targets:
+          - "192.168.0.219:9100"
+        labels:
+          instance: "soulfire"
   - job_name: "promtail"
     static_configs:
       - targets:
@@ -250,6 +254,10 @@ scrape_configs:
           - "192.168.0.218:9080"
         labels:
           instance: "stirling-pdf"
+      - targets:
+          - "192.168.0.219:9080"
+        labels:
+          instance: "soulfire"
   - job_name: "blackbox"
     metrics_path: /probe
     file_sd_configs:

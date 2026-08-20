@@ -319,6 +319,22 @@ hosts:
     role:
       - stirling-pdf
 
+  soulfire:
+    type: lxc
+    platform: proxmox
+    octet: 219
+    # Bot framework used to load-test the Minecraft server (see
+    # services/minecraft/README.md#load-testing) — not a 24/7 service,
+    # meant to be started only for a test session and shut down from
+    # Proxmox afterwards. Sized for a few hundred bots (SoulFire docs:
+    # ~2G is enough up to ~50 bots, this leaves headroom beyond that);
+    # bump memory here if a test run needs more before it OOMs.
+    cpu: 2
+    memory: 4096
+    disk: 8
+    role:
+      - soulfire
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

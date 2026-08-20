@@ -768,3 +768,18 @@ services:
       port: 8080
       scheme: http
       module: http_2xx
+
+  soulfire:
+    name: SoulFire
+    category: Utilities
+    tier: internal
+    url: http://192.168.0.219:38765
+    icon: mdi-robot
+
+    homepage:
+      enabled: true
+      description: Bot framework for Minecraft load testing (normally off)
+
+    # Deliberately unmonitored: this LXC is meant to be off between test
+    # sessions (see services/minecraft/README.md#load-testing), so an
+    # uptime/blackbox check would just alert "down" most of the time.

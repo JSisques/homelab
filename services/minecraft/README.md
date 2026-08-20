@@ -82,44 +82,43 @@ Once on the VPN, point the Minecraft client at `192.168.0.217:25565`. The first 
 
 ## Load testing
 
-Not a permanent part of the stack — a manual procedure to run occasionally, using [SoulFire](https://github.com/soulfiremc-com/SoulFire), a bot framework that runs real client code so bots behave like real players at the protocol level (unlike scripted-packet tools). Uses `spark` (already in `MODRINTH_PROJECTS`, see [Plugins](#plugins)) to read the impact.
+Uses [SoulFire](../soulfire/README.md), a bot framework that runs real client code so bots behave like real players at the protocol level (unlike scripted-packet tools), deployed as its own dedicated LXC (`services/soulfire/`) — off between test sessions, not part of the always-on stack. Uses `spark` (already in `MODRINTH_PROJECTS`, see [Plugins](#plugins)) to read the impact.
 
 ### 1. Prerequisites
 
-- Run the SoulFire container from a machine on the WireGuard VPN or LAN — `mc` is `tier: internal`, only reachable at `192.168.0.217:25565` (see [Before deploying this](#before-deploying-this--things-only-you-can-do), point 4).
+- Start the `soulfire` LXC in Proxmox (it's stopped by default between test sessions) and deploy it if it isn't already (`make deploy-soulfire`) — see `services/soulfire/README.md`.
 - Check the server's Minecraft version first (`docker logs minecraft-paper | grep -i "Minecraft Server"` on the `minecraft` LXC, or `/version` in-game) — SoulFire's bots need to speak the same protocol version.
 
 ### 2. Temporarily allow offline (non-Microsoft) bot accounts
 
 The `mc` service doesn't set `ONLINE_MODE`, so it defaults to `TRUE` (real Microsoft-authenticated accounts required to join). SoulFire can auto-generate fake accounts for load testing, but only if the server accepts offline auth — real per-bot Microsoft accounts aren't practical at the scale needed to find a breaking point.
 
-This is a **manual, temporary edit on the LXC, not a repo change** — do not commit `ONLINE_MODE: "FALSE"` to `compose.yaml`, it would leave the production server open to username spoofing (low risk given VPN-only exposure, but no reason to leave it that way outside a test window):
+This is a **manual, temporary edit on the LXC, not a repo change** — do not commit `ONLINE_MODE: "FALSE"` to `compose.yaml`, it would leave the production server open to username spoofing (low risk given VPN-only exposure, but no reason to leave it that way outside a test window). Insert it right after the `RCON_PASSWORD` line **inside the `mc` service specifically** — `mc-exporter` has its own `RCON_PASSWORD`-named line too, so a plain `sed '/RCON_PASSWORD/a...'` matches both and inserts it twice in the wrong places; target the line number instead (confirm it with `grep -n RCON_PASSWORD` first, it moves if the file changes):
 
 ```bash
-ssh <user>@192.168.0.217
-sudo sed -i '/RCON_PASSWORD/a\      ONLINE_MODE: "FALSE"' /opt/minecraft/compose.yaml
-cd /opt/minecraft && sudo docker compose up -d mc
+ssh root@192.168.0.217
+grep -n RCON_PASSWORD /opt/minecraft/compose.yaml   # confirm the mc service's line number, e.g. 54
+sed -i '54a\      ONLINE_MODE: "FALSE"' /opt/minecraft/compose.yaml
+cd /opt/minecraft && docker compose up -d mc
 ```
 
-Revert the same way after testing (remove the added line, `docker compose up -d mc` again) — or just rerun the Ansible playbook, since `ONLINE_MODE` isn't in the tracked `compose.yaml` and won't be reintroduced.
+Revert the same way after testing (`grep -n ONLINE_MODE` for the line number, `sed -i '<n>d' compose.yaml`, `docker compose up -d mc` again) — or just rerun the Ansible playbook, since `ONLINE_MODE` isn't in the tracked `compose.yaml` and won't be reintroduced.
 
 ### 3. Run SoulFire
 
-From the VPN-connected machine, as a throwaway container (no need to add this to any `compose.yaml` — it's not part of the stack):
-
-```bash
-docker run -d --name soulfire-stress-test --rm -p 38765:38765 ghcr.io/soulfiremc-com/soulfire
-```
-
-Open `http://<that machine's IP>:38765`, create the admin account on first visit, then create an instance with:
+`38765` is SoulFire's backend, not a web dashboard — connect with the GUI client instead (see `services/soulfire/README.md#client-server-there-is-no-web-dashboard-at-the-port` for generating an access token and installing the client). Once connected, create an instance with:
 
 - **Bot address**: `192.168.0.217:25565`
 - **Protocol version**: matching what you checked in step 1
-- **Accounts**: leave empty — SoulFire generates offline accounts automatically since `ONLINE_MODE` is now `FALSE`
 - **Bot amount**: start at `10` (see ramp-up plan below)
-- **Join delay min/max**: keep the defaults (1000–3000 ms) — a burst of simultaneous cold connections can confuse lazymc's wake-up handling and skew results
+- **Join delay min/max**: **do not use the 1000–3000 ms defaults** — Paper's own anti-bot protection (`connection-throttle` in `bukkit.yml`, default `4000` ms) rate-limits reconnects **per source IP**, and every bot connects from the same IP (the `soulfire` container's). Below that threshold, bots get stuck cycling `Connection throttled! Please wait before reconnecting.` instead of actually joining — confirmed live at 20 bots. Set **5000–7000 ms** instead (comfortably over the 4s window); joining takes longer (~2 min for 20 bots) but every bot actually gets in. (`bukkit.yml`'s `connection-throttle` could be set to `-1` to disable it server-side instead, but that's a bigger/less reversible change to a security setting than just spacing out the client's own join delay — prefer the client-side fix.)
+- **Accounts**: click **"Generar cuentas"** on the "No hay cuentas configuradas" prompt when you first hit Start — SoulFire generates offline accounts automatically since `ONLINE_MODE` is now `FALSE`
 
 Join with **one real client first** to wake `mc` via lazymc before starting bots, so the lazymc startup delay doesn't pollute the first measurement.
+
+**Make the bots actually move** (otherwise they stand still at spawn and never touch new chunks): Extensiones → Plugins → **Anti AFK**, enable it, and raise the defaults — `Max distance (blocks)` from `30` to `100+` so each move crosses into unloaded chunks, not just around the same one or two. It's real pathfinding (A*), not teleporting, so it also exercises pathing load, not just chunk I/O.
+
+**Known ceiling**: `server.properties` has `max-players=20` (itzg/Paper's own default) — bots beyond 20 concurrent will be rejected regardless of `connection-throttle`. Bump `MAX_PLAYERS` (same manual/temporary-edit approach as `ONLINE_MODE` above) before ramping past step 2 in the table below, or cap the ramp at 20 if that's a realistic ceiling for real usage anyway.
 
 ### 4. Ramp up and measure
 
@@ -127,29 +126,28 @@ Don't jump straight to hundreds of bots — that only proves "it crashes," not w
 
 | Step | Bots | What to check |
 | ---- | ---- | -------------- |
-| 0 | 0 (baseline) | `/spark tps` on an idle, awake server |
+| 0 | 0 (baseline) | `/tps` on an idle, awake server |
 | 1 | 10 | |
-| 2 | 25 | |
+| 2 | 20 | the `max-players` ceiling — bump `MAX_PLAYERS` first to go beyond this |
 | 3 | 50 | |
 | 4 | 100 | |
 | 5 | 200+ | until TPS degrades |
 
-Metrics, via `spark` (RCON console or in-game):
+Metrics:
 
-- `/spark tps` — **TPS** (target 20; below 15 = severe lag) and **MSPT** (healthy under 40 ms, 45 ms+ = near the limit)
-- `/spark profiler start` / `/spark profiler stop` — find what's actually consuming tick time at a given bot count
+- **`/tps`** via RCON (`docker exec minecraft-paper rcon-cli tps`) or in-game — TPS from the last 1m/5m/15m (target 20; below 15 = severe lag). More reliable over RCON than `/spark tps`, which returned empty output in practice (likely Adventure text component serialization over RCON) — use `/spark tps` in-game instead if you want spark's fuller MSPT breakdown.
+- `/spark profiler start` / `/spark profiler stop` (in-game) — find what's actually consuming tick time at a given bot count
+- `docker stats minecraft-paper` on the LXC — quick CPU%/memory read without going through Grafana
 - Grafana `homelab-minecraft` dashboard (see [Monitoring](#monitoring)) — same metrics over time, plus entity counts
 - Grafana `homelab-host-detail` (`minecraft` instance) — LXC-level CPU/memory; sustained >80% CPU means no headroom for real-player spikes
 
-Optional: a spike test (burst-connect 50 more bots on top of an already-stable 10) to simulate an event-driven joins, and an endurance run (50–75% of the found capacity for 4–8h) to catch plugin memory leaks — CoreProtect and GriefPrevention both accumulate in-memory state over a session.
+Expect a handful of bots to die to hostile mobs (zombies, strays) once Anti AFK has them wandering — that's normal gameplay noise from real pathfinding through the world, not a test failure; they respawn on their own.
+
+Optional: a spike test (burst-connect 50 more bots on top of an already-stable 10) to simulate an event-driven joins, and an endurance run (50–75% of the found capacity for 4–8h) to catch plugin memory leaks — CoreProtect and GriefPrevention both accumulate in-memory state over a session (when they're actually installed — see [Plugins](#plugins), both currently lack a build for this server's Minecraft version and are skipped).
 
 ### 5. Clean up
 
-```bash
-docker stop soulfire-stress-test   # --rm already removes the container
-```
-
-Then revert `ONLINE_MODE` on the LXC (step 2) so the production server goes back to requiring real Microsoft accounts.
+Revert `ONLINE_MODE` (and `MAX_PLAYERS`, if you changed it) on the `minecraft` LXC (step 2) so the production server goes back to its normal config, then stop the `soulfire` LXC from Proxmox — no need to tear anything down inside it, its config/instances persist in the `soulfire-data` volume for next time.
 
 ## Deployment
 
