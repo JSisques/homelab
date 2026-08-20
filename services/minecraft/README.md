@@ -10,6 +10,14 @@ Three containers:
 - **mc** ([itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server), `TYPE=PAPER`) — the actual Paper server. `restart: "no"` — it's managed entirely by lazymc; Docker's own restart policy would fight lazymc's stop/start cycle.
 - **mc-exporter** ([dirien/minecraft-exporter](https://github.com/dirien/minecraft-prometheus-exporter)) — Prometheus metrics via RCON, no in-game plugin needed. Naturally reports nothing (Prometheus sees `up=0` for the scrape) while `mc` is asleep — that's expected, not a fault.
 
+## Plugins
+
+`mc`'s `MODRINTH_PROJECTS` env var lists plugin slugs that [itzg/minecraft-server](https://github.com/itzg/docker-minecraft-server) downloads (latest compatible release) on every startup — no manual jar management. Currently: [LuckPerms](https://modrinth.com/plugin/luckperms) (permissions), [EssentialsX](https://modrinth.com/plugin/essentialsx) (core commands), [CoreProtect](https://modrinth.com/plugin/coreprotect) (grief rollback/logging), [GriefPrevention](https://modrinth.com/plugin/griefprevention) (claim-based land protection), [spark](https://modrinth.com/plugin/spark) (performance profiler), [Chunky](https://modrinth.com/plugin/chunky) (chunk pre-generation), [PlaceholderAPI](https://modrinth.com/plugin/placeholderapi).
+
+[Vault](https://github.com/MilkBowl/Vault) isn't on Modrinth, so it's fetched separately via `PLUGINS` from its GitHub releases (`.../releases/latest/download/Vault.jar` always resolves to the newest build).
+
+To add another plugin: append its Modrinth slug to `MODRINTH_PROJECTS` (comma-separated, no spaces), or its direct jar URL to `PLUGINS` if it isn't on Modrinth. Redeploy (`make deploy-minecraft` or rerun the Ansible playbook) — plugins persist in the NAS-backed `/data/plugins` volume but the env var list is what gets reconciled on each boot, so removing a slug does **not** delete an already-downloaded jar; remove it manually from `/mnt/nas/minecraft/plugins` if needed.
+
 ## Before deploying this — things only you can do
 
 1. **Create the NAS share folder.** The world lives on your NAS over CIFS/SMB, at `//<nas>/proxmox/data/minecraft` — create the `data/minecraft` folder inside your existing `proxmox` share before the first deploy.
