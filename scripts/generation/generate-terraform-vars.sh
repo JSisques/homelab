@@ -100,6 +100,7 @@ yq --argjson resolved "${RESOLVED}" --argjson categories "${CATEGORIES}" '
               vm_id: (.value.vmid // .value.octet),
               cores: .value.cpu,
               memory: .value.memory,
+              swap: (.value.swap // 0),
               disk: .value.disk,
               tags: (. | host_tags)
             }

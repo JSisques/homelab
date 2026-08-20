@@ -14,6 +14,7 @@ resource "proxmox_virtual_environment_container" "lxc" {
 
   memory {
     dedicated = each.value.memory
+    swap      = each.value.swap
   }
 
   disk {

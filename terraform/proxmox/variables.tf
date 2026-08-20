@@ -92,7 +92,11 @@ variable "lxc_network" {
     vm_id  = number
     cores  = number
     memory = number
-    disk   = number
-    tags   = optional(list(string), [])
+    # Cgroup swap limit (MB), backed by the Proxmox host's own swap
+    # device — unlike VM swap, it doesn't consume the container's disk.
+    # 0 (the default) means no swap.
+    swap = optional(number, 0)
+    disk = number
+    tags = optional(list(string), [])
   }))
 }
