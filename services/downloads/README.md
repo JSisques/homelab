@@ -203,7 +203,7 @@ make deploy-downloads
 
 Docker Compose brings up the containers; wiring them together is still a manual first-run step, same as Jellyfin's setup wizard:
 
-1. **qBittorrent** — log in (default `admin`/`adminadmin`, linuxserver.io prints the real generated password to the container log on first start — change it immediately), set the default save path to `/downloads`.
+1. **qBittorrent** — log in with `downloads_qbittorrent_username`/`downloads_qbittorrent_password` (the `downloads` Ansible role sets these permanently via the WebUI API on every deploy — see `ansible/roles/downloads/README.md#qbittorrent-webui-credentials`; there is no env var for this upstream), set the default save path to `/downloads`.
 2. **Prowlarr** — add indexers, then add qBittorrent, Sonarr, and Radarr as connected apps (`Settings → Apps`), using each container's Docker Compose service name as the host (e.g. `http://qbittorrent:8080` won't resolve since qBittorrent has no network of its own — use the `gluetun` service name instead: `http://gluetun:8080`).
 3. **Sonarr/Radarr** — add qBittorrent as a download client (host `gluetun`, port `8080`), set root folders to `/tv` and `/movies` respectively, and sync indexers from Prowlarr.
 4. **pyLoad/MeTube** — no wiring needed; open the WebUI and paste a link.

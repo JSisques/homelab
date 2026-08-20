@@ -7,6 +7,7 @@ Prepares an LXC container and deploys the downloads stack (see `services/downloa
 - Create the `torrents`/`direct`/`youtube` subdirectories the compose stack writes into (under `downloads_mount_path`, which itself comes from a Proxmox-level bind mount — see "NAS Export" below).
 - Template the `.env` file (VPN credentials, PUID/PGID/TZ) and deploy `services/downloads/compose.yaml`.
 - Start the stack with Docker Compose.
+- Give qBittorrent's WebUI a permanent username/password via its REST API (it has no env var for this — see "qBittorrent WebUI credentials" below).
 
 It does **not** mount the NAS — see "NAS Export" below.
 
@@ -42,6 +43,9 @@ downloads_vpn_service_provider: changeme
 downloads_vpn_wireguard_private_key: changeme
 downloads_vpn_wireguard_addresses: changeme
 downloads_vpn_server_countries: ""
+
+downloads_qbittorrent_username: changeme
+downloads_qbittorrent_password: changeme
 ```
 
 ## NAS Export
@@ -52,14 +56,27 @@ Neither download staging nor the media library touch the LXC's own disk — `/mn
 
 ### Secrets
 
-`downloads_vpn_service_provider`, `downloads_vpn_wireguard_private_key`, and `downloads_vpn_wireguard_addresses` must **never** be committed with real values. Pass them at deploy time the same way `n8n_postgres_password` is passed today — as environment variables consumed by the Makefile's `ANSIBLE_EXTRA_VARS`:
+`downloads_vpn_service_provider`, `downloads_vpn_wireguard_private_key`, `downloads_vpn_wireguard_addresses`, `downloads_qbittorrent_username`, and `downloads_qbittorrent_password` must **never** be committed with real values. Pass them at deploy time the same way `n8n_postgres_password` is passed today — as environment variables consumed by the Makefile's `ANSIBLE_EXTRA_VARS`:
 
 ```bash
 export DOWNLOADS_VPN_SERVICE_PROVIDER=mullvad
 export DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY=...
 export DOWNLOADS_VPN_WIREGUARD_ADDRESSES=10.x.x.x/32
+export DOWNLOADS_QBITTORRENT_USERNAME=...
+export DOWNLOADS_QBITTORRENT_PASSWORD=...
 make deploy-downloads
 ```
+
+### qBittorrent WebUI credentials
+
+The `linuxserver/qbittorrent` image has no env var for the WebUI username/password (feature request closed as not planned upstream — [linuxserver/docker-qbittorrent#228](https://github.com/linuxserver/docker-qbittorrent/issues/228)). Since qBittorrent 4.6.1, if the password is never changed from the WebUI, it generates a new random temporary one on every container start and prints it to `docker logs qbittorrent`.
+
+To make this idempotent, the role's last task:
+
+1. Tries logging in with `downloads_qbittorrent_username`/`downloads_qbittorrent_password` — if that already works (a previous run already set it), it's a no-op.
+2. Otherwise, reads the current temporary password from `docker logs qbittorrent`, logs in with it, and calls the WebUI API (`/api/v2/app/setPreferences`) to set the permanent username/password.
+
+This runs from the Ansible controller (`delegate_to: localhost`) against the LXC's LAN IP, since the minimal Debian image the LXC runs doesn't have `curl` and this avoids needing it.
 
 ## Deployment
 
@@ -68,7 +85,9 @@ cd ansible
 ansible-playbook -i inventory/hosts.yml playbooks/downloads.yaml \
   -e "downloads_vpn_service_provider=$DOWNLOADS_VPN_SERVICE_PROVIDER" \
   -e "downloads_vpn_wireguard_private_key=$DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY" \
-  -e "downloads_vpn_wireguard_addresses=$DOWNLOADS_VPN_WIREGUARD_ADDRESSES"
+  -e "downloads_vpn_wireguard_addresses=$DOWNLOADS_VPN_WIREGUARD_ADDRESSES" \
+  -e "downloads_qbittorrent_username=$DOWNLOADS_QBITTORRENT_USERNAME" \
+  -e "downloads_qbittorrent_password=$DOWNLOADS_QBITTORRENT_PASSWORD"
 ```
 
 or, from the repo root:

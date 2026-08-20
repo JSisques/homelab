@@ -27,3 +27,12 @@ downloads_vpn_wireguard_addresses: changeme
 # Optional: narrow the VPN server selection, e.g. "Netherlands,Sweden".
 # Leave empty to let gluetun pick.
 downloads_vpn_server_countries: ""
+
+# qBittorrent's WebUI has no env var for this (linuxserver/docker-qbittorrent
+# #228, closed as not planned) — it generates a random temporary password on
+# every container start until you change it through the WebUI once. Set here
+# and the role does that first login + change via the WebUI API so it's
+# permanent from the first deploy. Must be overridden (see Makefile's
+# ANSIBLE_EXTRA_VARS). Never commit real values.
+downloads_qbittorrent_username: changeme
+downloads_qbittorrent_password: changeme

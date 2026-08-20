@@ -33,3 +33,72 @@
   community.docker.docker_compose_v2:
     project_src: "{{ downloads_app_dir }}"
     state: present
+
+- name: Wait for the qBittorrent WebUI to accept connections
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: 8080
+    timeout: 60
+  delegate_to: localhost
+  become: false
+
+- name: Ensure qBittorrent's WebUI has a permanent username/password
+  no_log: true
+  become: false
+  block:
+    - name: Check whether the permanent qBittorrent credentials already work
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+        body_format: form-urlencoded
+        body:
+          username: "{{ downloads_qbittorrent_username }}"
+          password: "{{ downloads_qbittorrent_password }}"
+        status_code: [200, 204, 403]
+      register: qbt_permanent_login
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Read qBittorrent's temporary WebUI password from the container log
+      ansible.builtin.shell: >
+        docker logs qbittorrent 2>&1
+        | grep -oP 'temporary password is provided for this session: \K\S+'
+        | tail -n1
+      register: qbt_temp_password
+      changed_when: false
+      when: qbt_permanent_login.status not in [200, 204]
+
+    - name: Log in with the temporary password and set the permanent credentials
+      when:
+        - qbt_permanent_login.status not in [200, 204]
+        - qbt_temp_password.stdout | default('') | length > 0
+      delegate_to: localhost
+      block:
+        - name: Log in to qBittorrent with the temporary password
+          ansible.builtin.uri:
+            url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+            method: POST
+            headers:
+              Referer: "http://{{ ansible_host }}:8080"
+            body_format: form-urlencoded
+            body:
+              username: admin
+              password: "{{ qbt_temp_password.stdout }}"
+            status_code: [200, 204]
+          register: qbt_temp_login
+          changed_when: false
+
+        - name: Set the permanent qBittorrent WebUI username/password
+          ansible.builtin.uri:
+            url: "http://{{ ansible_host }}:8080/api/v2/app/setPreferences"
+            method: POST
+            headers:
+              Referer: "http://{{ ansible_host }}:8080"
+              Cookie: "{{ qbt_temp_login.set_cookie }}"
+            body_format: form-urlencoded
+            body:
+              json: "{{ {'web_ui_username': downloads_qbittorrent_username, 'web_ui_password': downloads_qbittorrent_password} | to_json }}"
+            status_code: [200]
+          changed_when: true

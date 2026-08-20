@@ -23,6 +23,13 @@ services:
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
       - SERVER_COUNTRIES=${SERVER_COUNTRIES}
       - TZ=${TZ}
+      # ProtonVPN's exit servers block outbound port 853, so gluetun's
+      # default DNS-over-TLS healthcheck query fails with "connection
+      # reset by peer" and the container gets marked unhealthy even
+      # though the tunnel itself works fine. DNS-over-HTTPS uses 443,
+      # which isn't blocked.
+      - DNS_UPSTREAM_RESOLVER_TYPE=doh
+      - DNS_UPSTREAM_RESOLVERS=cloudflare
 
     volumes:
       - gluetun-config:/gluetun
