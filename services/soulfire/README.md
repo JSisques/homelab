@@ -16,19 +16,24 @@ services/soulfire/
 
 ## Persistence
 
-One Docker named volume, `soulfire-data` → `/soulfire/data`: SoulFire's own config, instance definitions (bot address, protocol version, account settings), and generated data. Not backed up — if lost, the only cost is re-creating a test instance through the web UI, nothing operationally important lives here.
+One Docker named volume, `soulfire-data` → `/soulfire/data`: SoulFire's own config, instance definitions (bot address, protocol version, account settings), and generated data. Not backed up — if lost, the only cost is re-creating a test instance, nothing operationally important lives here.
 
-## Networking
+## Client/server: there is no web dashboard at the port
 
-Reached directly by LAN/VPN `IP:port`, no reverse proxy:
+`38765` is SoulFire's **backend** (gRPC-Web API) — opening `http://192.168.0.219:38765` in a browser just shows the auto-generated API docs, not a dashboard. To actually drive it you need a separate **client**:
 
-```text
-http://192.168.0.219:38765
-```
+1. **Generate an access token** — the console runs as the container's main process, so attach to it (needs `stdin_open`/`tty` in `compose.yaml`, already set):
+   ```bash
+   ssh root@192.168.0.219
+   cd /opt/soulfire && docker compose attach soulfire
+   ```
+   At the prompt: `generate-token api`, copy the token it prints. Detach without stopping the container with `Ctrl+P, Ctrl+Q` (plain `Ctrl+C` would kill the process).
+2. **Install the GUI client** on your own machine — not on this LXC — from the [SoulFireClient releases](https://github.com/soulfiremc-com/SoulFireClient/releases/latest) (macOS `.dmg`, Windows `.exe`, or Linux via Flathub).
+3. Open it, enter **Server URL** `http://192.168.0.219:38765` and the **access token** from step 1.
 
-Same trust model as every other `tier: internal` service — no auth in front of it beyond being on the LAN or WireGuard. The web UI's own admin account (created on first visit) is the only login.
+Same trust model as every other `tier: internal` service otherwise — no auth in front of the backend beyond being on the LAN or WireGuard (the access token is the app-level auth on top of that).
 
-Traffic to the SoulFire UI itself is plain HTTP (fine on the LAN/VPN); this is unrelated to the Minecraft protocol traffic SoulFire's bots generate when pointed at `192.168.0.217:25565`.
+Traffic between the client and this backend is plain HTTP (fine on the LAN/VPN); this is unrelated to the Minecraft protocol traffic SoulFire's bots generate when pointed at `192.168.0.217:25565`.
 
 ## Resource sizing
 
@@ -63,7 +68,7 @@ cd services/soulfire
 docker compose up -d
 ```
 
-Then open `http://localhost:38765`.
+Then point the GUI client (see above) at `http://localhost:38765`.
 
 ## Source of Truth
 

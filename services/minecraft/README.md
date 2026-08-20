@@ -103,7 +103,7 @@ Revert the same way after testing (remove the added line, `docker compose up -d 
 
 ### 3. Run SoulFire
 
-Open `http://192.168.0.219:38765`, create the admin account on first visit (only needed once — it persists in the `soulfire-data` volume across LXC stop/start), then create an instance with:
+`38765` is SoulFire's backend, not a web dashboard — connect with the GUI client instead (see `services/soulfire/README.md#client-server-there-is-no-web-dashboard-at-the-port` for generating an access token and installing the client). Once connected, create an instance with:
 
 - **Bot address**: `192.168.0.217:25565`
 - **Protocol version**: matching what you checked in step 1

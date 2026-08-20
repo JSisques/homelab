@@ -3,6 +3,11 @@ services:
     image: ghcr.io/soulfiremc-com/soulfire:latest
     container_name: soulfire
     restart: unless-stopped
+    # Needed to `docker compose attach soulfire` into the interactive
+    # console and run `generate-token api` — the GUI/CLI client can't
+    # connect without a token (see services/soulfire/README.md).
+    stdin_open: true
+    tty: true
 
     ports:
       - "38765:38765"
