@@ -164,7 +164,7 @@ hosts:
     platform: proxmox
     octet: 201
     cpu: 1
-    memory: 256
+    memory: 512
     disk: 4
     role:
       - adguard-home-1
@@ -179,7 +179,7 @@ hosts:
     # (see ansible/roles/adguard-home-sync/) rather than sharing state.
     octet: 202
     cpu: 1
-    memory: 256
+    memory: 512
     disk: 4
     role:
       - adguard-home-2
