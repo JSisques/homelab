@@ -52,6 +52,13 @@ services:
       TYPE: "PAPER"
       MEMORY: "6G"
       RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD}
+      # Plugins auto-downloaded on startup — itzg/minecraft-server resolves
+      # the latest release compatible with the server's Minecraft version.
+      # Add/remove slugs here (see https://modrinth.com/plugin/<slug>), no
+      # separate step needed. Vault isn't on Modrinth, so it's fetched via
+      # PLUGINS from its GitHub release instead.
+      MODRINTH_PROJECTS: "luckperms,essentialsx,coreprotect,griefprevention,spark,chunky,placeholderapi"
+      PLUGINS: "https://github.com/MilkBowl/Vault/releases/latest/download/Vault.jar"
 
     volumes:
       - /mnt/nas/minecraft:/data
