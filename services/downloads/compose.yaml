@@ -182,7 +182,12 @@ services:
       - CLAMD_HOST=clamav
       - CLAMD_PORT=3310
       - SCAN_DIR=/scan
-    entrypoint: ["/bin/sh", "-c", "apk add --no-cache clamav-clamdscan >/dev/null && exec /clamav-scan-watch.sh"]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        apk add --no-cache clamav-clamdscan >/dev/null
+        && exec /clamav-scan-watch.sh
     volumes:
       - /mnt/nas/downloads:/scan:ro
       - clamav-scanner-state:/state
