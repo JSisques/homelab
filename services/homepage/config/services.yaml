@@ -115,3 +115,7 @@
         href: http://192.168.0.218:8080
         icon: stirling-pdf.png
         description: Merge, split, convert, OCR, and edit PDFs
+    - SoulFire:
+        href: http://192.168.0.219:38765
+        icon: mdi-robot
+        description: Bot framework for Minecraft load testing (normally off)

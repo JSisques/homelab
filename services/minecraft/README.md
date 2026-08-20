@@ -80,11 +80,11 @@ Once on the VPN, point the Minecraft client at `192.168.0.217:25565`. The first 
 
 ## Load testing
 
-Not a permanent part of the stack — a manual procedure to run occasionally, using [SoulFire](https://github.com/soulfiremc-com/SoulFire), a bot framework that runs real client code so bots behave like real players at the protocol level (unlike scripted-packet tools). Uses `spark` (already in `MODRINTH_PROJECTS`, see [Plugins](#plugins)) to read the impact.
+Uses [SoulFire](../soulfire/README.md), a bot framework that runs real client code so bots behave like real players at the protocol level (unlike scripted-packet tools), deployed as its own dedicated LXC (`services/soulfire/`) — off between test sessions, not part of the always-on stack. Uses `spark` (already in `MODRINTH_PROJECTS`, see [Plugins](#plugins)) to read the impact.
 
 ### 1. Prerequisites
 
-- Run the SoulFire container from a machine on the WireGuard VPN or LAN — `mc` is `tier: internal`, only reachable at `192.168.0.217:25565` (see [Before deploying this](#before-deploying-this--things-only-you-can-do), point 4).
+- Start the `soulfire` LXC in Proxmox (it's stopped by default between test sessions) and deploy it if it isn't already (`make deploy-soulfire`) — see `services/soulfire/README.md`.
 - Check the server's Minecraft version first (`docker logs minecraft-paper | grep -i "Minecraft Server"` on the `minecraft` LXC, or `/version` in-game) — SoulFire's bots need to speak the same protocol version.
 
 ### 2. Temporarily allow offline (non-Microsoft) bot accounts
@@ -103,13 +103,7 @@ Revert the same way after testing (remove the added line, `docker compose up -d 
 
 ### 3. Run SoulFire
 
-From the VPN-connected machine, as a throwaway container (no need to add this to any `compose.yaml` — it's not part of the stack):
-
-```bash
-docker run -d --name soulfire-stress-test --rm -p 38765:38765 ghcr.io/soulfiremc-com/soulfire
-```
-
-Open `http://<that machine's IP>:38765`, create the admin account on first visit, then create an instance with:
+Open `http://192.168.0.219:38765`, create the admin account on first visit (only needed once — it persists in the `soulfire-data` volume across LXC stop/start), then create an instance with:
 
 - **Bot address**: `192.168.0.217:25565`
 - **Protocol version**: matching what you checked in step 1
@@ -143,11 +137,7 @@ Optional: a spike test (burst-connect 50 more bots on top of an already-stable 1
 
 ### 5. Clean up
 
-```bash
-docker stop soulfire-stress-test   # --rm already removes the container
-```
-
-Then revert `ONLINE_MODE` on the LXC (step 2) so the production server goes back to requiring real Microsoft accounts.
+Revert `ONLINE_MODE` on the `minecraft` LXC (step 2) so the production server goes back to requiring real Microsoft accounts, then stop the `soulfire` LXC from Proxmox — no need to tear anything down inside it, its config/instances persist in the `soulfire-data` volume for next time.
 
 ## Deployment
 

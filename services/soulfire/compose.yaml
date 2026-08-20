@@ -1,0 +1,14 @@
+services:
+  soulfire:
+    image: ghcr.io/soulfiremc-com/soulfire:latest
+    container_name: soulfire
+    restart: unless-stopped
+
+    ports:
+      - "38765:38765"
+
+    volumes:
+      - soulfire-data:/soulfire/data
+
+volumes:
+  soulfire-data:

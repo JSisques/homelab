@@ -1,0 +1,17 @@
+---
+- name: Create SoulFire application directory
+  ansible.builtin.file:
+    path: "{{ soulfire_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy SoulFire Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/soulfire/compose.yaml"
+    dest: "{{ soulfire_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start SoulFire
+  community.docker.docker_compose_v2:
+    project_src: "{{ soulfire_app_dir }}"
+    state: present
