@@ -37,7 +37,7 @@ Traffic between the client and this backend is plain HTTP (fine on the LAN/VPN);
 
 ## Resource sizing
 
-2 vCPU / 4GB RAM, 8GB disk (see `config/hosts.yaml` for the rationale) — sized for a few hundred bots per SoulFire's own guidance. Bump `memory` there if a test run needs more bots before the container OOMs.
+2 vCPU / 4GB RAM, 8GB disk (see `config/hosts.yaml` for the rationale). SoulFire's own docs suggest this is enough for a few hundred bots, but that's with idle bots — observed live with 20 bots pathfinding around (Anti AFK enabled, see `services/minecraft/README.md#load-testing`): ~137% CPU (of the 2 vCPU budget) and ~2.8GB/4GB memory. Each bot runs real client code (physics, pathfinding), not a lightweight packet stub, so budget noticeably more than the vendor number once bots are actually moving — bump `memory`/`cpu` in `config/hosts.yaml` before ramping much past 20-30 active bots.
 
 ## Deployment
 
