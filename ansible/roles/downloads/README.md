@@ -9,6 +9,7 @@ Prepares an LXC container and deploys the downloads stack (see `services/downloa
 - Template the `.env` file (VPN credentials, PUID/PGID/TZ) and deploy `services/downloads/compose.yaml`.
 - Start the stack with Docker Compose.
 - Give qBittorrent's WebUI a permanent username/password via its REST API (it has no env var for this — see "qBittorrent WebUI credentials" below).
+- Configure qBittorrent's Alternative Speed Limits scheduler so it only downloads at full speed overnight — see "qBittorrent night-only schedule" below.
 - Wire Sonarr, Radarr, and Prowlarr together via their REST APIs — root folders, the qBittorrent download client, Prowlarr's connected apps — see "App wiring" below.
 
 It does **not** create the underlying CIFS mounts on the Proxmox host itself — that's a one-time manual step, see `services/downloads/README.md#nas-prerequisite-mostly-one-time-partly-automated`.
@@ -52,6 +53,14 @@ downloads_vpn_server_countries: ""
 
 downloads_qbittorrent_username: changeme
 downloads_qbittorrent_password: changeme
+
+downloads_qbittorrent_scheduler_enabled: true
+downloads_qbittorrent_throttle_from_hour: 8
+downloads_qbittorrent_throttle_from_minute: 0
+downloads_qbittorrent_throttle_to_hour: 23
+downloads_qbittorrent_throttle_to_minute: 0
+downloads_qbittorrent_throttle_days: 0
+downloads_qbittorrent_throttle_speed_kib: 1
 ```
 
 ## NAS bind mounts
@@ -93,6 +102,14 @@ To make this idempotent, the role's last task:
 2. Otherwise, reads the current temporary password from `docker logs qbittorrent`, logs in with it, and calls the WebUI API (`/api/v2/app/setPreferences`) to set the permanent username/password.
 
 This runs from the Ansible controller (`delegate_to: localhost`) against the LXC's LAN IP, since the minimal Debian image the LXC runs doesn't have `curl` and this avoids needing it.
+
+### qBittorrent night-only schedule
+
+qBittorrent's API has no schedule-based pause/resume — only the **Alternative Speed Limits scheduler** (`Settings → Speed → Scheduling` in the WebUI). "Only downloads at night" is implemented as: unlimited speed during `downloads_qbittorrent_throttle_to_hour:minute`→`downloads_qbittorrent_throttle_from_hour:minute` (23:00→08:00 by default), throttled to `downloads_qbittorrent_throttle_speed_kib` KiB/s (1 KiB/s by default — a real pause isn't possible since qBittorrent treats a `0` limit as *unlimited*, not *paused*) the rest of the day, every day (`downloads_qbittorrent_throttle_days: 0`; see `defaults/main.yaml` for the other day-of-week values).
+
+Set `downloads_qbittorrent_scheduler_enabled: false` to leave qBittorrent's speed limits alone entirely (no schedule, always unlimited) — the role skips this whole block when that's set.
+
+Idempotent the same way as the credentials task: logs in with the permanent credentials (already guaranteed to work by the previous task), reads current preferences, and only calls `setPreferences` if any of the schedule/limit fields differ from what's wanted.
 
 ## App wiring
 

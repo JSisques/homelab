@@ -50,3 +50,22 @@ downloads_vpn_server_countries: ""
 # ANSIBLE_EXTRA_VARS). Never commit real values.
 downloads_qbittorrent_username: changeme
 downloads_qbittorrent_password: changeme
+
+# qBittorrent has no schedule-based pause/resume in its API — only the
+# Alternative Speed Limits scheduler (Settings -> Speed -> Scheduling
+# in the WebUI). So "downloads only at night" means: full/unlimited
+# speed during the night window below, throttled to
+# downloads_qbittorrent_throttle_speed_kib the rest of the day. 0 would
+# mean "unlimited" to qBittorrent, not "paused", hence a small non-zero
+# value instead of an actual pause.
+downloads_qbittorrent_scheduler_enabled: true
+# Throttled (alt speed limit) window: 08:00-23:00, i.e. normal speed
+# 23:00-08:00.
+downloads_qbittorrent_throttle_from_hour: 8
+downloads_qbittorrent_throttle_from_minute: 0
+downloads_qbittorrent_throttle_to_hour: 23
+downloads_qbittorrent_throttle_to_minute: 0
+# 0 = every day. qBittorrent's other values: 1=every weekday,
+# 2=every weekend, 3=every Monday, 4=every Tuesday, ... 9=every Sunday.
+downloads_qbittorrent_throttle_days: 0
+downloads_qbittorrent_throttle_speed_kib: 1

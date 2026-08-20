@@ -224,7 +224,7 @@ make deploy-downloads
 
 Most of the wiring a fresh Jellyfin-style setup wizard would normally make you click through by hand is done automatically by the `downloads` Ansible role, on every deploy, idempotently — see `ansible/roles/downloads/README.md#app-wiring`:
 
-- **qBittorrent** — permanent WebUI username/password (`downloads_qbittorrent_username`/`downloads_qbittorrent_password`), since there's no env var for this upstream.
+- **qBittorrent** — permanent WebUI username/password (`downloads_qbittorrent_username`/`downloads_qbittorrent_password`), since there's no env var for this upstream. Also configured to only run at full speed overnight (23:00-08:00 by default, throttled to a trickle the rest of the day) via its Alternative Speed Limits scheduler — see `ansible/roles/downloads/README.md#qbittorrent-night-only-schedule` to change the hours or turn it off (`downloads_qbittorrent_scheduler_enabled: false`).
 - **Radarr** — root folder `/movies`, qBittorrent as its download client.
 - **Sonarr** — root folder `/tv`, qBittorrent as its download client.
 - **Prowlarr** — Radarr and Sonarr added as connected apps (`Settings → Apps`), so any indexer added to Prowlarr propagates to both automatically.

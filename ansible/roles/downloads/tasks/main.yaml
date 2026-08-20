@@ -150,6 +150,72 @@
             status_code: [200]
           changed_when: true
 
+# qBittorrent's API has no schedule-based pause/resume, only the
+# Alternative Speed Limits scheduler — see downloads_qbittorrent_scheduler_*
+# in defaults/main.yaml for what "night-only" means in practice here.
+- name: Configure qBittorrent's night-only download schedule
+  no_log: true
+  become: false
+  when: downloads_qbittorrent_scheduler_enabled | bool
+  block:
+    - name: Log in to qBittorrent with the permanent credentials
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/auth/login"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+        body_format: form-urlencoded
+        body:
+          username: "{{ downloads_qbittorrent_username }}"
+          password: "{{ downloads_qbittorrent_password }}"
+        status_code: [200, 204]
+      register: qbt_scheduler_login
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Check qBittorrent's current scheduler preferences
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/app/preferences"
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+          Cookie: "{{ qbt_scheduler_login.set_cookie }}"
+        return_content: true
+      register: qbt_prefs
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Set qBittorrent's Alternative Speed Limits schedule
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}:8080/api/v2/app/setPreferences"
+        method: POST
+        headers:
+          Referer: "http://{{ ansible_host }}:8080"
+          Cookie: "{{ qbt_scheduler_login.set_cookie }}"
+        body_format: form-urlencoded
+        body:
+          json: >-
+            {{ {
+              'scheduler_enabled': true,
+              'schedule_from_hour': downloads_qbittorrent_throttle_from_hour,
+              'schedule_from_min': downloads_qbittorrent_throttle_from_minute,
+              'schedule_to_hour': downloads_qbittorrent_throttle_to_hour,
+              'schedule_to_min': downloads_qbittorrent_throttle_to_minute,
+              'scheduler_days': downloads_qbittorrent_throttle_days,
+              'alt_dl_limit': downloads_qbittorrent_throttle_speed_kib * 1024,
+              'alt_up_limit': downloads_qbittorrent_throttle_speed_kib * 1024,
+            } | to_json }}
+        status_code: [200]
+      delegate_to: localhost
+      when: >-
+        not qbt_prefs.json.scheduler_enabled
+        or qbt_prefs.json.schedule_from_hour != downloads_qbittorrent_throttle_from_hour
+        or qbt_prefs.json.schedule_from_min != downloads_qbittorrent_throttle_from_minute
+        or qbt_prefs.json.schedule_to_hour != downloads_qbittorrent_throttle_to_hour
+        or qbt_prefs.json.schedule_to_min != downloads_qbittorrent_throttle_to_minute
+        or qbt_prefs.json.scheduler_days != downloads_qbittorrent_throttle_days
+        or qbt_prefs.json.alt_dl_limit != (downloads_qbittorrent_throttle_speed_kib * 1024)
+        or qbt_prefs.json.alt_up_limit != (downloads_qbittorrent_throttle_speed_kib * 1024)
+
 - name: Wait for Sonarr, Radarr, and Prowlarr to accept connections
   ansible.builtin.wait_for:
     host: "{{ ansible_host }}"
