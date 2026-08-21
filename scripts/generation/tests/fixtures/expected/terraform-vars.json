@@ -1,0 +1,43 @@
+{
+  "proxmox_node": "hv-node",
+  "lxc_network": {
+    "app-host": {
+      "ip": "10.10.10.50",
+      "vm_id": 50,
+      "cores": 1,
+      "memory": 512,
+      "swap": 0,
+      "disk": 4,
+      "tags": [
+        "applications"
+      ]
+    },
+    "traefik": {
+      "ip": "10.10.10.70",
+      "vm_id": 70,
+      "cores": 1,
+      "memory": 256,
+      "swap": 0,
+      "disk": 4,
+      "tags": [
+        "infrastructure"
+      ]
+    }
+  },
+  "vm_nodes": {
+    "vm-host": {
+      "proxmox_node": "hv-node",
+      "vm_id": 960,
+      "cpu": 2,
+      "memory": 2048,
+      "disk": 20,
+      "ip": "10.10.10.60",
+      "tags": [
+        "applications"
+      ]
+    }
+  },
+  "gateway": "10.10.10.1",
+  "network_bridge": "vmbr0",
+  "network_mask": 24
+}

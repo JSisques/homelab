@@ -33,6 +33,17 @@ if require shellcheck; then
     find scripts -type f -name "*.sh" -print0 | xargs -0 -r shellcheck || FAILED=1
 fi
 
+section "Generation scripts (bats)"
+if require bats; then
+    chmod +x scripts/generation/*.sh
+    bats scripts/generation/tests || FAILED=1
+fi
+
+section "Secrets (gitleaks)"
+if require gitleaks; then
+    gitleaks detect --source . --redact -v || FAILED=1
+fi
+
 section "Terraform"
 if require terraform; then
     (cd terraform/proxmox && terraform fmt -check -recursive) || FAILED=1

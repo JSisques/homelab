@@ -16,7 +16,8 @@ generation/
 ├── generate-traefik.sh
 ├── generate-cloudflared.sh
 ├── generate-inventory.sh
-└── generate-terraform-vars.sh
+├── generate-terraform-vars.sh
+└── tests/               # bats tests, see "Testing" below
 ```
 
 `generate-uptime-kuma.sh` doesn't exist yet — Uptime Kuma has no config-as-code format to generate into, see `services/uptime-kuma/README.md`.
@@ -359,6 +360,31 @@ Example:
 ```bash
 ./scripts/generation/generate-example.sh
 ```
+
+## Testing
+
+`tests/` has [bats](https://github.com/bats-core/bats-core) tests:
+
+- `lib.bats` — unit tests for `lib.sh`'s `resolve_addresses()` (the TBD /
+  literal / octet+prefix resolution order), against the fixture
+  `tests/fixtures/lib/hosts.yaml`.
+- `generators.bats` — one snapshot test per `generate-*.sh`: runs the
+  script in an isolated sandbox against `tests/fixtures/config/` and
+  diffs the result against `tests/fixtures/expected/`.
+
+Run them with:
+
+```bash
+bats scripts/generation/tests
+```
+
+They also run in CI (`.github/workflows/ci.yaml`, `generation-tests` job)
+and as part of `scripts/validation/validate.sh` / `make validate`.
+
+If you change a generator's output on purpose, regenerate its snapshot:
+run the script against `tests/fixtures/config/` in a scratch directory,
+confirm the new output is correct, then copy it over the matching file in
+`tests/fixtures/expected/`.
 
 ## Important Rule
 
