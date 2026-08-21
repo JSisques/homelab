@@ -178,7 +178,11 @@ hosts:
     platform: proxmox
     octet: 201
     cpu: 1
-    memory: 512
+    # 512MB still wasn't enough: large blocklists (notably HaGeZi's Threat
+    # Intelligence Feeds, ~1M+ rules) hit the LXC's memcg OOM killer even
+    # after the previous 256->512MB bump (see git history). AdGuard Home
+    # keeps all filter rules in memory, so this scales with list size.
+    memory: 1024
     disk: 4
     role:
       - adguard-home-1
@@ -191,9 +195,11 @@ hosts:
     # adguard-home-2) instead of a single point of failure for DNS.
     # Kept in sync from adguard-home-1 by the adguard-home-sync role
     # (see ansible/roles/adguard-home-sync/) rather than sharing state.
+    # Sized to match adguard-home-1: it syncs the same blocklists, so it
+    # hits the same memory ceiling.
     octet: 202
     cpu: 1
-    memory: 512
+    memory: 1024
     disk: 4
     role:
       - adguard-home-2
