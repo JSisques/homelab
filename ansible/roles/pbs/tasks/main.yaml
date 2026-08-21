@@ -1,0 +1,77 @@
+---
+- name: Check supported operating system
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == 'Debian'
+    fail_msg: This role currently supports Debian-family operating systems only.
+
+- name: Install NFS client utilities
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install Proxmox Backup Server repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+
+- name: Create APT keyring directory
+  ansible.builtin.file:
+    path: "{{ pbs_apt_keyring | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Install Proxmox Backup Server repository key
+  ansible.builtin.get_url:
+    url: "{{ pbs_apt_key_url }}"
+    dest: "{{ pbs_apt_keyring }}"
+    mode: "0644"
+    force: true
+
+- name: Configure Proxmox Backup Server APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by={{ pbs_apt_keyring }}] {{ pbs_apt_repository }}
+      {{ pbs_apt_suite }} {{ pbs_apt_channel }}
+    filename: pbs
+    state: present
+    update_cache: true
+
+- name: Install Proxmox Backup Server
+  ansible.builtin.apt:
+    name: proxmox-backup-server
+    state: present
+
+- name: Create NFS mount point for the NAS datastore
+  ansible.builtin.file:
+    path: "{{ pbs_mount_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount the NAS NFS export
+  ansible.posix.mount:
+    path: "{{ pbs_mount_path }}"
+    src: "{{ pbs_nas_export }}"
+    fstype: nfs
+    opts: rw,sync,hard,intr
+    state: mounted
+
+- name: Check whether the datastore is already registered
+  ansible.builtin.command: >-
+    proxmox-backup-manager datastore list --output-format json
+  register: pbs_datastore_list
+  changed_when: false
+
+- name: Create the Proxmox Backup Server datastore
+  ansible.builtin.command: >-
+    proxmox-backup-manager datastore create
+    {{ pbs_datastore_name }} {{ pbs_mount_path }}
+  when: >-
+    pbs_datastore_name not in
+    (pbs_datastore_list.stdout | from_json | map(attribute='name') | list)
+  changed_when: true

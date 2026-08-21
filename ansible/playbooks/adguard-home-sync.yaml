@@ -1,0 +1,7 @@
+---
+- name: Deploy AdGuard Home Sync
+  hosts: adguard-home-2
+  become: true
+
+  roles:
+    - adguard-home-sync

@@ -1,0 +1,19 @@
+---
+- name: Check supported operating system
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == 'Debian'
+    fail_msg: This role currently supports Debian-family operating systems only.
+
+- name: Install Node Exporter
+  ansible.builtin.apt:
+    name: "{{ node_exporter_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Enable and start Node Exporter
+  ansible.builtin.service:
+    name: "{{ node_exporter_service_name }}"
+    enabled: true
+    state: started

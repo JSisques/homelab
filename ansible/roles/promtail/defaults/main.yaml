@@ -1,0 +1,12 @@
+---
+# Resolves via hostvars from the "monitoring" host in config/hosts.yaml —
+# updates automatically if that host's address ever changes.
+promtail_loki_host: "{{ hostvars['monitoring'].ansible_host }}"
+promtail_loki_url: "http://{{ promtail_loki_host }}:3100/loki/api/v1/push"
+promtail_config_path: /etc/promtail/config.yml
+
+promtail_apt_keyring: /etc/apt/keyrings/grafana.gpg
+promtail_apt_key_url: https://apt.grafana.com/gpg.key
+promtail_apt_repository: >-
+  deb [signed-by={{ promtail_apt_keyring }}] https://apt.grafana.com
+  stable main

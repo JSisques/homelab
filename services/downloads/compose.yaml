@@ -1,0 +1,204 @@
+services:
+  # VPN gateway for qBittorrent only. Nothing else in this stack routes
+  # through it — Prowlarr/Sonarr/Radarr/pyLoad/MeTube talk to trackers,
+  # indexers and hosters directly, same as any other homelab service.
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: downloads-gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    ports:
+      - "8080:8080" # qBittorrent WebUI
+      - "6881:6881" # qBittorrent torrent port (TCP)
+      - "6881:6881/udp"
+
+    environment:
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER}
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
+      - TZ=${TZ}
+      # ProtonVPN's exit servers block outbound port 853, so gluetun's
+      # default DNS-over-TLS healthcheck query fails with "connection
+      # reset by peer" and the container gets marked unhealthy even
+      # though the tunnel itself works fine. DNS-over-HTTPS uses 443,
+      # which isn't blocked.
+      - DNS_UPSTREAM_RESOLVER_TYPE=doh
+      - DNS_UPSTREAM_RESOLVERS=cloudflare
+
+    volumes:
+      - gluetun-config:/gluetun
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    # Shares gluetun's network namespace: no ports/network of its own,
+    # all its traffic (and only its traffic) goes through the VPN.
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+
+    volumes:
+      - qbittorrent-config:/config
+      - /mnt/nas/downloads/torrents:/downloads
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+
+    ports:
+      - "9696:9696"
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+    volumes:
+      - prowlarr-config:/config
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+
+    ports:
+      - "8989:8989"
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+    volumes:
+      - sonarr-config:/config
+      - /mnt/nas/downloads/torrents:/downloads
+      - /mnt/nas/jellyfin/series:/tv
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+
+    ports:
+      - "7878:7878"
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+    volumes:
+      - radarr-config:/config
+      - /mnt/nas/downloads/torrents:/downloads
+      - /mnt/nas/jellyfin/movies:/movies
+
+  # Generic "paste a direct HTTP/FTP link" downloader — the non-torrent,
+  # non-video-site case.
+  pyload:
+    image: lscr.io/linuxserver/pyload:latest
+    container_name: pyload
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+
+    volumes:
+      - pyload-config:/config
+      - /mnt/nas/downloads/direct:/downloads
+
+  # "Paste a YouTube (or any yt-dlp-supported site) link" downloader.
+  metube:
+    image: ghcr.io/alexta69/metube:latest
+    container_name: metube
+    restart: unless-stopped
+
+    ports:
+      - "8081:8081"
+
+    environment:
+      - UID=${PUID}
+      - GID=${PGID}
+      # YouTube changes its anti-bot mechanisms often enough that fixes
+      # regularly land in yt-dlp's nightly builds well before the next
+      # stable release — stable alone means every "HTTP Error 403:
+      # Forbidden" download failure sits broken until stable catches up.
+      # Switches to nightly and auto-updates+restarts daily at 04:00.
+      - YTDL_NIGHTLY_UPDATE_TIME=04:00
+
+    volumes:
+      - /mnt/nas/downloads/youtube:/downloads
+
+  # AV engine — reachable at clamav:3310 on this Compose network. No
+  # ports published to the host or LAN: nothing outside this stack needs
+  # to reach it, and clamd traffic is unencrypted.
+  clamav:
+    image: clamav/clamav:stable
+    container_name: downloads-clamav
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+      # No mail server here — skip the milter listener entirely.
+      - CLAMAV_NO_MILTERD=true
+      # Defaults (StreamMaxLength 25M, MaxFileSize 25M, MaxScanSize 100M)
+      # are sized for email attachments, not movie files. CLAMD_CONF_* is
+      # this image's documented way to set arbitrary clamd.conf
+      # directives without replacing the whole (entrypoint-managed) file.
+      - CLAMD_CONF_StreamMaxLength=8000M
+      - CLAMD_CONF_MaxFileSize=8000M
+      - CLAMD_CONF_MaxScanSize=8000M
+    volumes:
+      - clamav-db:/var/lib/clamav
+
+  # Polls /mnt/nas/downloads and reports hits to clamav — covers
+  # qBittorrent, pyLoad, and MeTube alike, independently of any one of
+  # them. See scripts/clamav-scan-watch.sh for what it does and why it
+  # doesn't quarantine/delete automatically.
+  clamav-scanner:
+    image: alpine:3.20
+    container_name: downloads-clamav-scanner
+    restart: unless-stopped
+    depends_on:
+      - clamav
+    environment:
+      - CLAMD_HOST=clamav
+      - CLAMD_PORT=3310
+      - SCAN_DIR=/scan
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        apk add --no-cache clamav-clamdscan >/dev/null
+        && exec /clamav-scan-watch.sh
+    volumes:
+      - /mnt/nas/downloads:/scan:ro
+      - clamav-scanner-state:/state
+      - ./scripts/clamav-scan-watch.sh:/clamav-scan-watch.sh:ro
+
+volumes:
+  gluetun-config:
+  qbittorrent-config:
+  prowlarr-config:
+  sonarr-config:
+  radarr-config:
+  pyload-config:
+  clamav-db:
+  clamav-scanner-state:

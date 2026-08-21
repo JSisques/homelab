@@ -1,0 +1,7 @@
+---
+- name: Deploy K3s (single-node server) and bootstrap Argo CD
+  hosts: k3s-server
+  become: true
+
+  roles:
+    - k3s

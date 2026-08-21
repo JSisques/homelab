@@ -1,0 +1,7 @@
+---
+- name: Deploy Sisques Labs Landing
+  hosts: sisqueslabs-landing
+  become: true
+
+  roles:
+    - sisqueslabs-landing

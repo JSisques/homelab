@@ -1,0 +1,37 @@
+---
+- name: Assert Uptime Kuma credentials are provided
+  ansible.builtin.assert:
+    that:
+      - uptime_kuma_username | length > 0
+      - uptime_kuma_password | length > 0
+    fail_msg: >-
+      uptime_kuma_username / uptime_kuma_password are not set. Provide
+      real values via Ansible Vault or CI secrets before running this
+      role (see ansible/roles/uptime-kuma-sync/README.md). Uptime
+      Kuma's own admin account (created through its first-run wizard)
+      is what these must match — this role never seeds it.
+
+- name: Sync Uptime Kuma monitors from config/services.yaml
+  vars:
+    # group_vars/all.yml's repo_root relies on inventory_dir, which
+    # isn't set for the implicit localhost this role runs on (it's not
+    # a real inventory host) — playbook_dir always resolves instead.
+    uptime_kuma_repo_root: "{{ playbook_dir }}/../.."
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ uptime_kuma_repo_root }}/scripts/sync-uptime-kuma.py"
+      - "--services-yaml={{ uptime_kuma_repo_root }}/config/services.yaml"
+      - "--url={{ uptime_kuma_url }}"
+      - "--username={{ uptime_kuma_username }}"
+      - "--password={{ uptime_kuma_password }}"
+  register: uptime_kuma_sync_result
+  changed_when: >-
+    'created:' in uptime_kuma_sync_result.stdout
+    or 'updated:' in uptime_kuma_sync_result.stdout
+    or 'deleted:' in uptime_kuma_sync_result.stdout
+  no_log: true
+
+- name: Show sync summary
+  ansible.builtin.debug:
+    msg: "{{ uptime_kuma_sync_result.stdout_lines }}"

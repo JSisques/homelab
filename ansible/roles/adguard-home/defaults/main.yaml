@@ -1,0 +1,6 @@
+---
+adguard_home_app_dir: /opt/adguard-home
+
+# Overridden per playbook from ADGUARD_SYNC_ORIGIN_* / ADGUARD_SYNC_REPLICA_*.
+adguard_home_username: ""
+adguard_home_password: ""

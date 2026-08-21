@@ -1,0 +1,7 @@
+---
+- name: Deploy IT-Tools
+  hosts: it-tools
+  become: true
+
+  roles:
+    - it-tools

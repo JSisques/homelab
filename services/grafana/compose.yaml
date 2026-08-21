@@ -1,0 +1,25 @@
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/provisioning:/etc/grafana/provisioning:ro
+
+    environment:
+      GF_SERVER_ROOT_URL: http://192.168.0.209:3000
+      GF_SERVER_DOMAIN: 192.168.0.209
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+volumes:
+  grafana-data:
+
+networks:
+  default:
+    name: monitoring
+    external: true

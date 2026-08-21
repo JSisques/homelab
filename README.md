@@ -6,6 +6,31 @@ The goal is to make the entire environment **reproducible, declarative, version 
 
 The homelab should be recoverable from scratch by deploying the desired state defined in Git.
 
+## Project Status
+
+🚧 **Early stage / work in progress, being rebuilt from a clean slate.** An earlier iteration of this homelab was deployed by hand against real Proxmox infrastructure (including a `*.home.arpa` internal domain scheme that turned out not to work — the ISP router won't serve custom DNS for it). This repository now describes the *target* design after that reset: Terraform/Ansible/config define the desired state first, Proxmox gets wiped and rebuilt from it, not the other way around. Treat the architecture below as the direction, not a snapshot of what is live today.
+
+What exists so far:
+
+* Terraform configuration for Proxmox (`terraform/proxmox/`) that provisions every LXC and VM declaratively from `config/hosts.yaml` (`lxc_network` / `vm_nodes`, both generated) — not yet applied to a running cluster.
+* Ansible roles and playbooks for every LXC/VM service (`it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `monitoring` [Prometheus + Grafana + Loki + Alertmanager], `homepage`, `uptime-kuma`, `cloudflared`, `adguard-home` [deployed twice — `adguard-home-1`/`adguard-home-2` — for DNS redundancy, kept in sync by `adguard-home-sync`], `wireguard`, `pbs`) plus a mandatory base (`common`, `node-exporter`, `promtail`, `docker`), driven by a generated inventory (`scripts/generation/generate-inventory.sh`).
+* Standalone Docker Compose definitions for `prometheus`, `grafana`, `loki`, `alertmanager`, `homepage`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `uptime-kuma`, `cloudflared`, `adguard-home`, `adguard-home-sync`, and `wireguard` under `services/` — each Ansible role deploys its matching directory as-is, no duplicated config. `pbs` and `promtail` are native packages instead (no Docker involved).
+* A Cloudflare Tunnel (`services/cloudflared/`) scaffolded to route `sisqueslabs.com` and `jsisques.net` to internal services — the ingress rules are in Git, but the tunnel itself still needs a one-time manual setup (see `services/cloudflared/README.md`) before it can run for real.
+* A WireGuard VPN gateway (`services/wireguard/`) for internal-only remote access, AdGuard Home for network-wide DNS/ad-blocking (no domain rewrite — internal services are plain LAN `IP:port`), and Traefik (`services/traefik/`) as the single reverse proxy for everything Cloudflared forwards in (`personal`/`public` tier). WireGuard still needs a one-time manual step outside Git (router port-forward + Dynamic DNS). AdGuard Home is seeded by Ansible (admin user only); the two instances stay in sync via `adguard-home-sync`.
+* Proxmox Backup Server (`ansible/roles/pbs/`), backing up onto the NAS over NFS — installed as a native package (not Docker), on its own VM. The Proxmox VE side (registering PBS as a storage backend, the actual backup job) is still a manual one-time step; see `ansible/roles/pbs/README.md`.
+* Obsidian (`services/obsidian/`), a headless, MCP-only "second brain" vault — no browser GUI, just an MCP endpoint (`http://192.168.0.213:4000`) that AI agents use to read/write notes. Its Markdown files live on the NAS over NFS, same pattern as PBS; see `services/obsidian/README.md`.
+* Jellyfin (`services/jellyfin/`), a media server whose libraries are mounted read-only from NFS exports on the NAS, same pattern as Obsidian. Reachable on the LAN at `http://192.168.0.215:8096` and remotely at `https://jellyfin.jsisques.net` via the existing Cloudflare Tunnel (`external:` alias, see `config/services.yaml`); see `services/jellyfin/README.md`.
+* A downloads stack (`services/downloads/`) — qBittorrent (behind a gluetun VPN gateway), Prowlarr, Sonarr, Radarr, pyLoad, and MeTube, all on one LXC. Paste a torrent/magnet link, a direct HTTP/FTP link, or a video-site link and it lands on the NAS; Sonarr/Radarr additionally organize finished TV/movie downloads straight into Jellyfin's library. LAN-only, plain `IP:port`, never routed through the Cloudflare Tunnel; see `services/downloads/README.md`.
+* A single-node K3s server (`ansible/roles/k3s/`) with Argo CD bootstrapped on top, empty and ready for `Application` resources. Kafka (via Strimzi, under `kubernetes/`) is defined but deliberately not applied yet — see `kubernetes/argocd/applications/kafka.yaml`'s header comment for why. Gardenia is planned as the first application-level Kubernetes workload, exposed publicly at `gardenia.sisqueslabs.com`, once there's a cluster with enough capacity for it. Days Off and Blog (`kubernetes/applications/daysoff/`, `kubernetes/applications/blog/`) are static Astro sites that, unlike Kafka/Gardenia, are small enough to actually run on the single node today — no workers needed — exposed at `daysoff.sisqueslabs.com` and `blog.jsisques.net` via a NodePort each, since there's no in-cluster ingress controller yet.
+* Sisques Labs Landing (`services/sisqueslabs-landing/`, `ansible/roles/sisqueslabs-landing/`), a static Astro site on its own LXC rather than Kubernetes — a static site is cheap enough that it isn't worth the cluster overhead. Reachable on the LAN at `http://192.168.0.221:8080` and publicly at `https://landing.sisqueslabs.com` via the Cloudflare Tunnel → Traefik.
+* Rancher (`kubernetes/argocd/applications/rancher.yaml`), the Kubernetes cluster management UI, deployed as a Helm chart via Argo CD onto the same k3s-server it manages (Rancher's "local cluster" pattern) — `config/hosts.yaml` bumps k3s-server's sizing to fit it. Internal tier, exposed at `http://192.168.0.207:30082` via a NodePort, not routed through Traefik/Cloudflared; see that file's header comment for what still needs verifying against the live Helm chart before the first real sync.
+* A NAS already exists on the local network (`config/hosts.yaml`) and backs PBS's datastore, Obsidian's vault, Jellyfin's media, and now RustFS (`services/rustfs/`) — an S3-compatible object store whose data lives entirely on the NAS. Unlike PBS/Obsidian/Jellyfin's NFS exports, RustFS's is a CIFS/SMB share mounted on the Proxmox host and bind-mounted into the LXC (unprivileged LXCs can't mount CIFS/NFS themselves — see `services/rustfs/README.md`). Its console is at `http://192.168.0.208:9001`; the S3 API itself is reached directly by LAN IP, not through Traefik. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still planned.
+* A public documentation site built with Astro/Starlight under `website/`, deployed to GitHub Pages.
+
+None of this has been applied to real infrastructure from this repository yet — `terraform apply`/the `deploy.yaml` workflow have not been run against it. Treat everything above as "ready to deploy," not "deployed." (The Proxmox host itself currently has an older, hand-deployed version of some of these services; it will be reset and rebuilt from this repo, not reconciled in place.)
+
+As pieces go from "defined in Git" to "actually running," this README and `docs/` should be updated to reflect it.
+
 ## Goals
 
 * Manage the entire homelab as code
@@ -57,6 +82,7 @@ The final architecture will combine:
 * K3s
 * Helm
 * Argo CD
+* Rancher
 * Docker
 * Prometheus
 * Grafana
@@ -64,12 +90,27 @@ The final architecture will combine:
 * Alertmanager
 * Homepage
 * Uptime Kuma
-* Traefik
-* Cloudflare
+* Traefik / Cloudflare Tunnel
+* RustFS (S3-compatible object storage)
+* VPN (internal-only access)
 * Home Assistant
 * Additional services and personal projects
 
 The exact services are expected to evolve as the homelab grows.
+
+## Domains and Network Access
+
+Services are split across three access tiers, depending on who they're for and how exposed they should be:
+
+| Tier | Domain | Access | Example services |
+| ---- | ------ | ------ | ----------------- |
+| Internal (default) | none — plain LAN `IP:port` | LAN / VPN only, linked from Homepage, never through Traefik or Cloudflare | Grafana, Proxmox, Prometheus, Kafka, Rancher, RustFS, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, Traefik itself, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube, Stirling PDF |
+| Personal | `jsisques.net` | `Cloudflared → Traefik → backend` | Blog (Kubernetes), Jellyfin (`external:` alias — also reachable directly by IP:port on the LAN) |
+| Public | `sisqueslabs.com` | `Cloudflared → Traefik → backend` | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
+
+Each service's tier is declared explicitly via the `tier` field in `config/services.yaml` (see [`config/README.md`](config/README.md#tier)) — nothing is public by default. A service that's internal day-to-day but also needs a remote-access alias (Jellyfin) adds an `external:` block instead of changing its own tier — see [`config/README.md`](config/README.md#external--a-service-thats-internal-but-also-has-a-public-alias).
+
+There is no internal domain at all — no `*.home.arpa`, no local DNS rewrite. Internal services are reached by their LAN `IP:port` straight from Homepage; Traefik never sits in front of them. `jsisques.net` and `sisqueslabs.com` are both routed through the **same** Cloudflare Tunnel (`services/cloudflared/`), which terminates on a dedicated LXC and forwards every hostname to the same place: Traefik (`services/traefik/`), plain HTTP on the internal LAN hop (Cloudflare already encrypts the public leg up to the tunnel). Traefik is then the single reverse proxy that routes each hostname to its backend by IP:port — see `services/traefik/README.md`. No inbound ports are opened on the home network for any of this. `services/cloudflared/config.yml` and `services/traefik/dynamic/routes.yml` are both generated from `config/services.yaml`/`config/hosts.yaml` (`generate-cloudflared.sh`, `generate-traefik.sh`) — never hand-edited.
 
 ## Repository Structure
 
@@ -77,92 +118,144 @@ The exact services are expected to evolve as the homelab grows.
 homelab/
 │
 ├── config/
+│   ├── README.md
 │   ├── hosts.yaml
-│   ├── services.yaml
-│   └── networks.yaml
+│   └── services.yaml
 │
 ├── terraform/
-│   ├── proxmox/
-│   └── modules/
+│   └── proxmox/
 │
 ├── ansible/
-│   ├── inventory/
+│   ├── ansible.cfg
+│   ├── requirements.yml
+│   ├── inventory/          # generated from config/hosts.yaml, do not edit
 │   ├── playbooks/
 │   └── roles/
+│       ├── common/  docker/  node-exporter/  promtail/
+│       ├── it-tools/  n8n/  obsidian/  jellyfin/  downloads/  monitoring/  homepage/  uptime-kuma/
+│       └── cloudflared/  adguard-home/  traefik/  wireguard/  pbs/  k3s/
 │
 ├── kubernetes/
 │   ├── argocd/
-│   ├── infrastructure/
-│   └── applications/
+│   └── infrastructure/
+│       └── kafka/
 │
 ├── services/
-│   ├── monitoring/
-│   ├── homepage/
-│   ├── uptime-kuma/
-│   ├── adguard/
-│   └── ...
+│   ├── prometheus/  grafana/  loki/  alertmanager/
+│   ├── homepage/  it-tools/  n8n/  obsidian/  jellyfin/  downloads/  uptime-kuma/
+│   └── cloudflared/  adguard-home/  traefik/  wireguard/
 │
 ├── scripts/
+│   ├── bootstrap/
+│   ├── generation/
+│   └── validation/
+│
+├── docs/
+│   ├── architecture.md
+│   ├── storage.md
+│   └── disaster-recovery.md
+│
+├── website/
 │
 ├── .github/
 │   └── workflows/
 │
-├── Makefile
-└── README.md
+└── Makefile
 ```
+
+## Deployment
+
+The root `Makefile` wraps Terraform, Ansible, and the `config/` generators behind a small set of targets — run `make help` for the full list.
+
+Every target that touches a service needing secrets (`deploy`, `deploy-<service>`) reads them from your shell environment via `$$VAR` — the `Makefile` never reads a file itself. The standard way to provide them locally is a gitignored `.env` at the repo root (`KEY='value'` per line, one file holding every service's secret — see [Secrets](#secrets) below), loaded into the shell **before** invoking `make`:
+
+```bash
+set -a && source .env && set +a
+
+make generate           # regenerate everything derived from config/ (inventory, Terraform vars, Homepage, Prometheus)
+make plan                # terraform plan
+make apply                # terraform apply — provisions/updates every LXC and VM
+make deploy               # apply + deploy EVERY service (Terraform apply, then the full Ansible site.yaml)
+make deploy-n8n           # deploy a single service only (see `make services` for the full list)
+make ping                 # check SSH/Ansible connectivity to every host
+make validate              # Terraform + Ansible + YAML + shell + Compose checks, all in one
+make status                # show current Terraform-managed infrastructure
+```
+
+`set -a` marks every variable `source .env` sets as exported for the rest of the shell session, so a plain `source .env` without it would leave the variables shell-local and invisible to the `make`/`ansible-playbook` subprocess — `set +a` afterwards just turns that auto-export back off again for anything you type next. Skipping this step is the most common cause of a role's `ansible.builtin.assert` failing with "not set" even though `.env` looks right.
+
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `cookidoo-mcp`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager), `homepage`, `uptime-kuma`, `uptime-kuma-sync`, `cloudflared`, `adguard-home-1`, `adguard-home-2`, `adguard-home-sync`, `traefik`, `wireguard`, `pbs`, `k3s-server`, `rustfs`, `minecraft`, `stirling-pdf`, or `promtail` alone (run it against every host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, `downloads`, `rustfs`, `adguard-home-*`, `minecraft`, and `uptime-kuma-sync` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`, `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY`, `ADGUARD_SYNC_ORIGIN_*`/`ADGUARD_SYNC_REPLICA_*`, `MINECRAFT_RCON_PASSWORD` — Minecraft's NAS mount is a manual Proxmox-host step, not an Ansible secret, see `services/minecraft/README.md`; `UPTIME_KUMA_USERNAME`/`UPTIME_KUMA_PASSWORD` — must match the admin account created by Uptime Kuma's own first-run wizard, see `ansible/roles/uptime-kuma-sync/README.md`); see the matching role's README. `uptime-kuma-sync` also needs `yq` and `pip install uptime-kuma-api` on the machine running Ansible (not any LXC — see `scripts/README.md`).
 
 ## Configuration
 
-The `config/` directory contains the high-level desired state of the homelab.
+The `config/` directory contains the high-level desired state of the homelab. See [`config/README.md`](config/README.md) for the full model.
 
 ### Hosts
 
-`config/hosts.yaml` describes the machines that should exist.
+`config/hosts.yaml` describes the machines that should exist: the Proxmox hypervisor itself (IP not confirmed yet), the NAS, every LXC Terraform provisions (`monitoring`, `homepage`, `uptime-kuma`, `it-tools`, `n8n`, `obsidian`, `jellyfin`, `downloads`, `cloudflared`), and the two Raspberry Pi K3s workers.
 
 ```yaml
+network:
+  lan:
+    prefix: "192.168.0"
+    mask: 24
+    gateway: "192.168.0.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
-
-  k3s-server:
-    type: vm
-    platform: proxmox
-    cpu: 4
-    memory: 8192
-    disk: 50G
-
-  monitoring:
+  it-tools:
     type: lxc
     platform: proxmox
+    octet: 23
     cpu: 2
-    memory: 4096
+    memory: 1024
+    disk: 8
+    role:
+      - it-tools
+
+  raspberrypi-01:
+    type: physical
+    platform: raspberry-pi
+    octet: 40
+    role:
+      - k3s
+      - worker
 ```
 
-This information can be consumed by Terraform and Ansible to provision and configure the corresponding hosts.
+`cpu`/`memory`/`disk` are only set on `lxc`/`vm` entries — Terraform needs them, physical hosts don't. Hosts resolve their address as `network.<network // "lan">.prefix` + `.` + `octet` (an explicit `address:` literal is still available as an override — see `config/README.md`), so a subnet change is a one-line edit to `network.lan.prefix`/`gateway`, not 25 hand-edited IPs.
+
+This is the **only** place addresses, network config, and sizing are written down. The generators that consume it (via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`) are never edited by hand:
+
+* `scripts/generation/generate-terraform-vars.sh` → `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes`, plus `gateway`/`network_bridge`/`network_mask` — all auto-loaded by Terraform, no more copy-pasting IPs or gateway into `terraform.tfvars`).
+* `scripts/generation/generate-inventory.sh` → `ansible/inventory/hosts.yml` (one group per host, plus one per `role` value — e.g. `k3s` groups both Raspberry Pis together — plus an `all.vars.lan_cidr` that roles like `wireguard` consume instead of hardcoding the LAN subnet).
+
+A host with `address: TBD` is skipped by both, with a warning, instead of generating a broken config.
 
 ### Services
 
-`config/services.yaml` is intended to become the central service catalog.
+`config/services.yaml` is the central service catalog.
 
 ```yaml
 services:
-
   grafana:
     name: Grafana
-    host: monitoring
-    url: https://grafana.home.example.com
+    category: Monitoring
+    tier: internal
+    url: http://192.168.0.209:3000
 
     homepage:
       enabled: true
-
-    uptime:
-      enabled: true
+      description: Monitoring dashboards
 
     monitoring:
       enabled: true
+      type: prometheus
+      endpoint: http://grafana:3000/metrics
 ```
 
-The service catalog allows different parts of the homelab to derive their configuration from the same source of truth.
-
-For example:
+The service catalog allows different parts of the homelab to derive their configuration from the same source of truth, so services are not defined multiple times across different config files.
 
 ```text
                     services.yaml
@@ -171,308 +264,120 @@ For example:
           │              │              │
           ▼              ▼              ▼
        Homepage      Uptime Kuma     Prometheus
-          │              │              │
-       service         monitor        metrics
 ```
 
-This avoids duplicating service definitions across multiple configuration files.
+Note: some entries in `services.yaml` (`kafka`, `uptime-kuma`, `gardenia`, `proxmox`) are catalog-only today — they describe services that are planned or partially deployed, not necessarily something with a matching `services/<name>/` directory yet.
 
 ## Infrastructure as Code
 
 ### Terraform
 
-Terraform is responsible for provisioning infrastructure on Proxmox.
+Terraform provisions infrastructure on Proxmox: virtual machines, LXC containers, CPU/memory/disk allocation, networking, and cloud-init metadata. It uses the [`bpg/proxmox`](https://registry.terraform.io/providers/bpg/proxmox) provider (see `terraform/proxmox/`). Every LXC is provisioned generically from the `lxc_network` map (`for_each`), generated straight from `config/hosts.yaml` — adding a new service's LXC is a `config/hosts.yaml` entry, not new HCL.
 
-It manages resources such as:
-
-* Virtual machines
-* LXC containers
-* CPU and memory allocation
-* Disks
-* Network configuration
-* Cloud-init
-* VM and container metadata
-
-Terraform defines **what infrastructure exists**.
-
-```text
-Terraform
-    │
-    ▼
-Proxmox
-    │
-    ├── VMs
-    └── LXCs
-```
-
-## Configuration Management
+Terraform defines **what infrastructure exists** — it does not configure the OS or deploy applications.
 
 ### Ansible
 
-Ansible is responsible for configuring the operating systems and services running on the provisioned hosts.
+Ansible configures the operating systems and services running on provisioned hosts: users/SSH, packages, Docker, Node Exporter, firewall rules, and service deployment (see `ansible/roles/`).
 
-Typical responsibilities include:
-
-* Base operating system configuration
-* Users and SSH
-* Packages
-* Docker
-* Node Exporter
-* Service configuration
-* Firewall rules
-* Configuration files
-* Service deployment
-
-Terraform answers:
-
-> What machines should exist?
-
-Ansible answers:
-
-> How should those machines be configured?
+Terraform answers *"what machines should exist?"*; Ansible answers *"how should those machines be configured?"*
 
 ## Kubernetes
 
-K3s is used for container orchestration.
+K3s runs as a **single-node server** (`ansible/roles/k3s/`, VM `k3s-server` at `192.168.0.207`) — no workers yet. The two Raspberry Pis are already tagged `role: [k3s, worker]` in `config/hosts.yaml` for exactly that future, but actually joining them as K3s agents is a separate, not-yet-built step.
 
-The cluster can run on virtual machines hosted by Proxmox and Raspberry Pi nodes.
+### Helm / Argo CD
 
-```text
-Proxmox
-│
-├── k3s-server
-│
-├── Raspberry Pi
-│
-└── Raspberry Pi
-```
-
-Kubernetes infrastructure and applications are managed declaratively.
-
-### Helm
-
-Helm is used to package and deploy Kubernetes applications.
-
-### Argo CD
-
-Argo CD provides GitOps-based continuous delivery for Kubernetes.
-
-```text
-GitHub
-   │
-   ▼
-Argo CD
-   │
-   ▼
-K3s
-```
-
-Changes committed to the repository are automatically reconciled with the Kubernetes cluster.
+Helm packages Kubernetes applications; Argo CD provides GitOps-based continuous delivery, reconciling what's committed to the repo with the running cluster. The `k3s` Ansible role installs Argo CD (`argocd` namespace) as part of provisioning the node, but applies no `Application` resources — it comes up empty. `kubernetes/argocd/projects/homelab.yaml` (the `AppProject` everything should use) is ready to apply; `kubernetes/argocd/applications/kafka.yaml` is **not** — see the comment at the top of that file for why (missing Strimzi operator wiring, more capacity needed than a single node has). See `ansible/roles/k3s/README.md` for how to reach the Argo CD UI.
 
 ## Observability
 
-Observability is centralized rather than deploying a separate monitoring stack for every application.
-
-The planned architecture is:
+Observability is meant to be centralized rather than deploying a separate monitoring stack per application:
 
 ```text
                          Grafana
                        /    |    \
                       /     |     \
-             Prometheus    Loki   Tempo
+             Prometheus    Loki  Alertmanager
                  │          │       │
-              Metrics      Logs   Traces
-                 │
-       ┌─────────┼──────────────┐
-       │         │              │
-    Proxmox     K3s          Services
-       │         │              │
-      LXCs      Pods       Applications
-       │
-   Raspberry Pi
+              Metrics      Logs   Alerts (Telegram)
 ```
 
-Prometheus collects metrics from:
+Prometheus, Grafana, Loki, Alertmanager, and blackbox_exporter all run on the shared `monitoring` LXC (`services/prometheus/`, `services/grafana/`, `services/loki/`, `services/alertmanager/`, `services/blackbox-exporter/`, deployed together by the `monitoring` Ansible role), attached to a common Docker network so they can reach each other by name. Its alert rules (`services/prometheus/alerts.yml`) fire into Alertmanager, which routes them to Telegram once `monitoring_alertmanager_telegram_bot_token`/`_chat_id` are set (see `ansible/roles/monitoring/README.md`) — without them, alerts still fire but land nowhere.
 
-* Proxmox
-* LXC containers
-* Virtual machines
-* Raspberry Pi nodes
-* Kubernetes nodes
-* Kubernetes workloads
-* Applications
+### Prometheus coverage
 
-Grafana provides centralized dashboards.
+Every service and host in the homelab is scraped one of three ways, and Prometheus's scrape config (`services/prometheus/prometheus.yml`) is generated from `config/services.yaml` **and** `config/hosts.yaml` by `scripts/generation/generate-prometheus.sh`:
 
-## Example: Grafana
+1. **Native `/metrics`** — most services (Grafana, Prometheus itself, Kafka, Uptime Kuma, Traefik, Gardenia, Loki, Alertmanager, Cloudflared) export Prometheus metrics directly; `config/services.yaml`'s `monitoring:` block for each declares the endpoint.
+2. **Host-level agents** — every `type: lxc`/`type: vm` host in `config/hosts.yaml` automatically gets `node-exporter` (`:9100`) and `promtail` (`:9080`) scrape targets, since both are a mandatory Ansible baseline on every host (see `ansible/README.md`) regardless of which application is deployed there — no per-service opt-in needed.
+3. **blackbox_exporter** — services with an HTTP(S) UI but no native `/metrics` (IT-Tools, n8n, Jellyfin, AdGuard Home, Homepage, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube, plus the self-signed PBS and K3s apiserver endpoints) are probed for up/down + latency instead. Targets live in `services/prometheus/blackbox-targets.yml`, see `services/blackbox-exporter/README.md`.
 
-Grafana configuration is stored in Git and provisioned automatically.
+The one known gap: WireGuard has no native metrics and no HTTP endpoint to blackbox-probe, so it currently isn't scraped at all.
 
-```text
-services/
-└── monitoring/
-    ├── compose.yaml
-    ├── prometheus/
-    │   └── prometheus.yml
-    └── grafana/
-        └── provisioning/
-            ├── datasources/
-            │   └── prometheus.yaml
-            └── dashboards/
-                ├── dashboards.yaml
-                └── homelab-test.json
-```
+Host-level metrics and logs are non-negotiable: every Ansible service role depends on `node-exporter` and `promtail` (via `meta/main.yml`), so any LXC or VM deployed through Ansible ships both automatically, with no per-playbook opt-in. See `ansible/README.md`.
 
-This allows dashboards and datasources to be recreated without manually configuring Grafana.
+## Uptime Monitoring & Homepage
 
-## Uptime Monitoring
-
-Uptime Kuma is used to monitor the availability of homelab services.
-
-Monitor definitions are intended to be declarative:
-
-```text
-config/services.yaml
-        │
-        ▼
-   Uptime Kuma
-        │
-        ├── Grafana
-        ├── Prometheus
-        ├── Proxmox
-        ├── Home Assistant
-        └── Applications
-```
-
-Adding a service to the central service catalog can automatically create the corresponding uptime monitor.
-
-## Homepage
-
-Homepage provides a central dashboard for accessing homelab services.
-
-Its configuration is generated from the service catalog where possible.
-
-```text
-services.yaml
-      │
-      ▼
-  Homepage
-      │
- ┌────┼──────────────┐
- │    │              │
-Infra Monitoring   Apps
-```
+[Uptime Kuma](https://github.com/louislam/uptime-kuma) (`services/uptime-kuma/`) and [Homepage](https://gethomepage.dev/) (`services/homepage/`) both read from the same service catalog — every service with `uptime: {enabled: true}` in `config/services.yaml` gets a monitor. Homepage's config is a generated static file (`scripts/generation/generate-homepage.sh`); Uptime Kuma has no config-as-code format of its own (monitors live only in its internal SQLite database), so `scripts/sync-uptime-kuma.py` pushes the same catalog into a running instance over its API instead — run via `ansible/roles/uptime-kuma-sync/`, automatically at the end of `make deploy` or on its own with `make deploy-uptime-kuma-sync`. Monitors it created are matched by name and updated in place on every run; anything created by hand through the UI is left alone.
 
 ## GitOps Workflow
 
-The intended workflow is:
-
 ```text
 1. Edit configuration locally
-        │
-        ▼
 2. Commit changes
-        │
-        ▼
 3. Push to GitHub
-        │
-        ▼
-4. GitHub Actions
-        │
-        ▼
-5. Validate configuration
-        │
-        ▼
-6. Terraform / Ansible
-        │
-        ▼
-7. Proxmox / Hosts
-        │
-        ▼
-8. Argo CD reconciles Kubernetes
-        │
-        ▼
-9. Homelab reaches desired state
+4. GitHub Actions validates (YAML, Terraform, Ansible, Compose)
+5. Terraform / Ansible apply (self-hosted runner)
+6. Argo CD reconciles Kubernetes
+7. Homelab reaches desired state
 ```
 
-The goal is to make manual configuration the exception rather than the normal workflow.
+CI (`.github/workflows/`) validates every push/PR; the `deploy.yaml` workflow (manual dispatch, self-hosted runner) applies Terraform and Ansible against the real infrastructure.
 
-## Deployment
+## Storage
 
-The repository will provide a simple interface for common operations.
-
-```bash
-make plan
-make apply
-make deploy
-make status
-make validate
-```
-
-The exact implementation may evolve as the platform grows.
-
-The desired end state is to be able to bootstrap the homelab from a clean environment with a minimal number of manual steps.
+Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network backs Proxmox Backup Server's datastore (`ansible/roles/pbs/`), so LXC/VM backups live off the host they protect, plus Obsidian's vault and Jellyfin's media over their own NFS exports. The general-purpose S3-compatible object store on top of it is now [RustFS](https://rustfs.com/) (`services/rustfs/`, `ansible/roles/rustfs/`) — chosen over MinIO — with its own CIFS share on the NAS, mounted on the Proxmox host and bind-mounted into the LXC; Restic/Borg for backups of anything outside Proxmox's own backup scope is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
 
 ## Secrets
 
-Secrets should never be committed in plaintext.
+Secrets are never committed in plaintext. In CI (`deploy.yaml`, self-hosted runner), they come from repository/organization secrets passed as `-e`/`--extra-vars`. Locally, the convention is a single gitignored `.env` file at the repo root — `KEY='value'` per line, one entry per service (see [Deployment](#deployment) above for how it's loaded). There's no template to copy from; add a new service's variable names to `.env` yourself as you configure it, following the existing lines' style. Longer-term this may move to SOPS/Age/Ansible Vault for values that need to live *in* Git (encrypted) rather than only in an untracked local file — not needed yet since every secret-consuming role already fails loudly (`ansible.builtin.assert`) rather than silently deploying with an insecure default when a value is missing.
 
-Sensitive configuration will use mechanisms such as:
+## Roadmap / Planned Services
 
-* SOPS
-* Age
-* Ansible Vault
-* Kubernetes Secrets
-* External Secrets
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard (wg-easy), AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD, RustFS, a Minecraft (PaperMC) server that starts on join and sleeps after 10 minutes idle (`services/minecraft/`), Stirling PDF (`services/stirling-pdf/`). The next priorities:
 
-Example:
+* **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
+* **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.
+* **NAS-backed application storage** — PBS, Obsidian, Jellyfin, and now RustFS all use the NAS. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still open.
+* **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
+* **Authelia / Authentik** — SSO in front of exposed apps.
+* **CrowdSec** — collaborative IPS/IDS reading logs from the exposed services (Cloudflared, AdGuard, Traefik).
+* **OPNsense** (router/firewall) — on hold pending a check of the Proxmox host's actual NIC situation; it needs to sit inline as the real gateway, unlike everything else here, so it's being treated as a separate, more careful project rather than bolted on alongside routine services.
 
-```text
-secrets/
-└── production/
-    ├── monitoring.enc.yaml
-    └── services.enc.yaml
-```
-
-Public configuration remains in Git while sensitive values remain encrypted.
+This list will grow as needs are identified — the intent is that any new service gets an entry in `config/services.yaml`, a home in `terraform/`/`ansible/`/`services/`/`kubernetes/` depending on how it's deployed, and a tier from the [Domains](#domains-and-network-access) table above.
 
 ## Design Principles
 
-### Declarative
+* **Declarative** — describe the desired state instead of procedural setup scripts.
+* **Reproducible** — the environment should be rebuildable from the repository.
+* **Version Controlled** — infrastructure and configuration changes are tracked through Git.
+* **Automated** — a Git push should be enough to trigger the required deployment workflow.
+* **Observable** — every important host and service should expose useful health and performance information.
+* **Modular** — services should be independently deployable and configurable.
+* **Single Source of Truth** — service metadata is defined once and reused to generate configuration for different systems.
 
-Describe the desired state instead of writing procedural setup scripts whenever possible.
+## Documentation
 
-### Reproducible
-
-The environment should be rebuildable from the repository.
-
-### Version Controlled
-
-Infrastructure and configuration changes should be tracked through Git.
-
-### Automated
-
-A Git push should be enough to trigger the required deployment workflow.
-
-### Observable
-
-Every important host and service should expose useful health and performance information.
-
-### Modular
-
-Services should be independently deployable and configurable.
-
-### Single Source of Truth
-
-Service metadata should be defined once and reused to generate configuration for different systems.
-
-## Project Status
-
-This repository is a work in progress.
-
-The homelab is continuously evolving as new infrastructure, services, automation, and experiments are added.
-
-The long-term goal is to turn the homelab into a fully reproducible **Internal Developer Platform** managed through Infrastructure as Code and GitOps.
+* [Architecture](docs/architecture.md)
+* [Storage](docs/storage.md)
+* [Disaster Recovery](docs/disaster-recovery.md)
+* [Configuration model](config/README.md)
+* [Scripts](scripts/README.md)
+* [Terraform / Proxmox](terraform/proxmox/README.md)
+* [Argo CD](kubernetes/argocd/README.md)
+* [Cloudflare Tunnel](services/cloudflared/README.md) — one-time setup + ingress rules
+* Public documentation site: `website/` (Astro/Starlight, deployed via GitHub Pages)
 
 ---
 

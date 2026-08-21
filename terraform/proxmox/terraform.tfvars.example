@@ -1,0 +1,30 @@
+# proxmox_endpoint and proxmox_api_token are intentionally left out of this
+# example file. They are provided via TF_VAR_proxmox_endpoint /
+# TF_VAR_proxmox_api_token (see .github/workflows/terraform.yaml and
+# deploy.yaml), or a local terraform.tfvars that is never committed.
+
+# proxmox_node is generated from config/hosts.yaml (the hypervisor host's
+# `node:` / hostname) into hosts.auto.tfvars.json — do not set it here.
+lxc_storage     = "local-lvm"
+vm_storage      = "local-lvm"
+ssh_public_key  = "ssh-ed25519 AAAA... user@host"
+debian_template = "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst"
+vm_user         = "ansible"
+
+# vm_cloud_image_url, vm_cloud_image_file_name, and vm_image_datastore_id
+# default to a Debian 12 (bookworm) cloud image downloaded into the "local"
+# datastore and imported as each VM's disk — no manually pre-built Proxmox
+# template required. Override here only to change the OS/image.
+
+# lxc_network, vm_nodes, proxmox_node, gateway, network_bridge, and
+# network_mask are NOT set here. They are generated from config/hosts.yaml
+# and per-host entries (the single source of truth for the LAN prefix,
+# gateway, bridge, and every host's address/sizing) by
+# scripts/generation/generate-terraform-vars.sh, which writes
+# terraform/proxmox/hosts.auto.tfvars.json. Terraform loads that file
+# automatically (the *.auto.tfvars.json naming convention) — no
+# -var-file flag needed, and no need to duplicate IPs/network config here.
+#
+# To change the LAN subnet, resize an LXC/VM, pin a Proxmox VMID, or add a
+# new host, edit config/hosts.yaml and re-run:
+#   ./scripts/generation/generate-terraform-vars.sh

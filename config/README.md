@@ -49,7 +49,8 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
-    url: https://grafana.home.arpa
+    tier: internal
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
@@ -59,8 +60,7 @@ services:
     monitoring:
       enabled: true
       type: prometheus
-      target: grafana:3000
-      path: /metrics
+      endpoint: http://grafana:3000/metrics
 
     uptime:
       enabled: true
@@ -73,6 +73,7 @@ Common fields include:
 ```yaml
 name:
 category:
+tier:
 url:
 icon:
 ```
@@ -80,6 +81,43 @@ icon:
 These fields describe the service itself.
 
 They can be consumed by multiple systems.
+
+### Tier
+
+`tier` declares which access tier the service belongs to. It determines whether the service has a domain at all, and whether it's routed through Traefik/Cloudflare Tunnel.
+
+```yaml
+tier: internal
+```
+
+Valid values:
+
+* `internal` — no domain. `url` is a LAN `IP:port`, linked directly from Homepage. Never routed through Traefik, never given a Cloudflare Tunnel entry. This is the default for everything.
+* `personal` — served under `*.jsisques.net`, exposed via Cloudflare Tunnel → Traefik → backend.
+* `public` — served under `*.sisqueslabs.com`, exposed via Cloudflare Tunnel → Traefik → backend.
+
+`personal` and `public` services need a `traefik: {enabled: true, port: <n>}` block (the backend port Traefik forwards to) — `generate-traefik.sh` and `generate-cloudflared.sh` both key off it. `internal` services must not set `traefik:` at all.
+
+Default to `internal` unless a service has a deliberate reason to be reachable from outside the home network.
+
+#### `external:` — a service that's internal but also has a public alias
+
+Some services are used day-to-day on the LAN (`tier: internal`, plain `IP:port`) but also need a remote-access alias — e.g. Jellyfin, reachable at `192.168.0.215:8096` on the LAN and at `https://jellyfin.jsisques.net` from anywhere. Rather than change the service's own `tier`, it gets an `external:` block with the same shape as a top-level `personal`/`public` service:
+
+```yaml
+jellyfin:
+  tier: internal
+  url: http://192.168.0.215:8096
+
+  external:
+    tier: personal
+    url: https://jellyfin.jsisques.net
+    traefik:
+      enabled: true
+      port: 8096
+```
+
+`generate-traefik.sh` and `generate-cloudflared.sh` treat `external:` as a second exposure of the same backend (resolved via the same host key in `config/hosts.yaml`), alongside whatever the service's own top-level `tier` gives it. A plain `personal`/`public` service does not need an `external:` block — it's already exposed via its top-level `tier`.
 
 ### Homepage
 
@@ -99,8 +137,7 @@ The `monitoring` section describes how the service should be monitored by Promet
 monitoring:
   enabled: true
   type: prometheus
-  target: grafana:3000
-  path: /metrics
+  endpoint: http://grafana:3000/metrics
 ```
 
 This information is consumed by:
@@ -122,50 +159,102 @@ Additional Uptime Kuma configuration can be added as required.
 
 ## `hosts.yaml`
 
-`hosts.yaml` describes the physical and virtual machines that make up the homelab.
+`hosts.yaml` describes the physical and virtual machines that make up the homelab, plus the `network:` block every one of them resolves its address against.
 
 Example:
 
 ```yaml
+network:
+  lan:
+    prefix: "192.168.0"
+    mask: 24
+    gateway: "192.168.0.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
+
 hosts:
 
   proxmox:
     type: server
-    address: 192.168.1.10
     platform: proxmox
+    node: proxmox
+    octet: 157
 
-  k3s-01:
+  nas:
+    type: physical
+    platform: nas
+    network: nas
+    octet: 111
+    role:
+      - storage
+
+  monitoring:
+    type: lxc
+    platform: proxmox
+    octet: 20
+    cpu: 4
+    memory: 4096
+    disk: 32
+    role:
+      - prometheus
+      - grafana
+
+  k3s-server:
     type: vm
-    address: 192.168.1.30
-    platform: linux
+    octet: 31
+    platform: proxmox
+    cpu: 4
+    memory: 8192
+    disk: 50
     role:
       - k3s
-      - control-plane
-
-  k3s-02:
-    type: vm
-    address: 192.168.1.31
-    platform: linux
-    role:
-      - k3s
-      - worker
+      - server
 
   raspberrypi-01:
     type: physical
-    address: 192.168.1.40
+    octet: 40
     platform: raspberry-pi
     role:
       - k3s
       - worker
 ```
 
-This information can be used to generate or configure:
+### Resolving a host's address
 
-* Ansible inventory
-* Monitoring targets
-* Node Exporter configuration
-* K3s nodes
-* Infrastructure documentation
+Every host resolves to a full IPv4 address one of three ways, in order:
+
+1. `address: TBD` — unconfirmed, skipped everywhere (see below).
+2. `address: <literal IP>` — an explicit override, used as-is. Reach for this only when a host's IP genuinely isn't `<network>.<prefix>.<octet>` (today, only `proxmox` while its real IP is still unknown).
+3. `octet: <n>` — the common case. Resolves to `network.<network // "lan">.prefix` + `.` + `octet`, so `octet: 20` under the default `lan` network becomes `192.168.0.20`. Set `network: nas` (see the `nas` host above) to resolve against `network.nas.prefix` instead.
+
+This means changing your home network's subnet — `192.168.0.0/24` today, `10.0.0.0/24` tomorrow — is a one-line change to `network.lan.prefix` (and `network.lan.gateway`), not 25 hand-edited IPs. `cpu`/`memory` (MB)/`disk` (GB) are only meaningful for `type: lxc` and `type: vm` — they're the exact fields Terraform needs to size the resource. Physical hosts (`server`, `physical`) don't set them since Terraform doesn't provision those.
+
+### `swap` (LXC only)
+
+`swap: <MB>` is an optional field on `type: lxc` hosts (defaults to `0`, i.e. none). It's a cgroup swap limit backed by the Proxmox *host's* own swap device — unlike disk-based guest swap, it costs no space on the container's own `disk`, so it's safe to add even to hosts with a tight `disk` allocation. It's not available for `type: vm`: a VM's swap would have to live inside the guest (a swapfile/partition on its own disk), which this repo doesn't provision.
+
+Only add `swap` where a service has a real, bursty memory pattern (e.g. `n8n` workflow executions, `minecraft`'s JVM GC headroom, the `downloads` stack under load) — not blanket across every LXC. Most single-purpose containers here are already sized close to their steady-state usage (see the sizing comments throughout `hosts.yaml`); swap is a safety net for spikes, not a substitute for correct `memory` sizing.
+
+### Proxmox VMID
+
+Terraform always sets a pinned Proxmox ID (`vm_id`) so a lost state file cannot spawn a second CT/VM with "the next free ID". The ID is `vmid:` if set, otherwise `octet` — so `it-tools` at `octet: 214` is CT `214` at `192.168.0.214`. Set `vmid:` only when the Proxmox ID must differ from the last IP octet (for example when adopting a guest that was created by hand with another ID).
+
+### Proxmox node name
+
+LXCs and VMs are created on the node named by the hypervisor host's `node:` field (falling back to that host's key). Today that host is `proxmox` with `node: proxmox`. A per-VM `proxmox_node:` override exists for a future multi-node cluster; do not set `proxmox_node` in `terraform.tfvars`.
+
+This information is used to generate:
+
+* **Terraform variables** — `scripts/generation/generate-terraform-vars.sh` turns every `lxc`/`vm` entry into `terraform/proxmox/hosts.auto.tfvars.json` (`lxc_network` / `vm_nodes` / `proxmox_node`), plus `gateway` / `network_bridge` / `network_mask` from the `network.lan` block — all loaded by Terraform automatically. **Addresses, VMIDs, node name, sizing, gateway, and bridge are only ever set here, never duplicated in `terraform.tfvars`.**
+* **Ansible inventory** — `scripts/generation/generate-inventory.sh` turns every entry into `ansible/inventory/hosts.yml`, grouped by hostname and by `role`, plus an `all.vars.lan_cidr` (e.g. `192.168.0.0/24`) that roles like `wireguard` consume instead of hardcoding the LAN subnet.
+* Monitoring targets, Node Exporter configuration, Traefik routes, and blackbox_exporter targets — every generator in `scripts/generation/` resolves addresses the same way, via the shared `resolve_addresses` helper in `scripts/generation/lib.sh`.
+
+A host with `address: TBD` is skipped by every generator (with a warning) instead of producing a broken IP.
+
+### Proxmox tags
+
+Every `lxc`/`vm` host gets a `tags` list on its Proxmox resource, generated automatically — there's no `tags:` field to set by hand in `hosts.yaml`. Tags are the generic `category` values (from `services.yaml`, e.g. `monitoring`, `networking`, `downloads`, `media`, `automation`, `productivity`, `utilities`, `applications`, `infrastructure`) of the services matched by the host's `role` list — not the role/service names themselves, and not `lxc`/`vm` (that's already visible on the resource). E.g. the `monitoring` host above (`role: [prometheus, grafana, loki, alertmanager, otel-collector, tempo]`, all `category: Monitoring` in `services.yaml`) gets `tags: ["monitoring"]`; `k3s-server` (`role: [k3s, server, daysoff, rancher, blog]`, a mix of `Applications` and `Infrastructure`) gets `tags: ["applications", "infrastructure"]`. A role with no matching `services.yaml` entry (e.g. `k3s`, `server`, `worker`) contributes no tag; if a host ends up with no category at all, it falls back to `tags: ["infrastructure"]` so nothing is left untagged. Renaming a `role` or changing a service's `category` updates the tags on the next `make terraform-vars` + `terraform apply`; nothing else to maintain.
 
 ## Configuration vs Infrastructure
 

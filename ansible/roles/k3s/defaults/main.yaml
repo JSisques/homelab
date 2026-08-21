@@ -1,0 +1,15 @@
+---
+# Pinned below the "stable" channel's current release (1.36.x) because no
+# published Rancher chart supports Kubernetes 1.36 yet (the newest, 2.14.3,
+# caps at `kubeVersion: < 1.36.0-0`) — see kubernetes/infrastructure/rancher/.
+# Bump this once a Rancher chart covers whatever "stable" resolves to.
+k3s_channel: v1.35
+k3s_node_ready_timeout: 120
+
+# Where the operator's machine (the Ansible control node) gets a copy of
+# the kubeconfig, with the server address rewritten from 127.0.0.1 to the
+# real node IP. Never committed — outside the repo by default.
+k3s_kubeconfig_local_path: "~/.kube/homelab-k3s.yaml"
+
+k3s_argocd_namespace: argocd
+k3s_argocd_install_manifest: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml  # yamllint disable-line rule:line-length

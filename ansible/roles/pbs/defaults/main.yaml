@@ -1,0 +1,13 @@
+---
+pbs_apt_keyring: /etc/apt/keyrings/proxmox-backup.gpg
+pbs_apt_key_url: https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg  # yamllint disable-line rule:line-length
+pbs_apt_repository: http://download.proxmox.com/debian/pbs
+pbs_apt_suite: bookworm
+pbs_apt_channel: pbs-no-subscription
+
+# The IP resolves via hostvars from the "nas" host in config/hosts.yaml —
+# it updates automatically if that host's address ever changes. Adjust
+# the export path here if the NAS's folder layout changes.
+pbs_nas_export: "{{ hostvars['nas'].ansible_host }}:/export/pbs"
+pbs_mount_path: /mnt/datastore/nas
+pbs_datastore_name: nas-backups

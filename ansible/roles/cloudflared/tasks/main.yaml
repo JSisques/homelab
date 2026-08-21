@@ -1,0 +1,39 @@
+---
+- name: Assert Cloudflare Tunnel credentials are provided
+  ansible.builtin.assert:
+    that:
+      - cloudflared_credentials_json | length > 0
+    fail_msg: >-
+      cloudflared_credentials_json is not set. Provide the tunnel credentials
+      JSON via Ansible Vault or CI secrets before running this role
+      (see services/cloudflared/README.md).
+
+- name: Create Cloudflare Tunnel application directory
+  ansible.builtin.file:
+    path: "{{ cloudflared_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Cloudflare Tunnel Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/cloudflared/compose.yaml"
+    dest: "{{ cloudflared_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Cloudflare Tunnel ingress configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/cloudflared/config.yml"
+    dest: "{{ cloudflared_app_dir }}/config.yml"
+    mode: "0644"
+
+- name: Deploy Cloudflare Tunnel credentials
+  ansible.builtin.copy:
+    content: "{{ cloudflared_credentials_json }}"
+    dest: "{{ cloudflared_app_dir }}/credentials.json"
+    mode: "0600"
+  no_log: true
+
+- name: Start Cloudflare Tunnel
+  community.docker.docker_compose_v2:
+    project_src: "{{ cloudflared_app_dir }}"
+    state: present

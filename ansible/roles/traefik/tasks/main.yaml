@@ -1,0 +1,29 @@
+---
+- name: Create Traefik application directory
+  ansible.builtin.file:
+    path: "{{ traefik_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Traefik Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/traefik/compose.yaml"
+    dest: "{{ traefik_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Traefik static configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/traefik/traefik.yml"
+    dest: "{{ traefik_app_dir }}/traefik.yml"
+    mode: "0644"
+
+- name: Deploy Traefik dynamic configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/traefik/dynamic/"
+    dest: "{{ traefik_app_dir }}/dynamic/"
+    mode: "0644"
+
+- name: Start Traefik
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_app_dir }}"
+    state: present
