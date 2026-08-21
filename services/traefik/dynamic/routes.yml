@@ -41,7 +41,7 @@ http:
     blog:
       loadBalancer:
         servers:
-          - url: "http://192.168.0.207:30083"
+          - url: "http://192.168.0.220:8080"
     jellyfin-remote:
       loadBalancer:
         servers:

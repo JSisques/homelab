@@ -256,7 +256,8 @@ hosts:
     # generate-traefik.sh can resolve a LAN address for their
     # config/services.yaml target (this node's NodePort), same trick as
     # grafana/prometheus/loki/alertmanager sharing the "monitoring" host
-    # below.
+    # below. blog moved to its own LXC (see the `blog` host below) — a
+    # static site doesn't need to live in the cluster.
     cpu: 4
     memory: 6144
     disk: 40
@@ -266,7 +267,6 @@ hosts:
       - sisqueslabs-landing
       - daysoff
       - rancher
-      - blog
 
   cookidoo-mcp:
     type: lxc
@@ -344,6 +344,20 @@ hosts:
     disk: 8
     role:
       - soulfire
+
+  blog:
+    type: lxc
+    platform: proxmox
+    octet: 220
+    # Static Astro site, single published Docker image, no database — same
+    # profile as it-tools. Was a Kubernetes Deployment on k3s-server; moved
+    # here because a static site doesn't need to pay for living in a
+    # cluster (see ansible/roles/blog/README.md).
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - blog
 
   raspberrypi-01:
     type: physical
