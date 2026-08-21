@@ -1,6 +1,10 @@
 services:
   adguard-home:
-    image: adguard/adguardhome:v0.107.73
+    # Both LXCs already migrated their config to schema 34 while running
+    # :latest (v0.107.79) before this pin existed — v0.107.73 (schema 33)
+    # can no longer read it ("unknown current schema version 34"), so
+    # don't downgrade past v0.107.79 without also resetting the config.
+    image: adguard/adguardhome:v0.107.79
     container_name: adguard-home
     restart: unless-stopped
 
