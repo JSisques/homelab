@@ -62,6 +62,9 @@
 - name: Deploy SoulFire
   ansible.builtin.import_playbook: soulfire.yaml
 
+- name: Deploy Sisques Labs Landing
+  ansible.builtin.import_playbook: sisqueslabs-landing.yaml
+
 # Runs last: reads config/services.yaml's full catalog, so it wants
 # every other service's Terraform/Ansible state to already be current.
 - name: Sync Uptime Kuma monitors from config/services.yaml

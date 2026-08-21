@@ -176,6 +176,10 @@ scrape_configs:
           - "192.168.0.219:9100"
         labels:
           instance: "soulfire"
+      - targets:
+          - "192.168.0.221:9100"
+        labels:
+          instance: "sisqueslabs-landing"
   - job_name: "promtail"
     static_configs:
       - targets:
@@ -258,6 +262,10 @@ scrape_configs:
           - "192.168.0.219:9080"
         labels:
           instance: "soulfire"
+      - targets:
+          - "192.168.0.221:9080"
+        labels:
+          instance: "sisqueslabs-landing"
   - job_name: "blackbox"
     metrics_path: /probe
     file_sd_configs:
