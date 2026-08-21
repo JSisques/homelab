@@ -15,11 +15,13 @@
 #
 # Rancher is `tier: internal` (config/services.yaml) — plain LAN IP:NodePort,
 # no ingress controller runs in this cluster, so `service.disableHTTP: true`
-# + `tls: ingress` (the chart's own name for "the pod terminates its own
-# TLS", despite there being no actual Ingress resource here — see the
-# chart's values.yaml, it's the default and the only option that doesn't
-# require something in front already stripping TLS) makes Rancher serve
-# HTTPS with a self-signed cert directly off the NodePort.
+# + `tls: external` (misleadingly named: it just means "don't make
+# cert-manager issue a cert for an Ingress that doesn't exist here" — the
+# chart's *default*, `tls: ingress`, renders a cert-manager Issuer even
+# with ingress.enabled: false, which fails without cert-manager installed).
+# The Rancher container itself always self-signs and serves HTTPS on 443
+# regardless of this setting, so we still get TLS straight off the
+# NodePort, just without the cert-manager dependency.
 #
 # No password is set below. Rancher generates a random bootstrap
 # password on first boot; retrieve it with:
@@ -41,6 +43,7 @@ helmCharts:
     valuesInline:
       hostname: 192.168.0.207
       replicas: 1
+      tls: external
       networkExposure:
         type: none
       ingress:
