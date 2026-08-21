@@ -61,6 +61,10 @@ resource "proxmox_virtual_environment_container" "lxc" {
     # added on the Proxmox host via `pct set -mpN ...` outside Terraform
     # (see commits 668f35f, ab87d64) — undeclared here on purpose, so
     # Terraform must not try to strip it and force-replace the container.
-    ignore_changes = [mount_point]
+    #
+    # jellyfin also gets its iGPU passthrough (dev0/dev1) via `pct set`
+    # for the same reason: it needs root@pam, which this repo's API token
+    # deliberately doesn't have. See services/jellyfin/README.md#gpu-passthrough.
+    ignore_changes = [mount_point, device_passthrough]
   }
 }

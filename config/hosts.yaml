@@ -125,11 +125,14 @@ hosts:
     type: lxc
     platform: proxmox
     octet: 215
-    # Not in use yet. Direct play barely needs any CPU; bump this (or pass
-    # through the iGPU for hardware transcoding) if software transcoding
-    # becomes the common case.
-    cpu: 2
-    memory: 1536
+    # 2/1536 was sized for direct play only and crashed the LXC the first
+    # time a software transcode ran. The proxmox host's i5-8400T has an
+    # Intel UHD 630 iGPU, now passed through for QSV/VAAPI hardware
+    # transcoding (see services/jellyfin/README.md#gpu-passthrough), which
+    # keeps transcoding CPU-light — this bump is headroom for Jellyfin
+    # itself, library scans, and the cases HW transcoding can't cover.
+    cpu: 4
+    memory: 3072
     disk: 10
     role:
       - jellyfin

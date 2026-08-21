@@ -5,7 +5,7 @@ Jellyfin is the homelab's media server — it streams video/audio libraries whos
 ## Responsibilities
 
 - Serves a web UI and streaming API for the media libraries mounted into it.
-- Transcodes on demand (software/CPU transcoding by default — see "Resource sizing").
+- Transcodes on demand — hardware (QSV/VAAPI via the proxmox host's iGPU) when available, software otherwise. See "Resource sizing" and "GPU passthrough".
 - Keeps all application state (config, metadata cache, thumbnails) local to the LXC; keeps the actual media files on the NAS.
 
 Jellyfin is deployed as a Docker Compose application inside a dedicated LXC container, same as `n8n`, `it-tools`, and `obsidian`.
@@ -116,6 +116,27 @@ The `pct set` step applies live to a running container (no reboot needed) but is
 
 If you deploy Jellyfin **before** `services/downloads/`, the mount above can start read-only (`uid=100000,gid=100000,...,ro,_netdev` — Jellyfin doesn't need write access on its own) and get switched to the read-write form above later, when `downloads` needs to share it. See `services/downloads/README.md`'s NAS prerequisite for that switch.
 
+### GPU passthrough (one-time, manual)
+
+The **proxmox host** (`192.168.0.157`) has an Intel i5-8400T with an Intel UHD 630 iGPU (`/dev/dri/card0`, `/dev/dri/renderD128` — Quick Sync Video capable). Passing it through to the `jellyfin` LXC (`vm_id 215`) lets Jellyfin hardware-transcode (VAAPI/QSV) instead of falling back to software transcoding, which is what crashed the LXC under `cpu: 2` / `memory: 1536` before this was set up.
+
+Like the NAS bind mount above, this is a live `pct` device passthrough that requires `root@pam` — not something this repo's least-privilege Terraform API token can do, so it's a manual step, not managed by Terraform (see `terraform/proxmox/lxc.tf`'s `ignore_changes`).
+
+This isn't a policy choice, it's a hard Proxmox restriction: `mp[n]` and `dev[n]` are gated to `root@pam` at the API level regardless of what privileges a role grants a token (the `bpg/proxmox` provider itself documents `device_passthrough` as requiring `root@pam` authentication) — so no Terraform ACL tweak makes this scriptable without abandoning the least-privilege service account set up in `terraform/proxmox/README.md#proxmox-side-setup`. Ansible can't pick up the slack either: the `proxmox` host itself (the hypervisor) isn't in the Ansible inventory at all — only the LXCs/VMs it hosts are, so there's no existing Ansible surface to run this from without adding hypervisor management to the repo for the first time (a bigger change than this one feature warrants — considered and declined for now).
+
+```bash
+pct set 215 -dev0 /dev/dri/renderD128 -dev1 /dev/dri/card0
+
+```bash
+pct set 215 -dev0 /dev/dri/renderD128 -dev1 /dev/dri/card0
+```
+
+Applies live to a running container, no reboot needed. If the LXC is ever destroyed and recreated, redo this line (same caveat as the NAS mount above).
+
+Once `/dev/dri` is passed through to the LXC, `services/jellyfin/compose.yaml` maps it straight into the container (`devices: /dev/dri:/dev/dri`) — the official `jellyfin/jellyfin` image runs as root, so no extra `video`/`render` group membership is needed inside the container.
+
+The last step is inside Jellyfin itself, one-time, through the admin UI (not file-based, so not something Ansible manages): **Dashboard → Playback → Transcoding** → set *Hardware acceleration* to **Intel QuickSync (QSV)**, point it at `/dev/dri/renderD128`, and enable hardware decoding for H.264/HEVC.
+
 ## Networking
 
 Jellyfin is exposed two ways:
@@ -127,7 +148,7 @@ The internal application port is `8096` in both cases.
 
 ## Resource sizing
 
-4 vCPU / 4GB RAM, 16GB disk (image layers and `/config` only — media data is all on the NAS). CPU-bound because this deployment relies on software (CPU) transcoding; there is no GPU/iGPU passthrough configured. If direct play (no transcoding) covers most playback, this is comfortable headroom. If multiple simultaneous transcodes become common, revisit — either raise `cpu`/`memory` in `config/hosts.yaml`, or move to hardware transcoding (LXC `/dev/dri` passthrough or a VM with GPU passthrough), which is a bigger change than this role currently supports.
+4 vCPU / 3GB RAM, 10GB disk (image layers and `/config` only — media data is all on the NAS). Transcoding itself is now offloaded to the iGPU (see "GPU passthrough" above), so this headroom covers Jellyfin itself, library scans, and the cases hardware transcoding can't handle (falls back to software) — not full software transcoding load.
 
 ## Deployment
 
@@ -162,6 +183,8 @@ docker compose up -d
 ```
 
 Then open `http://localhost:8096` and walk through the first-run setup wizard.
+
+`compose.yaml` maps `/dev/dri` unconditionally (see "GPU passthrough" above) — on a machine without it (e.g. macOS), comment out the `devices:` block before running `docker compose up`, or the container will fail to start.
 
 ## Monitoring
 

@@ -7,6 +7,13 @@ services:
     ports:
       - "8096:8096"
 
+    # Intel UHD 630 iGPU on the proxmox host, passed through to the LXC
+    # via `pct set -dev0/-dev1` (see README#gpu-passthrough). Requires
+    # /dev/dri to exist on whatever's running this compose file — see
+    # "Local Development" below if it doesn't.
+    devices:
+      - /dev/dri:/dev/dri
+
     volumes:
       - jellyfin-config:/config
       - jellyfin-cache:/cache
