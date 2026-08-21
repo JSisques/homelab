@@ -27,6 +27,13 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   memory {
     dedicated = each.value.memory
+    # Without a balloon device (the default when this is unset/0), Proxmox
+    # has no channel to ask the guest how much RAM it's actually using, so
+    # the UI just shows the full static allocation as "used". Setting the
+    # floating target equal to dedicated adds the balloon device (so real
+    # usage is reported) without letting the host actually reclaim memory
+    # below what's assigned.
+    floating = each.value.memory
   }
 
   disk {
