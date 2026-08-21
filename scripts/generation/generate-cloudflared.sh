@@ -6,7 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 SERVICES_SOURCE="${ROOT_DIR}/config/services.yaml"
 HOSTS_SOURCE="${ROOT_DIR}/config/hosts.yaml"
-OUTPUT="${ROOT_DIR}/services/cloudflared/config.yml"
+OUTPUT_DIR="${ROOT_DIR}/services/cloudflared"
+OUTPUT="${OUTPUT_DIR}/config.yml"
 
 # The internal HTTP entrypoint Traefik listens on for traffic forwarded by
 # Cloudflared (services/traefik/traefik.yml's "web" entryPoint). Not
@@ -33,6 +34,8 @@ if [[ ! -f "${HOSTS_SOURCE}" ]]; then
 fi
 
 source "${ROOT_DIR}/scripts/generation/lib.sh"
+
+mkdir -p "${OUTPUT_DIR}"
 
 echo "Generating Cloudflare Tunnel ingress configuration..."
 

@@ -1,0 +1,66 @@
+# This file is generated.
+# Do not edit manually.
+# Source: config/services.yaml, config/hosts.yaml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: "app"
+    static_configs:
+      - targets:
+          - "10.10.10.50:8080"
+        labels:
+          instance: "app"
+  - job_name: "node-exporter"
+    static_configs:
+      - targets:
+          - "10.10.10.50:9100"
+        labels:
+          instance: "app-host"
+      - targets:
+          - "10.10.10.60:9100"
+        labels:
+          instance: "vm-host"
+      - targets:
+          - "10.10.10.70:9100"
+        labels:
+          instance: "traefik"
+  - job_name: "promtail"
+    static_configs:
+      - targets:
+          - "10.10.10.50:9080"
+        labels:
+          instance: "app-host"
+      - targets:
+          - "10.10.10.60:9080"
+        labels:
+          instance: "vm-host"
+      - targets:
+          - "10.10.10.70:9080"
+        labels:
+          instance: "traefik"
+  - job_name: "blackbox"
+    metrics_path: /probe
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/blackbox-targets.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - source_labels: [module]
+        target_label: __param_module
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

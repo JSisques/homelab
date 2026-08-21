@@ -1,0 +1,54 @@
+network:
+  lan:
+    prefix: "10.10.10"
+    mask: 24
+    gateway: "10.10.10.1"
+    bridge: "vmbr0"
+  iot:
+    prefix: "10.10.20"
+
+hosts:
+  hv:
+    type: server
+    node: hv-node
+    octet: 1
+    role:
+      - hypervisor
+
+  app-host:
+    type: lxc
+    octet: 50
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - app
+      - public-app
+
+  vm-host:
+    type: vm
+    octet: 60
+    vmid: 960
+    cpu: 2
+    memory: 2048
+    disk: 20
+    role:
+      - vm-app
+
+  traefik:
+    type: lxc
+    octet: 70
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - traefik
+
+  unconfirmed:
+    type: lxc
+    address: TBD
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - future-app
