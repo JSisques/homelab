@@ -9,10 +9,18 @@ The goal is to maintain a single source of truth for service metadata while avoi
 ```text
 generation/
 ├── README.md
+├── lib.sh
 ├── generate-homepage.sh
-├── generate-uptime-kuma.sh
-└── generate-prometheus.sh
+├── generate-prometheus.sh
+├── generate-blackbox.sh
+├── generate-traefik.sh
+├── generate-cloudflared.sh
+├── generate-inventory.sh
+├── generate-terraform-vars.sh
+└── tests/               # bats tests, see "Testing" below
 ```
+
+`generate-uptime-kuma.sh` doesn't exist yet — Uptime Kuma has no config-as-code format to generate into, see `services/uptime-kuma/README.md`.
 
 ## Source of Truth
 
@@ -31,7 +39,8 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
-    url: https://grafana.home.arpa
+    tier: internal
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
@@ -120,27 +129,87 @@ Output:
 services/homepage/config/services.yaml
 ```
 
-### Uptime Kuma
-
-```bash
-./scripts/generation/generate-uptime-kuma.sh
-```
-
-Generates the configuration required to monitor services through Uptime Kuma.
-
 ### Prometheus
 
 ```bash
 ./scripts/generation/generate-prometheus.sh
 ```
 
-Generates Prometheus configuration based on the services that expose metrics.
+Generates Prometheus configuration: one scrape job per service that exposes native metrics, plus a `node-exporter`/`promtail` job scraping every `type: lxc`/`type: vm` host, plus a static `blackbox` job (targets read at runtime from `services/prometheus/blackbox-targets.yml`, generated separately by `generate-blackbox.sh`).
+
+Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/prometheus/prometheus.yml`.
+
+### blackbox_exporter
+
+```bash
+./scripts/generation/generate-blackbox.sh
+```
+
+Generates the blackbox_exporter target list: one target per service with a `blackbox: {enabled: true, port: <n>, scheme: http|https, module: <name>}` block in `config/services.yaml`, grouped by `module` (e.g. `http_2xx`, `http_2xx_insecure`) since blackbox_exporter's `file_sd_config` needs one `labels:` block per group. The backend LAN address comes from `config/hosts.yaml`, resolved the same way as Traefik — host key first, then `role`. `pbs` and `k3s-server` have minimal `config/services.yaml` entries (no `homepage`/`traefik`/`uptime` blocks) that exist solely to carry a `blackbox:` block, since those service names match their `config/hosts.yaml` host keys directly.
+
+Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/prometheus/blackbox-targets.yml`.
+
+### Traefik
+
+```bash
+./scripts/generation/generate-traefik.sh
+```
+
+Generates Traefik's dynamic routing config: one router + backend pair per `personal`/`public` tier exposure with a `traefik: {enabled: true, port: <n>}` block — either a service's own top-level tier, or nested under its `external:` alias (a service that's internal day-to-day but also has a remote-access alias, e.g. Jellyfin — see `config/README.md#external`). `internal` services never get a router here; Traefik only fronts what Cloudflared forwards to it. The router's hostname comes from the exposure's `url:`; the backend LAN address comes from `config/hosts.yaml`, resolved by matching host key first, then by `role`.
+
+Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/traefik/dynamic/routes.yml`.
+
+### Cloudflared
+
+```bash
+./scripts/generation/generate-cloudflared.sh
+```
+
+Generates the Cloudflare Tunnel ingress list: one `hostname` entry per `personal`/`public` tier exposure (same set as Traefik's, above), every one pointing at Traefik's LAN address — never straight at the backend. Traefik does the actual per-service routing from the same catalog. The `tunnel:` ID (a one-time manual value from `cloudflared tunnel create`, see `services/cloudflared/README.md`) is preserved across regenerations if already set, since it isn't `config/`-owned data.
+
+Source: `config/services.yaml`, `config/hosts.yaml`. Output: `services/cloudflared/config.yml`.
+
+### Ansible Inventory
+
+```bash
+./scripts/generation/generate-inventory.sh
+```
+
+Generates the Ansible inventory: one group per host and one per `role` value (e.g. `k3s` groups every Raspberry Pi together), plus an `all.vars` block (`lan_cidr`, `lan_gateway`) carrying `config/hosts.yaml`'s `network.lan` block into Ansible — roles that need the LAN subnet (e.g. `wireguard`'s `ALLOWEDIPS`) read it from there instead of hardcoding it.
+
+Source: `config/hosts.yaml`. Output: `ansible/inventory/hosts.yml`.
+
+### Terraform Variables
+
+```bash
+./scripts/generation/generate-terraform-vars.sh
+```
+
+Generates the `lxc_network` and `vm_nodes` Terraform variables from every `type: lxc` / `type: vm` host, plus `gateway`/`network_bridge`/`network_mask` from `config/hosts.yaml`'s `network.lan` block — addresses, Proxmox VMID (`vmid` or `octet`), sizing (`cpu`/`memory`/`disk`), and network config live in `config/hosts.yaml` only, never duplicated by hand in `terraform.tfvars`.
+
+Source: `config/hosts.yaml`. Output: `terraform/proxmox/hosts.auto.tfvars.json` (auto-loaded by Terraform, no `-var-file` needed).
+
+Hosts with `address: TBD` are skipped (with a warning) by every generator that resolves addresses.
+
+### Shared Address Resolution
+
+```text
+scripts/generation/lib.sh
+```
+
+Not a generator itself — a `resolve_addresses()` helper, sourced by every script above, that turns `config/hosts.yaml`'s per-host `octet`/`network`/`address` fields into a flat `{host: ip}` JSON map against the `network:` block's prefixes. This is the one place that understands the address schema; see `config/README.md` for the resolution rules and `config/hosts.yaml`'s header comment.
 
 ## Requirements
 
-The generation scripts are written in POSIX-compatible shell/Bash and use `yq` for YAML processing.
+The generation scripts are written in POSIX-compatible shell/Bash and use [`yq`](https://github.com/kislyuk/yq) — the Python/jq wrapper, **not** mikefarah's Go `yq` — for YAML processing, since they rely on jq filter syntax (`to_entries`, `group_by`, `sub()`, ...).
 
-Install `yq` before running the scripts.
+Install it with:
+
+```bash
+pip install yq
+```
+
+GitHub Actions runners ship mikefarah's `yq` by default, which is not compatible with these scripts. CI installs the correct one explicitly before running them.
 
 The scripts should fail with a clear error message if required dependencies are missing.
 
@@ -291,6 +360,31 @@ Example:
 ```bash
 ./scripts/generation/generate-example.sh
 ```
+
+## Testing
+
+`tests/` has [bats](https://github.com/bats-core/bats-core) tests:
+
+- `lib.bats` — unit tests for `lib.sh`'s `resolve_addresses()` (the TBD /
+  literal / octet+prefix resolution order), against the fixture
+  `tests/fixtures/lib/hosts.yaml`.
+- `generators.bats` — one snapshot test per `generate-*.sh`: runs the
+  script in an isolated sandbox against `tests/fixtures/config/` and
+  diffs the result against `tests/fixtures/expected/`.
+
+Run them with:
+
+```bash
+bats scripts/generation/tests
+```
+
+They also run in CI (`.github/workflows/ci.yaml`, `generation-tests` job)
+and as part of `scripts/validation/validate.sh` / `make validate`.
+
+If you change a generator's output on purpose, regenerate its snapshot:
+run the script against `tests/fixtures/config/` in a scratch directory,
+confirm the new output is correct, then copy it over the matching file in
+`tests/fixtures/expected/`.
 
 ## Important Rule
 

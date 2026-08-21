@@ -1,0 +1,36 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  # Pull model: Prometheus scrapes this endpoint (see config/services.yaml
+  # "otel-collector" -> scripts/generation/generate-prometheus.sh), instead
+  # of the collector pushing to Prometheus via remote_write.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+  # Loki's native OTLP log ingestion (endpoint + "/v1/logs" appended by the
+  # exporter), no separate Promtail hop needed for app logs shipped this way.
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      exporters: [otlphttp/loki]
+    traces:
+      receivers: [otlp]
+      exporters: [otlp/tempo]

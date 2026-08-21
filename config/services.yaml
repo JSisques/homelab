@@ -1,9 +1,15 @@
+# `internal` services have no domain: url is LAN IP:port, linked from
+# Homepage, never routed through Traefik. `personal`/`public` services are
+# routed Cloudflared -> Traefik -> backend and need a `traefik: {enabled:
+# true, port: <n>}` block. A service that's internal day-to-day but also
+# needs a public alias (e.g. Jellyfin) adds an `external:` block instead of
+# changing its own tier — see jellyfin below and config/README.md.
 services:
-
   proxmox:
     name: Proxmox
     category: Infrastructure
-    url: https://proxmox.home.arpa
+    tier: internal
+    url: https://192.168.0.157:8006
     icon: proxmox.png
 
     homepage:
@@ -18,7 +24,8 @@ services:
   grafana:
     name: Grafana
     category: Monitoring
-    url: https://grafana.home.arpa
+    tier: internal
+    url: http://192.168.0.209:3000
     icon: grafana.png
 
     homepage:
@@ -33,7 +40,8 @@ services:
   prometheus:
     name: Prometheus
     category: Monitoring
-    url: https://prometheus.home.arpa
+    tier: internal
+    url: http://192.168.0.209:9090
     icon: prometheus.png
 
     homepage:
@@ -45,10 +53,76 @@ services:
       type: prometheus
       endpoint: http://prometheus:9090/metrics
 
+  loki:
+    name: Loki
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no standalone UI, browsed through Grafana
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://loki:3100/metrics
+
+  alertmanager:
+    name: Alertmanager
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no standalone UI, browsed through Grafana
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://alertmanager:9093/metrics
+
+  otel-collector:
+    name: OTel Collector
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no UI, receives OTLP (traces/metrics/logs) from services
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://otel-collector:8889/metrics
+
+  tempo:
+    name: Tempo
+    category: Monitoring
+    tier: internal
+
+    homepage:
+      enabled: false  # no standalone UI, browsed through Grafana
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://tempo:3200/metrics
+
+  cloudflared:
+    name: Cloudflared
+    category: Networking
+    tier: internal
+
+    homepage:
+      enabled: false  # background tunnel daemon, no web UI
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.0.200:20241/metrics
+
   kafka:
     name: Kafka
     category: Infrastructure
-    url: https://kafka.home.arpa
+    tier: internal
+    url: http://192.168.0.207
     icon: kafka.png
 
     homepage:
@@ -63,7 +137,8 @@ services:
   uptime-kuma:
     name: Uptime Kuma
     category: Monitoring
-    url: https://uptime.home.arpa
+    tier: internal
+    url: http://192.168.0.210:3001
     icon: uptime-kuma.png
 
     homepage:
@@ -75,10 +150,117 @@ services:
       type: prometheus
       endpoint: http://uptime-kuma:3001/metrics
 
+  homepage:
+    name: Homepage
+    category: Infrastructure
+    tier: internal
+    url: http://192.168.0.205:3000
+    icon: homepage.png
+
+    homepage:
+      enabled: false  # Homepage does not need to link to itself
+      description: Central dashboard for homelab services
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — Homepage is a static dashboard. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 3000
+      scheme: http
+      module: http_2xx
+
+  adguard-home-1:
+    name: AdGuard Home (Primary)
+    category: Networking
+    tier: internal
+    url: http://192.168.0.201
+    icon: adguard-home.png
+
+    homepage:
+      enabled: true
+      description: Primary DNS resolver and network-wide ad blocking
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — AdGuard Home has no Prometheus support. Probed
+    # by blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 80
+      scheme: http
+      module: http_2xx
+
+  adguard-home-2:
+    name: AdGuard Home (Secondary)
+    category: Networking
+    tier: internal
+    url: http://192.168.0.202
+    icon: adguard-home.png
+
+    homepage:
+      enabled: true
+      description: Secondary DNS resolver, kept in sync from the primary
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 80
+      scheme: http
+      module: http_2xx
+
+  traefik:
+    name: Traefik
+    category: Networking
+    tier: internal
+    url: http://192.168.0.204:8080
+    icon: traefik.png
+
+    homepage:
+      enabled: true
+      description: Reverse proxy for personal/public tier services
+
+    uptime:
+      enabled: true
+
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.0.204:8082/metrics
+
+  wireguard:
+    name: WireGuard Easy
+    category: Networking
+    tier: internal
+    url: http://192.168.0.203:51821
+    icon: wireguard.png
+
+    homepage:
+      enabled: true
+      description: VPN gateway — client and peer management dashboard
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 51821
+      scheme: http
+      module: http_2xx
+
   gardenia:
     name: Gardenia
     category: Applications
-    url: https://gardenia.home.arpa
+    # Catalog-only: not deployed yet, no role/NodePort in config/hosts.yaml,
+    # so no `traefik:` block here either (generate-traefik.sh needs a
+    # resolvable backend address). Add both once it actually runs.
+    tier: public  # deployed on Kubernetes, exposed via Cloudflare Tunnel
+    url: https://gardenia.sisqueslabs.com
     icon: mdi-sprout
 
     homepage:
@@ -89,3 +271,518 @@ services:
       enabled: true
       type: prometheus
       endpoint: http://gardenia:3000/metrics
+
+  sisqueslabs-landing:
+    name: Sisques Labs Landing
+    category: Applications
+    # Static Astro site (source: github.com/sisques-labs/sisques-labs-landing),
+    # deployed on Kubernetes via Argo CD (kubernetes/applications/
+    # sisqueslabs-landing/), same pattern as Gardenia — no LXC, no Traefik
+    # LAN route, exposed publicly only via the Cloudflare Tunnel at
+    # landing.sisqueslabs.com (NodePort 30080 on k3s-server, see
+    # services/cloudflared/config.yml).
+    tier: public
+    url: https://landing.sisqueslabs.com
+    icon: mdi-web
+
+    homepage:
+      enabled: true
+      description: Sisques Labs public landing page
+
+    traefik:
+      enabled: true
+      port: 30080
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "sisqueslabs-landing" role on the
+    # k3s-server host in config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 30080
+      scheme: http
+      module: http_2xx
+
+  daysoff:
+    name: Days Off
+    category: Applications
+    # Static Astro site (source: github.com/sisques-labs/daysoff), deployed
+    # on Kubernetes via Argo CD (kubernetes/applications/daysoff/), same
+    # pattern as sisqueslabs-landing — exposed publicly only via the
+    # Cloudflare Tunnel at daysoff.sisqueslabs.com (NodePort 30081 on
+    # k3s-server, see services/cloudflared/config.yml).
+    tier: public
+    url: https://daysoff.sisqueslabs.com
+    icon: mdi-beach
+
+    homepage:
+      enabled: true
+      description: Vacation bridge calculator
+
+    traefik:
+      enabled: true
+      port: 30081
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "daysoff" role on the k3s-server host in
+    # config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 30081
+      scheme: http
+      module: http_2xx
+
+  blog:
+    name: Blog
+    category: Applications
+    # Static Astro site (source: github.com/JSisques/blog), a single
+    # published Docker image run on its own LXC (services/blog/,
+    # ansible/roles/blog/) — was a Kubernetes Deployment on k3s-server,
+    # moved off because a static site doesn't need to pay for living in a
+    # cluster. tier: personal (not public) since it's under jsisques.net,
+    # not sisqueslabs.com.
+    tier: personal
+    url: https://blog.jsisques.net
+    icon: mdi-post-outline
+
+    homepage:
+      enabled: true
+      description: Personal blog
+
+    traefik:
+      enabled: true
+      port: 8080
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    # Address resolves via the "blog" host in config/hosts.yaml.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
+  it-tools:
+    name: IT-Tools
+    category: Utilities
+    tier: internal
+    url: http://192.168.0.214:8080
+    icon: it-tools.png
+
+    homepage:
+      enabled: true
+      description: Collection of useful developer tools
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — it's a static tools page. Covered by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
+  n8n:
+    name: n8n
+    category: Automation
+    tier: internal  # exposed only via VPN/reverse proxy, see services/n8n
+    url: http://192.168.0.211:5678
+    icon: n8n.png
+
+    homepage:
+      enabled: true
+      description: Workflow automation platform
+
+    uptime:
+      enabled: true
+
+    # No native Prometheus endpoint wired up here (n8n has an optional
+    # N8N_METRICS flag worth checking against current docs — not enabled
+    # in services/n8n/compose.yml). Covered by blackbox_exporter for now,
+    # see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 5678
+      scheme: http
+      module: http_2xx
+
+  cookidoo-mcp:
+    name: Cookidoo MCP
+    category: Automation
+    tier: internal  # exposes Cookidoo account credentials, LAN/VPN only
+    url: http://192.168.0.212:3000
+    icon: mdi-chef-hat
+
+    homepage:
+      enabled: true
+      description: MCP server exposing a Cookidoo account to AI agents
+
+    uptime:
+      # HTTP check should target GET /api/health, not "/"
+      enabled: true
+
+    # No native /metrics — cookidoo-mcp only pushes OTLP metrics when
+    # OTEL_EXPORTER_OTLP_ENDPOINT is set (see services/cookidoo-mcp). No
+    # blackbox block either: root "/" isn't a mapped route (404), only
+    # /api/health and /api/mcp are, same reasoning as obsidian below.
+
+  obsidian:
+    name: Obsidian
+    category: Productivity
+    tier: internal  # second-brain vault, AI-agent access only
+    url: http://192.168.0.213:4000
+    icon: obsidian.png
+
+    homepage:
+      enabled: false  # MCP/API only, no web UI, see services/obsidian
+      description: Second-brain vault exposed to AI agents via MCP
+
+    uptime:
+      enabled: true  # TCP monitor on :4000, HTTP 2xx isn't reliable here
+
+  jellyfin:
+    name: Jellyfin
+    category: Media
+    # LAN by IP:port; also reachable remotely at jellyfin.jsisques.net via
+    # Cloudflared -> Traefik -> this same backend, see `external:` below.
+    tier: internal
+    url: http://192.168.0.215:8096
+    icon: jellyfin.png
+
+    homepage:
+      enabled: true
+      description: Media streaming server
+
+    external:
+      tier: personal
+      url: https://jellyfin.jsisques.net
+      traefik:
+        enabled: true
+        port: 8096
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — Jellyfin has no built-in Prometheus support.
+    # Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8096
+      scheme: http
+      module: http_2xx
+
+  qbittorrent:
+    name: qBittorrent
+    category: Downloads
+    # Torrent client, network_mode: service:gluetun in compose.yaml so all
+    # its traffic (not the WebUI, just torrent traffic) routes through the
+    # VPN. WebUI itself is published on the host like any other service.
+    tier: internal
+    url: http://192.168.0.216:8080
+    icon: qbittorrent.png
+
+    homepage:
+      enabled: true
+      description: Torrent client (via VPN)
+
+    uptime:
+      enabled: true
+
+    # No native /metrics. Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
+  prowlarr:
+    name: Prowlarr
+    category: Downloads
+    tier: internal
+    url: http://192.168.0.216:9696
+    icon: prowlarr.png
+
+    homepage:
+      enabled: true
+      description: Indexer manager for Sonarr/Radarr
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 9696
+      scheme: http
+      module: http_2xx
+
+  sonarr:
+    name: Sonarr
+    category: Downloads
+    tier: internal
+    url: http://192.168.0.216:8989
+    icon: sonarr.png
+
+    homepage:
+      enabled: true
+      description: TV series automation
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8989
+      scheme: http
+      module: http_2xx
+
+  radarr:
+    name: Radarr
+    category: Downloads
+    tier: internal
+    url: http://192.168.0.216:7878
+    icon: radarr.png
+
+    homepage:
+      enabled: true
+      description: Movie automation
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 7878
+      scheme: http
+      module: http_2xx
+
+  pyload:
+    name: pyLoad
+    category: Downloads
+    # Paste a direct HTTP/FTP link, it downloads straight to the NAS —
+    # the generic "give it a URL" downloader that isn't a torrent or a
+    # video site.
+    tier: internal
+    url: http://192.168.0.216:8000
+    icon: pyload.png
+
+    homepage:
+      enabled: true
+      description: Direct HTTP/FTP link downloader
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8000
+      scheme: http
+      module: http_2xx
+
+  metube:
+    name: MeTube
+    category: Downloads
+    # yt-dlp web UI: paste a YouTube (or any yt-dlp-supported site) URL,
+    # it downloads the video/audio straight to the NAS.
+    tier: internal
+    url: http://192.168.0.216:8081
+    icon: metube.png
+
+    homepage:
+      enabled: true
+      description: YouTube/video downloader (yt-dlp)
+
+    uptime:
+      enabled: true
+
+    blackbox:
+      enabled: true
+      port: 8081
+      scheme: http
+      module: http_2xx
+
+  pbs:
+    name: Proxmox Backup Server
+    category: Infrastructure
+    tier: internal
+    # Not yet in Homepage/Traefik/Uptime Kuma — this is a minimal catalog
+    # entry that exists only so pbs can opt into blackbox_exporter probing.
+    # The host itself (address, sizing) lives in config/hosts.yaml; the
+    # "pbs" key here matches that host key directly, no role fallback
+    # needed. Self-signed TLS, hence the *_insecure module.
+
+    # No native /metrics — PBS has no Prometheus support. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8007
+      scheme: https
+      module: http_2xx_insecure
+
+  k3s-server:
+    name: K3s API Server
+    category: Infrastructure
+    tier: internal
+    # Same rationale as pbs above: minimal catalog entry only for
+    # blackbox_exporter, matching the "k3s-server" host key in
+    # config/hosts.yaml directly. The apiserver returns 401/403
+    # unauthenticated, which the *_insecure module still counts as "up".
+
+    # No native /metrics scraped here — the K3s apiserver isn't covered by
+    # a `monitoring:` block yet. Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 6443
+      scheme: https
+      module: http_2xx_insecure
+
+  rustfs:
+    name: RustFS
+    category: Infrastructure
+    # S3-compatible object storage (https://rustfs.com/), data on the
+    # NAS over NFS (ansible/roles/rustfs/). Only the console (port 9001)
+    # is routed here; the S3 API (port 9000) is reached directly by
+    # other services over the LAN IP in config/hosts.yaml — same pattern
+    # as Prometheus scrape targets / Promtail→Loki, no domain for it,
+    # internal tier only (IP:port).
+    tier: internal
+    url: http://192.168.0.208:9001
+    icon: mdi-database
+
+    homepage:
+      enabled: true
+      description: S3-compatible object storage
+
+    uptime:
+      enabled: true
+
+    # No native /metrics wired up yet. Probed by blackbox_exporter
+    # instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9001
+      scheme: http
+      module: http_2xx
+
+  rancher:
+    name: Rancher
+    category: Infrastructure
+    # Kubernetes cluster management UI, deployed on the k3s cluster itself
+    # via Argo CD as a Helm chart wrapped in Kustomize (see
+    # kubernetes/infrastructure/rancher/kustomization.yaml and
+    # kubernetes/argocd/applications/rancher.yaml) — manages the same
+    # "local" cluster it runs on. No LXC of its own; exposed via a
+    # NodePort on k3s-server, same pattern as sisqueslabs-landing/daysoff.
+    # Address resolves via the "rancher" role on the k3s-server host in
+    # config/hosts.yaml. https, not http: Rancher terminates its own
+    # self-signed TLS (no ingress controller in front) — expect a
+    # browser cert warning on first visit.
+    tier: internal
+    url: https://192.168.0.207:30082
+    icon: rancher.png
+
+    homepage:
+      enabled: true
+      description: Kubernetes cluster management
+
+    uptime:
+      enabled: true
+
+    # No native /metrics scraped here (would need the rancher-monitoring
+    # stack, not deployed). Probed by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md. Internal tier only (IP:NodePort),
+    # not routed through Traefik/Cloudflared.
+    blackbox:
+      enabled: true
+      port: 30082
+      scheme: http
+      module: http_2xx
+
+  minecraft:
+    name: Minecraft (PaperMC)
+    category: Juegos
+    tier: internal
+    # Not HTTP — this is the raw Minecraft protocol port, informational
+    # link only (paste IP:port into the Minecraft client, not a browser).
+    # Reachable via VPN only: a wg-easy client scoped to just this IP
+    # (Allowed IPs = 192.168.0.217/32), see services/minecraft/README.md
+    # — never port-forwarded on the router.
+    url: http://192.168.0.217:25565
+    icon: minecraft.png
+
+    homepage:
+      enabled: true
+      description: PaperMC (arranca al conectar, duerme tras 10 min)
+
+    uptime:
+      enabled: true
+
+    # lazymc (services/minecraft/) keeps this port listening even while
+    # the actual Paper server is asleep, so a plain TCP connect is the
+    # right up/down check — it reflects "can a player join at all",
+    # not whether the heavy server process happens to be awake right now.
+    blackbox:
+      enabled: true
+      port: 25565
+      module: tcp_connect
+
+    # dirien/minecraft-exporter (services/minecraft/), RCON-based, no
+    # in-game plugin needed. Only reachable while the Paper server is
+    # actually awake — up=0 while lazymc has it asleep is expected, not
+    # a fault. See services/minecraft/README.md.
+    monitoring:
+      enabled: true
+      type: prometheus
+      endpoint: http://192.168.0.217:9150/metrics
+
+  stirling-pdf:
+    name: Stirling PDF
+    category: Utilities
+    tier: internal
+    url: http://192.168.0.218:8080
+    icon: stirling-pdf.png
+
+    homepage:
+      enabled: true
+      description: Merge, split, convert, OCR, and edit PDFs
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — covered by blackbox_exporter instead, see
+    # services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
+  soulfire:
+    name: SoulFire
+    category: Utilities
+    tier: internal
+    url: http://192.168.0.219:38765
+    icon: mdi-robot
+
+    homepage:
+      # :38765 is the backend API, not a browsable dashboard — the real
+      # UI is the desktop GUI client, see services/soulfire/README.md
+      enabled: false
+
+    # Deliberately unmonitored: this LXC is meant to be off between test
+    # sessions (see services/minecraft/README.md#load-testing), so an
+    # uptime/blackbox check would just alert "down" most of the time.

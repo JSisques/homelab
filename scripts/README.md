@@ -13,20 +13,26 @@ scripts/
 ├── README.md
 │
 ├── bootstrap/
-│   └── bootstrap.sh
+│   └── bootstrap.sh        # not implemented yet
 │
 ├── validation/
 │   └── validate.sh
 │
 ├── generation/
-│   ├── generate-homepage.ts
-│   ├── generate-uptime-kuma.ts
-│   └── generate-prometheus.ts
+│   ├── README.md
+│   ├── generate-homepage.sh
+│   ├── generate-prometheus.sh
+│   ├── generate-traefik.sh
+│   ├── generate-cloudflared.sh
+│   ├── generate-inventory.sh
+│   └── generate-terraform-vars.sh
 │
-└── utils/
-    ├── wait-for-service.sh
-    └── health-check.sh
+└── sync-uptime-kuma.py    # pushes config/services.yaml into a live Uptime Kuma over its API — not a local
+                            # file transform like generation/, since Uptime Kuma has no config file of its own
+                            # (see ansible/roles/uptime-kuma-sync/)
 ```
+
+`utils/` (a `wait-for-service.sh` / `health-check.sh` pair) doesn't exist yet — it's a placeholder for future deploy tooling, not a current gap.
 
 ## Bootstrap
 
@@ -92,7 +98,11 @@ config/services.yaml
         ▼              ▼
  Homepage         Uptime Kuma
  config             monitors
+ (generate-        (sync-uptime-kuma.py,
+  homepage.sh)       ansible/roles/uptime-kuma-sync/)
 ```
+
+Homepage's config is a static file `generate-homepage.sh` writes to disk (`services/homepage/config/services.yaml`), deployed like any other checked-in config. Uptime Kuma has no config file at all — everything lives in its own SQLite database — so `sync-uptime-kuma.py` pushes state into a *running* instance over its API instead of writing a file; see `ansible/roles/uptime-kuma-sync/` for why that makes it an Ansible-run script rather than a `make generate` step.
 
 The generated configuration should be deterministic and reproducible.
 

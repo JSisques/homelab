@@ -1,0 +1,28 @@
+services:
+  obsidian:
+    build: https://github.com/shanehull/obsidian-remote.git#v1.2.0
+    container_name: obsidian
+    restart: unless-stopped
+
+    # Headless Obsidian runs real Chromium/Electron under the hood — the
+    # default 64MB /dev/shm is too small and it will crash.
+    shm_size: "1gb"
+
+    ports:
+      - "4000:4000"
+
+    environment:
+      - PUBLIC_HOST=http://192.168.0.213:4000
+      # TEST_MODE seeds a fresh vault (with the Local REST API plugin
+      # installed) only the first time /vaults has no .obsidian directory,
+      # then never touches it again. There is no git remote configured, so
+      # that "seed" — sitting on the NFS bind mount below — becomes the
+      # vault's real, permanent home on the NAS. See README.md.
+      - TEST_MODE=true
+
+    volumes:
+      - /mnt/nas/obsidian:/vaults
+      - obsidian-config:/config
+
+volumes:
+  obsidian-config:

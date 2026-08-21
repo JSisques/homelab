@@ -1,1 +1,376 @@
+# `network` is the single source of truth for anything subnet-shaped —
+# change a prefix/gateway/bridge here and every generated file (Terraform
+# vars, Ansible inventory, Traefik routes, Prometheus/blackbox targets,
+# WireGuard's ALLOWEDIPS/PEERDNS) picks it up on the next `make generate`.
+# See config/README.md for the full resolution rules.
+#
+# Proxmox VMID for type: lxc / type: vm defaults to `octet` (it-tools
+# octet 214 → CT 214 at 192.168.0.214). Set `vmid:` only when they must
+# differ — Terraform always passes a pinned vm_id, never "next free ID".
+network:
+  lan:
+    prefix: "192.168.0"
+    mask: 24
+    gateway: "192.168.0.1"
+    bridge: "vmbr0"
+  nas:
+    prefix: "192.168.0"
 
+hosts:
+  proxmox:
+    type: server
+    platform: proxmox
+    # Proxmox API node_name (hostname). VMs used to default to "pve" in the
+    # generator and ignore terraform.tfvars — this is the SSOT for both LXC
+    # and VM node_name.
+    node: proxmox
+    octet: 157
+    role:
+      - hypervisor
+
+  nas:
+    type: physical
+    platform: nas
+    network: nas
+    octet: 111
+    role:
+      - storage
+
+  monitoring:
+    type: lxc
+    platform: proxmox
+    octet: 209
+    cpu: 2
+    # Bumped from 2560 to fit the OTel Collector + Tempo alongside
+    # Prometheus/Grafana/Loki/Alertmanager on the same LXC.
+    memory: 3584
+    # OS + Docker images + retained Prometheus/Loki data (~15GB at
+    # typical retention settings, see prometheus.yml/config.yml) + Tempo
+    # trace storage (48h retention, services/tempo/tempo.yaml).
+    disk: 24
+    role:
+      - prometheus
+      - grafana
+      - loki
+      - alertmanager
+      - otel-collector
+      - tempo
+
+  homepage:
+    type: lxc
+    platform: proxmox
+    octet: 205
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - homepage
+
+  uptime-kuma:
+    type: lxc
+    platform: proxmox
+    octet: 210
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - uptime-kuma
+
+  it-tools:
+    type: lxc
+    platform: proxmox
+    octet: 214
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - it-tools
+
+  n8n:
+    type: lxc
+    platform: proxmox
+    octet: 211
+    cpu: 2
+    memory: 2560
+    # Workflow executions can spike above the dedicated allocation
+    # (e.g. large payloads through a Function/Code node). This is a
+    # cgroup swap limit backed by the Proxmox host's own swap device —
+    # it costs no LXC disk space, see config/README.md#swap.
+    swap: 1024
+    disk: 16
+    role:
+      - n8n
+
+  obsidian:
+    type: lxc
+    platform: proxmox
+    octet: 213
+    cpu: 1
+    # Headless Chromium alone needs ~1GB of /dev/shm (see compose.yaml),
+    # so this can't be trimmed as far as the other LXCs.
+    memory: 2048
+    # The obsidian-remote image bundles a full desktop + Chromium — the
+    # docker build step alone needs more than 8G of scratch space to
+    # extract layers (confirmed live: "no space left on device" with
+    # only ~2G free at 76% usage on an 8G disk). Unlike memory, a disk
+    # size change on this Terraform resource forces destroy+recreate
+    # (not in-place) — applied the 8->20 bump live via `pct resize 213
+    # rootfs 20G` on the Proxmox host instead, so this value now matches
+    # the LXC's actual size without Terraform ever having applied it.
+    disk: 20
+    role:
+      - obsidian
+
+  jellyfin:
+    type: lxc
+    platform: proxmox
+    octet: 215
+    # Not in use yet. Direct play barely needs any CPU; bump this (or pass
+    # through the iGPU for hardware transcoding) if software transcoding
+    # becomes the common case.
+    cpu: 2
+    memory: 1536
+    disk: 10
+    role:
+      - jellyfin
+
+  downloads:
+    type: lxc
+    platform: proxmox
+    octet: 216
+    # gluetun + qBittorrent (torrents, routed through VPN) + Prowlarr +
+    # Sonarr/Radarr (indexing/organizing into Jellyfin's library) + pyLoad
+    # (direct HTTP/FTP links) + MeTube (yt-dlp web UI) + ClamAV (scans
+    # everything landing in /mnt/nas/downloads). All app state is local;
+    # actual downloaded files live on the NAS (see
+    # services/downloads/README.md).
+    cpu: 4
+    # 4096 was enough for the *arr stack alone; ClamAV's clamd (virus
+    # databases loaded in memory, ~300-700MB depending on signature set
+    # size) pushed it too close to the edge, so bumped to 6144.
+    memory: 6144
+    # gluetun + qBittorrent + the *arr stack under load (large imports,
+    # simultaneous downloads) can burst past the dedicated allocation.
+    # Cgroup swap limit backed by the Proxmox host's own swap device —
+    # costs no LXC disk space, see config/README.md#swap.
+    swap: 1024
+    disk: 24
+    role:
+      - qbittorrent
+      - prowlarr
+      - sonarr
+      - radarr
+      - pyload
+      - metube
+
+  cloudflared:
+    type: lxc
+    platform: proxmox
+    octet: 200
+    cpu: 1
+    memory: 128
+    disk: 4
+    role:
+      - cloudflared
+
+  adguard-home-1:
+    type: lxc
+    platform: proxmox
+    octet: 201
+    cpu: 1
+    # 512MB still wasn't enough: large blocklists (notably HaGeZi's Threat
+    # Intelligence Feeds, ~1M+ rules) hit the LXC's memcg OOM killer even
+    # after the previous 256->512MB bump (see git history). AdGuard Home
+    # keeps all filter rules in memory, so this scales with list size.
+    memory: 1024
+    disk: 4
+    role:
+      - adguard-home-1
+
+  adguard-home-2:
+    type: lxc
+    platform: proxmox
+    # Independent secondary DNS resolver, on its own LXC, so LAN clients
+    # get real redundancy (primary = adguard-home-1, secondary =
+    # adguard-home-2) instead of a single point of failure for DNS.
+    # Kept in sync from adguard-home-1 by the adguard-home-sync role
+    # (see ansible/roles/adguard-home-sync/) rather than sharing state.
+    # Sized to match adguard-home-1: it syncs the same blocklists, so it
+    # hits the same memory ceiling.
+    octet: 202
+    cpu: 1
+    memory: 1024
+    disk: 4
+    role:
+      - adguard-home-2
+
+  traefik:
+    type: lxc
+    platform: proxmox
+    octet: 204
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - traefik
+
+  wireguard:
+    type: lxc
+    platform: proxmox
+    octet: 203
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - wireguard
+
+  pbs:
+    type: vm
+    platform: proxmox
+    octet: 206
+    cpu: 2
+    # Was undersized, not oversized: PBS wants ~4GB baseline for its
+    # dedup chunk index, even with under 1TB of backup data.
+    memory: 4096
+    disk: 32
+    role:
+      - pbs
+
+  k3s-server:
+    type: vm
+    platform: proxmox
+    octet: 207
+    # Runs real pods today (no worker nodes yet), so this keeps headroom
+    # above pure control-plane sizing. Revisit once raspberrypi-01/02 join
+    # as workers and take workload off this node.
+    #
+    # Bumped from 2/3072/30 to fit Rancher's management server (Helm
+    # chart via Argo CD, see kubernetes/argocd/applications/rancher.yaml)
+    # alongside Argo CD and the existing workloads — Rancher alone wants
+    # ~2GB+ of headroom on top of what was already a tight single node.
+    #
+    # sisqueslabs-landing/daysoff/rancher carry no LXC/VM of their own —
+    # they're Kubernetes workloads (see kubernetes/applications/ and
+    # kubernetes/argocd/applications/), deployed via Argo CD, not
+    # Ansible. These roles exist only so generate-blackbox.sh /
+    # generate-traefik.sh can resolve a LAN address for their
+    # config/services.yaml target (this node's NodePort), same trick as
+    # grafana/prometheus/loki/alertmanager sharing the "monitoring" host
+    # below. blog moved to its own LXC (see the `blog` host below) — a
+    # static site doesn't need to live in the cluster.
+    cpu: 4
+    memory: 6144
+    disk: 40
+    role:
+      - k3s
+      - server
+      - sisqueslabs-landing
+      - daysoff
+      - rancher
+
+  cookidoo-mcp:
+    type: lxc
+    platform: proxmox
+    octet: 212
+    # Single Node/NestJS container, no database — same profile as it-tools.
+    cpu: 1
+    memory: 512
+    disk: 4
+    role:
+      - cookidoo-mcp
+
+  rustfs:
+    type: lxc
+    platform: proxmox
+    octet: 208
+    # S3-compatible object storage (https://rustfs.com/, see
+    # services/rustfs/README.md). Object data lives on the NAS (CIFS,
+    # mounted on the Proxmox host and bind-mounted in — see
+    # services/rustfs/README.md), not on this LXC's own disk — disk here
+    # only needs to hold the OS and the container image.
+    cpu: 2
+    memory: 1024
+    disk: 8
+    role:
+      - rustfs
+
+  minecraft:
+    type: lxc
+    platform: proxmox
+    octet: 217
+    # PaperMC behind lazymc (services/minecraft/) — the JVM heap alone
+    # wants ~6G once plugins are added, so this leaves real headroom for
+    # the OS, Docker, lazymc, and the metrics exporter on top of it.
+    cpu: 3
+    memory: 8192
+    # Headroom for the JVM's GC to avoid an OOM-kill mid-game when
+    # plugins push heap usage right up against the dedicated
+    # allocation. Cgroup swap limit backed by the Proxmox host's own
+    # swap device — costs no LXC disk space, see config/README.md#swap.
+    swap: 2048
+    # World data lives on the NAS (CIFS, mounted on the Proxmox host and
+    # bind-mounted in — see services/minecraft/README.md), not on this
+    # LXC's own disk — disk here only needs the OS, Docker images, and
+    # the Paper server jar itself.
+    disk: 16
+    role:
+      - minecraft
+
+  stirling-pdf:
+    type: lxc
+    platform: proxmox
+    octet: 218
+    # Standard image (not -fat/-ultra-lite, see services/stirling-pdf/
+    # README.md) — stateless per request (no NAS mount needed), disk
+    # here only needs the OS, Docker, and the image itself.
+    cpu: 2
+    memory: 2048
+    disk: 6
+    role:
+      - stirling-pdf
+
+  soulfire:
+    type: lxc
+    platform: proxmox
+    octet: 219
+    # Bot framework used to load-test the Minecraft server (see
+    # services/minecraft/README.md#load-testing) — not a 24/7 service,
+    # meant to be started only for a test session and shut down from
+    # Proxmox afterwards. Sized for a few hundred bots (SoulFire docs:
+    # ~2G is enough up to ~50 bots, this leaves headroom beyond that);
+    # bump memory here if a test run needs more before it OOMs.
+    cpu: 2
+    memory: 4096
+    disk: 8
+    role:
+      - soulfire
+
+  blog:
+    type: lxc
+    platform: proxmox
+    octet: 220
+    # Static Astro site, single published Docker image, no database — same
+    # profile as it-tools. Was a Kubernetes Deployment on k3s-server; moved
+    # here because a static site doesn't need to pay for living in a
+    # cluster (see ansible/roles/blog/README.md).
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - blog
+
+  raspberrypi-01:
+    type: physical
+    platform: raspberry-pi
+    octet: 40
+    role:
+      - k3s
+      - worker
+
+  raspberrypi-02:
+    type: physical
+    platform: raspberry-pi
+    octet: 41
+    role:
+      - k3s
+      - worker

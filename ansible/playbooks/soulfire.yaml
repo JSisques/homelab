@@ -1,0 +1,7 @@
+---
+- name: Deploy SoulFire
+  hosts: soulfire
+  become: true
+
+  roles:
+    - soulfire

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sisqueslabs-landing
+  namespace: argocd
+spec:
+  project: homelab
+
+  source:
+    repoURL: https://github.com/JSisques/homelab.git
+    targetRevision: main
+    path: kubernetes/applications/sisqueslabs-landing
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sisqueslabs-landing
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true

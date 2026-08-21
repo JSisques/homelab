@@ -1,0 +1,186 @@
+---
+- name: Create shared Docker network for the monitoring stack
+  community.docker.docker_network:
+    name: "{{ monitoring_docker_network }}"
+    state: present
+
+- name: Create Prometheus application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_prometheus_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Prometheus Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/compose.yaml"
+    dest: "{{ monitoring_prometheus_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Prometheus configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/prometheus.yml"
+    dest: "{{ monitoring_prometheus_app_dir }}/prometheus.yml"
+    mode: "0644"
+
+- name: Deploy Prometheus alert rules
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/alerts.yml"
+    dest: "{{ monitoring_prometheus_app_dir }}/alerts.yml"
+    mode: "0644"
+
+- name: Deploy Prometheus blackbox_exporter targets
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/prometheus/blackbox-targets.yml"
+    dest: "{{ monitoring_prometheus_app_dir }}/blackbox-targets.yml"
+    mode: "0644"
+
+- name: Start Prometheus
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_prometheus_app_dir }}"
+    state: present
+
+- name: Create Grafana application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_grafana_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Grafana Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/grafana/compose.yaml"
+    dest: "{{ monitoring_grafana_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Grafana provisioning configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/grafana/config/"
+    dest: "{{ monitoring_grafana_app_dir }}/config/"
+    mode: "0644"
+
+- name: Start Grafana
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_grafana_app_dir }}"
+    state: present
+
+- name: Create Loki application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_loki_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Loki Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/loki/compose.yaml"
+    dest: "{{ monitoring_loki_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Loki configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/loki/config.yml"
+    dest: "{{ monitoring_loki_app_dir }}/config.yml"
+    mode: "0644"
+
+- name: Start Loki
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_loki_app_dir }}"
+    state: present
+
+- name: Create Alertmanager application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_alertmanager_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Alertmanager Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/alertmanager/compose.yaml"
+    dest: "{{ monitoring_alertmanager_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Alertmanager configuration
+  ansible.builtin.template:
+    src: "{{ services_dir }}/alertmanager/alertmanager.yml.j2"
+    dest: "{{ monitoring_alertmanager_app_dir }}/alertmanager.yml"
+    mode: "0644"
+
+- name: Warn if Alertmanager has no Telegram receiver configured
+  ansible.builtin.debug:
+    msg: >-
+      monitoring_alertmanager_telegram_bot_token is not set — alerts will
+      fire but won't be delivered anywhere. See
+      ansible/roles/monitoring/README.md.
+  when: not monitoring_alertmanager_telegram_bot_token
+
+- name: Start Alertmanager
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_alertmanager_app_dir }}"
+    state: present
+
+- name: Create Tempo application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_tempo_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Tempo Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/tempo/compose.yaml"
+    dest: "{{ monitoring_tempo_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Tempo configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/tempo/tempo.yaml"
+    dest: "{{ monitoring_tempo_app_dir }}/tempo.yaml"
+    mode: "0644"
+
+- name: Start Tempo
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_tempo_app_dir }}"
+    state: present
+
+- name: Create OTel Collector application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_otel_collector_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy OTel Collector Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/otel-collector/compose.yaml"
+    dest: "{{ monitoring_otel_collector_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy OTel Collector configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/otel-collector/config.yaml"
+    dest: "{{ monitoring_otel_collector_app_dir }}/config.yaml"
+    mode: "0644"
+
+- name: Start OTel Collector
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_otel_collector_app_dir }}"
+    state: present
+
+- name: Create blackbox_exporter application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_blackbox_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy blackbox_exporter Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/blackbox-exporter/compose.yaml"
+    dest: "{{ monitoring_blackbox_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy blackbox_exporter configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/blackbox-exporter/config.yml"
+    dest: "{{ monitoring_blackbox_app_dir }}/config.yml"
+    mode: "0644"
+
+- name: Start blackbox_exporter
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_blackbox_app_dir }}"
+    state: present

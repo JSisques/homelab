@@ -1,0 +1,23 @@
+---
+- name: Create Homepage application directory
+  ansible.builtin.file:
+    path: "{{ homepage_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Homepage Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/homepage/compose.yaml"
+    dest: "{{ homepage_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Deploy Homepage configuration
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/homepage/config/"
+    dest: "{{ homepage_app_dir }}/config/"
+    mode: "0644"
+
+- name: Start Homepage
+  community.docker.docker_compose_v2:
+    project_src: "{{ homepage_app_dir }}"
+    state: present

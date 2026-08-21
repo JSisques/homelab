@@ -1,0 +1,37 @@
+# Fast, local mirror of the checks CI runs in .github/workflows/ci.yaml —
+# catches the common mistakes (trailing whitespace, broken YAML, shell
+# lint, a leaked secret) before they cost a CI round-trip. Heavier checks
+# (ansible-lint, terraform validate, Docker Compose validation, the
+# generator snapshot tests) stay CI/`make validate`-only; see
+# scripts/validation/validate.sh for the full local suite.
+#
+# Setup: pip install pre-commit && pre-commit install
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+        exclude: ^ansible/roles/.*/templates/
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: ^scripts/.*\.sh$
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

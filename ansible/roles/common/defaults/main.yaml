@@ -1,0 +1,12 @@
+---
+common_timezone: Europe/Madrid
+
+common_packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - jq
+  - unzip
+  - ca-certificates

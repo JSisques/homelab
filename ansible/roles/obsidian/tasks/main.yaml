@@ -1,0 +1,17 @@
+---
+- name: Create Obsidian application directory
+  ansible.builtin.file:
+    path: "{{ obsidian_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Obsidian Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/obsidian/compose.yaml"
+    dest: "{{ obsidian_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Obsidian
+  community.docker.docker_compose_v2:
+    project_src: "{{ obsidian_app_dir }}"
+    state: present

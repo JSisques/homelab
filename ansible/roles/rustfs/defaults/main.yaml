@@ -1,0 +1,16 @@
+---
+rustfs_app_dir: /opt/rustfs
+
+# Object data at /mnt/nas/rustfs comes from a Proxmox-level bind mount
+# (host mounts the NAS CIFS share, LXC gets it as `mp0`), not something
+# this role manages — unprivileged LXCs can't mount CIFS/NFS themselves
+# even with the `mount=cifs;nfs` feature flag (kernel limitation, not
+# just permissions). Same pattern as ansible/roles/minecraft/. See
+# services/rustfs/README.md for the exact host-side setup commands.
+
+# Root credentials for the S3 API / console. Must be provided via Ansible
+# Vault or CI secrets — never commit real values. The role refuses to run
+# without them (see tasks/main.yaml). Never fall back to RustFS's own
+# defaults (rustfsadmin/rustfsadmin) — they're public.
+rustfs_access_key: ""
+rustfs_secret_key: ""

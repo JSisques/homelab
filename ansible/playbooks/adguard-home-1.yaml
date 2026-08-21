@@ -1,0 +1,10 @@
+---
+- name: Deploy AdGuard Home (Primary)
+  hosts: adguard-home-1
+  become: true
+  vars:
+    adguard_home_username: "{{ adguard_sync_origin_username | default('') }}"
+    adguard_home_password: "{{ adguard_sync_origin_password | default('') }}"
+
+  roles:
+    - adguard-home

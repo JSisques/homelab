@@ -1,0 +1,32 @@
+# Hand-authored, unlike prometheus.yml — not generated from
+# config/services.yaml.
+groups:
+  - name: homelab
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} lleva caído más de 5 minutos"
+
+      - alert: HostHighMemoryUsage
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.instance }} tiene menos del 10% de RAM libre"
+
+      - alert: HostLowDiskSpace
+        expr: >
+          node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"}
+          / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} < 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: >-
+            {{ $labels.instance }} tiene menos del 10% de espacio libre
+            en {{ $labels.mountpoint }}

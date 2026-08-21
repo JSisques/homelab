@@ -1,0 +1,15 @@
+---
+extends: default
+
+ignore: |
+  .terraform/
+
+rules:
+  # No file in this repo uses "---" document markers; enforcing it now
+  # would mean touching every YAML file for no functional benefit.
+  document-start: disable
+  # GitHub Actions' `on:` trigger key is YAML 1.1 truthy ("on" == true),
+  # which is intentional and appears in every workflow file.
+  truthy: disable
+  line-length:
+    max: 80

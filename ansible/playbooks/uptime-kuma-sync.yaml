@@ -1,0 +1,9 @@
+---
+- name: Sync Uptime Kuma monitors from config/services.yaml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  roles:
+    - uptime-kuma-sync

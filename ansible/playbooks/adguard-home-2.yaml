@@ -1,0 +1,10 @@
+---
+- name: Deploy AdGuard Home (Secondary)
+  hosts: adguard-home-2
+  become: true
+  vars:
+    adguard_home_username: "{{ adguard_sync_replica_username | default('') }}"
+    adguard_home_password: "{{ adguard_sync_replica_password | default('') }}"
+
+  roles:
+    - adguard-home

@@ -9,7 +9,14 @@ services:
 
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./blackbox-targets.yml:/etc/prometheus/blackbox-targets.yml:ro
       - prometheus-data:/prometheus
 
 volumes:
   prometheus-data:
+
+networks:
+  default:
+    name: monitoring
+    external: true

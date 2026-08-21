@@ -1,0 +1,10 @@
+---
+jellyfin_app_dir: /opt/jellyfin
+
+# Media at /mnt/nas/jellyfin/{movies,series} comes from a Proxmox-level
+# bind mount (host mounts the NAS CIFS share, LXC gets it as `mp0`), not
+# something this role manages — unprivileged LXCs can't mount CIFS/NFS
+# themselves even with the `mount=cifs;nfs` feature flag (kernel
+# limitation, not just permissions). Same pattern as
+# ansible/roles/minecraft/ and ansible/roles/rustfs/. See
+# services/jellyfin/README.md for the exact host-side setup commands.

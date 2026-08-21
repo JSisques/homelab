@@ -1,0 +1,71 @@
+---
+- name: Deploy IT-Tools
+  ansible.builtin.import_playbook: it-tools.yaml
+
+- name: Deploy n8n
+  ansible.builtin.import_playbook: n8n.yaml
+
+- name: Deploy cookidoo-mcp
+  ansible.builtin.import_playbook: cookidoo-mcp.yaml
+
+- name: Deploy Obsidian
+  ansible.builtin.import_playbook: obsidian.yaml
+
+- name: Deploy Jellyfin
+  ansible.builtin.import_playbook: jellyfin.yaml
+
+- name: Deploy Downloads stack
+  ansible.builtin.import_playbook: downloads.yaml
+
+- name: Deploy monitoring stack (Prometheus + Grafana + Loki + Alertmanager)
+  ansible.builtin.import_playbook: monitoring.yaml
+
+- name: Deploy Homepage
+  ansible.builtin.import_playbook: homepage.yaml
+
+- name: Deploy Uptime Kuma
+  ansible.builtin.import_playbook: uptime-kuma.yaml
+
+- name: Deploy Cloudflare Tunnel
+  ansible.builtin.import_playbook: cloudflared.yaml
+
+- name: Deploy AdGuard Home (Primary)
+  ansible.builtin.import_playbook: adguard-home-1.yaml
+
+- name: Deploy AdGuard Home (Secondary)
+  ansible.builtin.import_playbook: adguard-home-2.yaml
+
+- name: Deploy AdGuard Home Sync
+  ansible.builtin.import_playbook: adguard-home-sync.yaml
+
+- name: Deploy Traefik
+  ansible.builtin.import_playbook: traefik.yaml
+
+- name: Deploy WireGuard
+  ansible.builtin.import_playbook: wireguard.yaml
+
+- name: Deploy Proxmox Backup Server
+  ansible.builtin.import_playbook: pbs.yaml
+
+- name: Deploy K3s (single-node server) and bootstrap Argo CD
+  ansible.builtin.import_playbook: k3s-server.yaml
+
+- name: Deploy RustFS
+  ansible.builtin.import_playbook: rustfs.yaml
+
+- name: Deploy Minecraft
+  ansible.builtin.import_playbook: minecraft.yaml
+
+- name: Deploy Stirling PDF
+  ansible.builtin.import_playbook: stirling-pdf.yaml
+
+- name: Deploy SoulFire
+  ansible.builtin.import_playbook: soulfire.yaml
+
+- name: Deploy Blog
+  ansible.builtin.import_playbook: blog.yaml
+
+# Runs last: reads config/services.yaml's full catalog, so it wants
+# every other service's Terraform/Ansible state to already be current.
+- name: Sync Uptime Kuma monitors from config/services.yaml
+  ansible.builtin.import_playbook: uptime-kuma-sync.yaml

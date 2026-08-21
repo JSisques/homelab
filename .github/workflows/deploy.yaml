@@ -1,0 +1,95 @@
+name: Deploy Homelab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homelab-deployment
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: Terraform Apply
+    runs-on:
+      - self-hosted
+      - linux
+      - homelab
+
+    defaults:
+      run:
+        working-directory: terraform/proxmox
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Generate Terraform variables from config/hosts.yaml
+        working-directory: .
+        run: |
+          chmod +x scripts/generation/generate-terraform-vars.sh
+          ./scripts/generation/generate-terraform-vars.sh
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_proxmox_endpoint: ${{ secrets.PROXMOX_ENDPOINT }}
+          TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+
+  ansible:
+    name: Ansible Deploy
+    needs: terraform
+
+    runs-on:
+      - self-hosted
+      - linux
+      - homelab
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ansible dependencies
+        working-directory: ansible
+        run: |
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Install yq
+        run: pip install yq
+
+      - name: Generate inventory
+        run: |
+          chmod +x scripts/generation/generate-inventory.sh
+          ./scripts/generation/generate-inventory.sh
+
+      - name: Run Ansible
+        working-directory: ansible
+        run: |
+          BOT_TOKEN_VAR="monitoring_alertmanager_telegram_bot_token=${TELEGRAM_BOT_TOKEN}"
+          CHAT_ID_VAR="monitoring_alertmanager_telegram_chat_id=${TELEGRAM_CHAT_ID}"
+          ansible-playbook \
+            -i inventory/hosts.yml \
+            playbooks/site.yaml \
+            -e "n8n_postgres_password=${N8N_POSTGRES_PASSWORD}" \
+            -e "cloudflared_credentials_json=${CLOUDFLARED_CREDS_JSON}" \
+            -e "${BOT_TOKEN_VAR}" \
+            -e "${CHAT_ID_VAR}"
+        env:
+          N8N_POSTGRES_PASSWORD: ${{ secrets.N8N_POSTGRES_PASSWORD }}
+          CLOUDFLARED_CREDS_JSON: ${{ secrets.CLOUDFLARED_CREDS_JSON }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

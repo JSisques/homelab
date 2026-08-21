@@ -1,0 +1,49 @@
+---
+- name: Check supported operating system
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.os_family == 'Debian'
+    fail_msg: This role currently supports Debian-family operating systems only.
+
+- name: Install Docker repository prerequisites
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create APT keyring directory
+  ansible.builtin.file:
+    path: "{{ docker_apt_keyring | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Install Docker repository key
+  ansible.builtin.get_url:
+    url: "{{ docker_apt_key_url }}"
+    dest: "{{ docker_apt_keyring }}"
+    mode: "0644"
+    force: true
+
+- name: Configure Docker APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ docker_apt_architecture }}
+      signed-by={{ docker_apt_keyring }}] {{ docker_apt_repository }}
+      {{ ansible_facts.distribution_release }} {{ docker_apt_channel }}
+    filename: docker
+    state: present
+    update_cache: true
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: "{{ docker_service_name }}"
+    enabled: true
+    state: started

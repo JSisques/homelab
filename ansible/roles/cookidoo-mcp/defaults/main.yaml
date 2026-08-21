@@ -1,0 +1,8 @@
+---
+cookidoo_mcp_app_dir: /opt/cookidoo-mcp
+
+# Cookidoo account credentials. Must be provided via Ansible Vault or CI
+# secrets — never commit real values. The role refuses to run without them
+# (see tasks/main.yaml).
+cookidoo_mcp_email: ""
+cookidoo_mcp_password: ""

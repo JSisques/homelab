@@ -1,0 +1,7 @@
+---
+# Role directories are named to match their service directory under
+# services/ (e.g. it-tools, uptime-kuma, adguard-home, node-exporter),
+# which requires a hyphen. Renaming them to satisfy role-name would break
+# that 1:1 naming convention across the repo.
+skip_list:
+  - role-name

@@ -1,1 +1,30 @@
+---
+- greeting:
+    text_size: xl
+    text: Homelab
 
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+      hour12: false
+
+- openmeteo:
+    label: Santiago de Compostela
+    latitude: 42.8785
+    longitude: -8.5481
+    timezone: Europe/Madrid
+    units: metric
+    cache: 15
+    format:
+      maximumFractionDigits: 1
+
+- search:
+    provider: duckduckgo
+    target: _blank
+
+- resources:
+    cpu: true
+    memory: true
+    disk: /

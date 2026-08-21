@@ -1,0 +1,18 @@
+- Applications:
+    - App:
+        href: http://10.10.10.50:8080
+        icon: mdi-app
+        description: Internal test app
+    - VM App:
+        href: https://vmapp.jsisques.net
+        icon: mdi-vm
+        description: VM-hosted personal app
+    - Public App:
+        href: https://pubapp.sisqueslabs.com
+        icon: mdi-earth
+        description: Public app
+- Infrastructure:
+    - Traefik:
+        href: http://10.10.10.70:8080
+        icon: traefik.png
+        description: Reverse proxy

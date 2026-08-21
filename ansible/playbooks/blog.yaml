@@ -1,0 +1,7 @@
+---
+- name: Deploy Blog
+  hosts: blog
+  become: true
+
+  roles:
+    - blog

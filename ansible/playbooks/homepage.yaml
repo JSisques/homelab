@@ -1,0 +1,7 @@
+---
+- name: Deploy Homepage
+  hosts: homepage
+  become: true
+
+  roles:
+    - homepage

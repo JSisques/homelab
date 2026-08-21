@@ -1,0 +1,7 @@
+---
+- name: Deploy cookidoo-mcp
+  hosts: cookidoo-mcp
+  become: true
+
+  roles:
+    - cookidoo-mcp

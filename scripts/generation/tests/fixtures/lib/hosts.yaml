@@ -1,0 +1,30 @@
+network:
+  lan:
+    prefix: "192.168.0"
+    mask: 24
+    gateway: "192.168.0.1"
+    bridge: "vmbr0"
+  iot:
+    prefix: "192.168.50"
+
+hosts:
+  tbd-host:
+    type: lxc
+    address: TBD
+
+  literal-host:
+    type: lxc
+    address: "10.0.0.5"
+    octet: 99
+
+  lan-octet-host:
+    type: lxc
+    octet: 42
+
+  iot-octet-host:
+    type: lxc
+    network: iot
+    octet: 7
+
+  bare-host:
+    type: lxc

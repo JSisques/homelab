@@ -1,0 +1,7 @@
+---
+- name: Deploy Stirling PDF
+  hosts: stirling-pdf
+  become: true
+
+  roles:
+    - stirling-pdf

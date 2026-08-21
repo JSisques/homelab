@@ -1,0 +1,60 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor and local workspace files
+.vscode/*.log
+.idea/
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+
+# Python bytecode cache (scripts/sync-uptime-kuma.py)
+__pycache__/
+*.pyc
+
+# JavaScript dependencies and logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Astro and other frontend build output
+dist/
+.astro/
+
+# Terraform local state and working files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!terraform/proxmox/hosts.auto.tfvars.json
+crash.log
+crash.*.log
+
+# Ansible temporary files
+*.retry
+*.vault_pass
+
+# Cloudflare Tunnel credentials (never commit)
+**/credentials.json
+
+# AdGuard Home runtime config (seeded on the host, then rewritten by AdGuard)
+services/adguard-home/conf/
+
+# Kubeconfigs fetched from K3s (never commit)
+.kube/
+*kubeconfig*.yaml
+
+# Environment variable files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Charts pulled locally by `kustomize build --enable-helm` (kubernetes/infrastructure/*)
+kubernetes/**/charts/

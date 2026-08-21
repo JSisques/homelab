@@ -1,0 +1,17 @@
+---
+- name: Create Jellyfin application directory
+  ansible.builtin.file:
+    path: "{{ jellyfin_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Jellyfin Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/jellyfin/compose.yaml"
+    dest: "{{ jellyfin_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Jellyfin
+  community.docker.docker_compose_v2:
+    project_src: "{{ jellyfin_app_dir }}"
+    state: present
