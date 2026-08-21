@@ -249,14 +249,15 @@ hosts:
     # alongside Argo CD and the existing workloads — Rancher alone wants
     # ~2GB+ of headroom on top of what was already a tight single node.
     #
-    # sisqueslabs-landing/daysoff/rancher carry no LXC/VM of their own —
-    # they're Kubernetes workloads (see kubernetes/applications/ and
+    # sisqueslabs-landing/rancher carry no LXC/VM of their own — they're
+    # Kubernetes workloads (see kubernetes/applications/ and
     # kubernetes/argocd/applications/), deployed via Argo CD, not
     # Ansible. These roles exist only so generate-blackbox.sh /
     # generate-traefik.sh can resolve a LAN address for their
     # config/services.yaml target (this node's NodePort), same trick as
     # grafana/prometheus/loki/alertmanager sharing the "monitoring" host
-    # below.
+    # below. daysoff moved to its own LXC (see the `daysoff` host below)
+    # — a static site doesn't need to live in the cluster.
     cpu: 4
     memory: 6144
     disk: 40
@@ -264,7 +265,6 @@ hosts:
       - k3s
       - server
       - sisqueslabs-landing
-      - daysoff
       - rancher
       - blog
 
@@ -344,6 +344,20 @@ hosts:
     disk: 8
     role:
       - soulfire
+
+  daysoff:
+    type: lxc
+    platform: proxmox
+    octet: 222
+    # Static Astro site, single published Docker image, no database — same
+    # profile as it-tools. Was a Kubernetes Deployment on k3s-server; moved
+    # here because a static site doesn't need to pay for living in a
+    # cluster (see ansible/roles/daysoff/README.md).
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - daysoff
 
   raspberrypi-01:
     type: physical
