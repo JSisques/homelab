@@ -17,6 +17,12 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
   cpu {
     cores = each.value.cpu
+    # Defaults to "qemu64" otherwise — too limited a baseline for the
+    # imported Debian cloud image's kernel/systemd to boot on (PID 1 hit
+    # an unimplemented syscall and exited, panicking the kernel with
+    # "Attempted to kill init!"). Single Proxmox node, no live migration
+    # to worry about, so pass the host CPU straight through.
+    type = "host"
   }
 
   memory {
