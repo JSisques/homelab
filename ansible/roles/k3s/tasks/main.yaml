@@ -42,7 +42,11 @@
 
 - name: Install Argo CD
   ansible.builtin.command: >-
-    k3s kubectl apply -n argocd -f {{ k3s_argocd_install_manifest }}
+    k3s kubectl apply --server-side --force-conflicts -n argocd -f {{ k3s_argocd_install_manifest }}
+  # Client-side apply stores the whole manifest in a last-applied-configuration
+  # annotation, which overflows the 256KiB annotation limit on Argo CD's
+  # applicationsets.argoproj.io CRD. Server-side apply tracks field ownership
+  # instead of that annotation, so it doesn't hit the limit.
   register: k3s_apply_argocd
   changed_when: "'unchanged' not in k3s_apply_argocd.stdout"
 
