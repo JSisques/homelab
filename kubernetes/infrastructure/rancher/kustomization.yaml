@@ -1,0 +1,64 @@
+---
+# Rancher (https://rancher.com): management UI/API for this homelab's
+# Kubernetes cluster, using Rancher's "local cluster" pattern — it runs
+# on and manages the same single-node k3s it's installed into. See
+# ansible/roles/k3s/README.md for the cluster topology and
+# config/hosts.yaml's k3s-server entry for the sizing bumped to fit it.
+#
+# Wrapped in Kustomize (rather than a plain Argo CD Helm source) because
+# the chart's Service template has no value for pinning `nodePort` — see
+# https://github.com/rancher/rancher/blob/v2.14.3/.../templates/service.yaml.
+# Requires Argo CD's `argocd-cm` to carry
+# `kustomize.buildOptions: --enable-helm` (set by
+# ansible/roles/k3s/tasks/main.yaml) so `kustomize build` will inflate
+# helmCharts below.
+#
+# Rancher is `tier: internal` (config/services.yaml) — plain LAN IP:NodePort,
+# no ingress controller runs in this cluster, so `service.disableHTTP: true`
+# + `tls: ingress` (the chart's own name for "the pod terminates its own
+# TLS", despite there being no actual Ingress resource here — see the
+# chart's values.yaml, it's the default and the only option that doesn't
+# require something in front already stripping TLS) makes Rancher serve
+# HTTPS with a self-signed cert directly off the NodePort.
+#
+# No password is set below. Rancher generates a random bootstrap
+# password on first boot; retrieve it with:
+#   kubectl -n cattle-system get secret bootstrap-secret \
+#     -o go-template='{{.data.bootstrapPassword|base64decode}}{{"\n"}}'
+# Rotate/discard it after first login, same as Argo CD's own
+# argocd-initial-admin-secret (see ansible/roles/k3s/README.md).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cattle-system
+
+helmCharts:
+  - name: rancher
+    repo: https://releases.rancher.com/server-charts/stable
+    version: 2.14.3
+    releaseName: rancher
+    namespace: cattle-system
+    valuesInline:
+      hostname: 192.168.0.207
+      replicas: 1
+      networkExposure:
+        type: none
+      ingress:
+        enabled: false
+        # Unused (ingress.enabled is false), but the chart's values schema
+        # cross-validates this against service.disableHTTP regardless.
+        servicePort: 443
+      service:
+        type: NodePort
+        disableHTTP: true
+
+patches:
+  # disableHTTP: true above leaves exactly one port (https) on the
+  # Service, so index 0 is the right — and only — target.
+  - target:
+      kind: Service
+      name: rancher
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30082

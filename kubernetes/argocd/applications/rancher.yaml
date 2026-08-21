@@ -1,33 +1,6 @@
-# Rancher (https://rancher.com): management UI/API for this homelab's
-# Kubernetes cluster, using Rancher's "local cluster" pattern — it runs
-# on and manages the same single-node k3s it's installed into. See
-# ansible/roles/k3s/README.md for the cluster topology and
-# config/hosts.yaml's k3s-server entry for the sizing bumped to fit it.
-#
-# Verify before the first real `argocd app sync` — this file was written
-# without a working connection to
-# https://releases.rancher.com/server-charts/stable, so both the pinned
-# targetRevision and the `helm.values` keys below should be checked
-# against the live chart first:
-#   helm repo add rancher-stable \
-#     https://releases.rancher.com/server-charts/stable
-#   helm show values rancher-stable/rancher --version <targetRevision>
-#
-# Rancher is `tier: internal` (config/services.yaml) — plain LAN IP:NodePort,
-# not routed through Traefik/Cloudflared (that's `personal`/`public` only,
-# see config/README.md#tier). `tls: external` was written assuming Traefik
-# terminated TLS in front of every service, which is no longer true for
-# `internal` tier — re-check this against the live chart (still unverified,
-# per the header above) before the first real sync: either switch to
-# `tls: rancher` (self-signed, Rancher terminates its own TLS) or accept
-# plain HTTP like every other internal-tier service's `url:`.
-#
-# No password is set below. Rancher generates a random bootstrap
-# password on first boot; retrieve it with:
-#   kubectl -n cattle-system get secret bootstrap-secret \
-#     -o go-template='{{.data.bootstrapPassword|base64decode}}{{"\n"}}'
-# Rotate/discard it after first login, same as Argo CD's own
-# argocd-initial-admin-secret (see ansible/roles/k3s/README.md).
+# See kubernetes/infrastructure/rancher/kustomization.yaml for what's
+# actually deployed and why it's wrapped in Kustomize instead of a plain
+# Helm source.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -37,20 +10,9 @@ spec:
   project: homelab
 
   source:
-    repoURL: https://releases.rancher.com/server-charts/stable
-    chart: rancher
-    targetRevision: 2.9.3
-    helm:
-      releaseName: rancher
-      values: |
-        hostname: 192.168.0.207
-        replicas: 1
-        ingress:
-          enabled: false
-        tls: external
-        service:
-          type: NodePort
-          nodePort: 30082
+    repoURL: https://github.com/JSisques/homelab.git
+    targetRevision: main
+    path: kubernetes/infrastructure/rancher
 
   destination:
     server: https://kubernetes.default.svc

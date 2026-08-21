@@ -55,6 +55,28 @@
     k3s kubectl -n argocd rollout status deployment/argocd-server --timeout=180s
   changed_when: false
 
+- name: Allow Argo CD's Kustomize builds to inflate Helm charts
+  # Needed by kubernetes/infrastructure/rancher/ (a Helm chart wrapped in
+  # Kustomize so a JSON6902 patch can pin the Service's nodePort, which the
+  # chart itself doesn't expose as a value) and any future app using the
+  # same helmCharts-in-Kustomize pattern.
+  ansible.builtin.command: >-
+    k3s kubectl patch configmap argocd-cm -n argocd --type merge
+    -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
+  register: k3s_patch_argocd_cm
+  changed_when: "'patched' in k3s_patch_argocd_cm.stdout"
+
+- name: Restart the Argo CD repo server to pick up the Kustomize build option
+  ansible.builtin.command: k3s kubectl -n argocd rollout restart deployment/argocd-repo-server
+  when: k3s_patch_argocd_cm is changed
+  changed_when: true
+
+- name: Wait for the Argo CD repo server deployment to become available
+  ansible.builtin.command: >-
+    k3s kubectl -n argocd rollout status deployment/argocd-repo-server --timeout=180s
+  when: k3s_patch_argocd_cm is changed
+  changed_when: false
+
 - name: Fetch kubeconfig from the K3s server
   ansible.builtin.fetch:
     src: /etc/rancher/k3s/k3s.yaml

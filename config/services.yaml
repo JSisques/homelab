@@ -683,14 +683,18 @@ services:
   rancher:
     name: Rancher
     category: Infrastructure
-    # Kubernetes cluster management UI, deployed on the k3s cluster
-    # itself via Argo CD as a Helm chart (kubernetes/argocd/applications/
-    # rancher.yaml) — manages the same "local" cluster it runs on. No LXC
-    # of its own; exposed via a NodePort on k3s-server, same pattern as
-    # sisqueslabs-landing/daysoff. Address resolves via the "rancher"
-    # role on the k3s-server host in config/hosts.yaml.
+    # Kubernetes cluster management UI, deployed on the k3s cluster itself
+    # via Argo CD as a Helm chart wrapped in Kustomize (see
+    # kubernetes/infrastructure/rancher/kustomization.yaml and
+    # kubernetes/argocd/applications/rancher.yaml) — manages the same
+    # "local" cluster it runs on. No LXC of its own; exposed via a
+    # NodePort on k3s-server, same pattern as sisqueslabs-landing/daysoff.
+    # Address resolves via the "rancher" role on the k3s-server host in
+    # config/hosts.yaml. https, not http: Rancher terminates its own
+    # self-signed TLS (no ingress controller in front) — expect a
+    # browser cert warning on first visit.
     tier: internal
-    url: http://192.168.0.207:30082
+    url: https://192.168.0.207:30082
     icon: rancher.png
 
     homepage:

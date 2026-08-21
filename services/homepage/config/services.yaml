@@ -63,7 +63,7 @@
         icon: mdi-database
         description: S3-compatible object storage
     - Rancher:
-        href: http://192.168.0.207:30082
+        href: https://192.168.0.207:30082
         icon: rancher.png
         description: Kubernetes cluster management
 - Juegos:

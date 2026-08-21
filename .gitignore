@@ -55,3 +55,6 @@ services/adguard-home/conf/
 **/.env
 **/.env.*
 !**/.env.example
+
+# Charts pulled locally by `kustomize build --enable-helm` (kubernetes/infrastructure/*)
+kubernetes/**/charts/
