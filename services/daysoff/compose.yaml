@@ -1,0 +1,8 @@
+services:
+  daysoff:
+    image: sisqueslabs/daysoff:latest
+    container_name: daysoff
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"

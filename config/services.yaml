@@ -309,11 +309,11 @@ services:
   daysoff:
     name: Days Off
     category: Applications
-    # Static Astro site (source: github.com/sisques-labs/daysoff), deployed
-    # on Kubernetes via Argo CD (kubernetes/applications/daysoff/), same
-    # pattern as sisqueslabs-landing — exposed publicly only via the
-    # Cloudflare Tunnel at daysoff.sisqueslabs.com (NodePort 30081 on
-    # k3s-server, see services/cloudflared/config.yml).
+    # Static Astro site (source: github.com/sisques-labs/daysoff), a
+    # single published Docker image run on its own LXC
+    # (services/daysoff/, ansible/roles/daysoff/) — was a Kubernetes
+    # Deployment on k3s-server, moved off because a static site doesn't
+    # need to pay for living in a cluster.
     tier: public
     url: https://daysoff.sisqueslabs.com
     icon: mdi-beach
@@ -324,18 +324,17 @@ services:
 
     traefik:
       enabled: true
-      port: 30081
+      port: 8080
 
     uptime:
       enabled: true
 
     # No native /metrics — static site with no backend. Probed by
     # blackbox_exporter instead, see services/blackbox-exporter/README.md.
-    # Address resolves via the "daysoff" role on the k3s-server host in
-    # config/hosts.yaml.
+    # Address resolves via the "daysoff" host in config/hosts.yaml.
     blackbox:
       enabled: true
-      port: 30081
+      port: 8080
       scheme: http
       module: http_2xx
 

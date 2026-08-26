@@ -37,7 +37,7 @@ http:
     daysoff:
       loadBalancer:
         servers:
-          - url: "http://192.168.0.207:30081"
+          - url: "http://192.168.0.222:8080"
     blog:
       loadBalancer:
         servers:

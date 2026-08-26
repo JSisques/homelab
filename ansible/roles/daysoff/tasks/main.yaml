@@ -1,0 +1,17 @@
+---
+- name: Create Days Off application directory
+  ansible.builtin.file:
+    path: "{{ daysoff_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Days Off Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/daysoff/compose.yaml"
+    dest: "{{ daysoff_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Days Off
+  community.docker.docker_compose_v2:
+    project_src: "{{ daysoff_app_dir }}"
+    state: present

@@ -1,0 +1,7 @@
+---
+- name: Deploy Days Off
+  hosts: daysoff
+  become: true
+
+  roles:
+    - daysoff
