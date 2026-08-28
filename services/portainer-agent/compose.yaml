@@ -4,8 +4,14 @@ services:
     container_name: portainer-agent
     restart: unless-stopped
 
+    # Host-side 9002, not the agent's native 9001: RustFS already
+    # publishes its console on 9001 (services/rustfs/compose.yaml), and
+    # port collisions here would break docker compose on that host. The
+    # agent's self-signed TLS cert only ever covers its internal Docker
+    # IP regardless of networking mode, so registration must pass
+    # TLSSkipVerify — see ansible/roles/portainer-agent/tasks/main.yaml.
     ports:
-      - "9001:9001"
+      - "9002:9001"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

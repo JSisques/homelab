@@ -15,3 +15,48 @@
   community.docker.docker_compose_v2:
     project_src: "{{ portainer_agent_app_dir }}"
     state: present
+
+- name: Warn if Portainer API token not configured
+  ansible.builtin.debug:
+    msg: >-
+      portainer_api_token is not set — this host won't be auto-registered
+      as a Portainer environment. Add it manually via Environments → Add
+      environment → Docker → Agent, or set the secret and re-run. See
+      ansible/roles/portainer-agent/README.md.
+  when: portainer_api_token | length == 0
+
+- name: Look up existing Portainer environments
+  ansible.builtin.uri:
+    url: "{{ portainer_url }}/api/endpoints"
+    method: GET
+    headers:
+      X-API-Key: "{{ portainer_api_token }}"
+  register: portainer_endpoints
+  delegate_to: localhost
+  become: false
+  when: portainer_api_token | length > 0
+  failed_when: false
+  no_log: true
+
+- name: Register this host as a Portainer environment
+  ansible.builtin.uri:
+    url: "{{ portainer_url }}/api/endpoints"
+    method: POST
+    headers:
+      X-API-Key: "{{ portainer_api_token }}"
+    body_format: form-multipart
+    body:
+      Name: "{{ inventory_hostname }}"
+      EndpointCreationType: "2"
+      URL: "tcp://{{ ansible_host }}:{{ portainer_agent_port }}"
+      TLS: "true"
+      TLSSkipVerify: "true"
+      TLSSkipClientVerify: "true"
+    status_code: 200
+  delegate_to: localhost
+  become: false
+  when:
+    - portainer_api_token | length > 0
+    - portainer_endpoints.status | default(0) == 200
+    - portainer_endpoints.json | default([]) | selectattr('Name', 'equalto', inventory_hostname) | list | length == 0
+  no_log: true

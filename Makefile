@@ -27,7 +27,8 @@ ANSIBLE_EXTRA_VARS := \
 	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}" \
 	-e "minecraft_rcon_password=$${MINECRAFT_RCON_PASSWORD}" \
 	-e "uptime_kuma_username=$${UPTIME_KUMA_USERNAME}" \
-	-e "uptime_kuma_password=$${UPTIME_KUMA_PASSWORD}"
+	-e "uptime_kuma_password=$${UPTIME_KUMA_PASSWORD}" \
+	-e "portainer_api_token=$${PORTAINER_API_TOKEN}"
 
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \

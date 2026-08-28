@@ -1,2 +1,16 @@
 ---
 portainer_agent_app_dir: /opt/portainer-agent
+
+# Must match the host-side port published in
+# services/portainer-agent/compose.yaml.
+portainer_agent_port: 9002
+
+portainer_url: "http://{{ hostvars['monitoring'].ansible_host }}:9000"
+
+# Long-lived Access Token, generated once by hand from Portainer's own
+# UI (top-right user menu → My account → Access Tokens) after the
+# initial admin setup. Used to auto-register each host as a Portainer
+# environment via its REST API. Must be provided via Ansible Vault or
+# CI secrets — never commit a real value. Leave empty to skip
+# auto-registration (add environments manually instead, see README).
+portainer_api_token: ""

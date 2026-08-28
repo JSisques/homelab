@@ -719,7 +719,7 @@ services:
     category: Infrastructure
     # Central Docker management UI for every LXC/VM that runs Docker
     # Compose — connects out to a portainer-agent container on each host
-    # (port 9001, standard agent mode, no Edge Key/enrollment needed since
+    # (port 9002, standard agent mode, no Edge Key/enrollment needed since
     # every host is on the same flat LAN). Runs alongside the rest of the
     # observability stack on the "monitoring" LXC. See
     # ansible/roles/portainer-agent/README.md for the fleet-wide agent.
