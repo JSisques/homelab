@@ -1,7 +1,10 @@
-# proxmox_endpoint and proxmox_api_token are intentionally left out of this
-# example file. They are provided via TF_VAR_proxmox_endpoint /
-# TF_VAR_proxmox_api_token (see .github/workflows/terraform.yaml and
-# deploy.yaml), or a local terraform.tfvars that is never committed.
+# proxmox_endpoint and proxmox_api_token are required but intentionally left
+# without real values in this example file. They are provided via
+# TF_VAR_proxmox_endpoint / TF_VAR_proxmox_api_token (see
+# .github/workflows/terraform.yaml and deploy.yaml), or fill them in below in
+# a local terraform.tfvars that is never committed.
+# proxmox_endpoint  = "https://192.168.0.157:8006/"
+# proxmox_api_token = "terraform@pve!<tokenid>=<uuid>"
 
 # proxmox_node is generated from config/hosts.yaml (the hypervisor host's
 # `node:` / hostname) into hosts.auto.tfvars.json — do not set it here.

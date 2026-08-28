@@ -1,0 +1,12 @@
+---
+- name: Restart the Argo CD repo server to pick up the Kustomize build option
+  ansible.builtin.command: >-
+    k3s kubectl -n argocd rollout restart
+    deployment/argocd-repo-server
+  changed_when: true
+
+- name: Wait for the Argo CD repo server deployment to become available
+  ansible.builtin.command: >-
+    k3s kubectl -n argocd rollout status
+    deployment/argocd-repo-server --timeout=180s
+  changed_when: false
