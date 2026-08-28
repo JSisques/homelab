@@ -8,7 +8,8 @@ Terraform creates the LXC (`terraform/proxmox/lxc.tf`). This role installs Docke
 
 - Create the application directory (`portfolio_app_dir`, default `/opt/portfolio`)
 - Deploy the Compose file from `services/portfolio/compose.yaml` (the single source of truth for the application configuration)
-- Start the stack with `community.docker.docker_compose_v2`
+- Start the stack with `community.docker.docker_compose_v2` — the image has `pull_policy: always`, so this always re-pulls `:latest` (see `AGENTS.md#self-built-images-own-tools`)
+- Prune unused Docker images afterwards, so the digest `:latest` pointed at before the deploy doesn't linger on disk
 
 ## Variables
 

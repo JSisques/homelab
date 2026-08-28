@@ -11,8 +11,8 @@ This role handles:
 - Docker installation (via the `docker` role dependency)
 - cookidoo-mcp application directory creation
 - Cookidoo credential injection
-- Docker Compose deployment
-- Service startup and updates
+- Docker Compose deployment (`pull_policy: always` re-pulls `:latest` on every run)
+- Pruning unused Docker images after deployment
 
 Terraform is responsible for creating the LXC container.
 
@@ -118,7 +118,7 @@ The role should be safe to run repeatedly. Running it again should only modify t
 
 ## Updates
 
-Updating cookidoo-mcp is done by changing the image tag in `services/cookidoo-mcp/compose.yml` (e.g. `sisqueslabs/cookidoo-mcp:0.4.0`), then running the Ansible deployment again. Avoid manually updating the container inside the LXC — those changes would not be represented in Git.
+cookidoo-mcp is our own image, re-tagged `:latest` on every release rather than version-pinned (see `AGENTS.md#self-built-images-own-tools`). `services/cookidoo-mcp/compose.yml` sets `pull_policy: always`, so re-running this role (`make deploy-cookidoo-mcp`) always re-pulls the real latest digest instead of reusing whatever was cached — a plain container/LXC restart never re-pulls. The role prunes unused images afterwards (`community.docker.docker_prune`) so the previous digest doesn't linger on disk. Avoid manually updating the container inside the LXC — those changes would not be represented in Git.
 
 ## Monitoring
 

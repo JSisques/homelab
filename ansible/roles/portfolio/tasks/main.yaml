@@ -15,3 +15,9 @@
   community.docker.docker_compose_v2:
     project_src: "{{ portfolio_app_dir }}"
     state: present
+
+- name: Prune unused Docker images
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
