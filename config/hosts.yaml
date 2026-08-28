@@ -42,8 +42,9 @@ hosts:
     octet: 209
     cpu: 2
     # Bumped from 2560 to fit the OTel Collector + Tempo alongside
-    # Prometheus/Grafana/Loki/Alertmanager on the same LXC.
-    memory: 3584
+    # Prometheus/Grafana/Loki/Alertmanager on the same LXC, then from 3584
+    # to fit Portainer (~150-200MB) with headroom.
+    memory: 4096
     # OS + Docker images + retained Prometheus/Loki data (~15GB at
     # typical retention settings, see prometheus.yml/config.yml) + Tempo
     # trace storage (48h retention, services/tempo/tempo.yaml).
@@ -55,6 +56,7 @@ hosts:
       - alertmanager
       - otel-collector
       - tempo
+      - portainer
 
   homepage:
     type: lxc

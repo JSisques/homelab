@@ -70,6 +70,10 @@
         href: https://192.168.0.207:30082
         icon: rancher.png
         description: Kubernetes cluster management
+    - Portainer:
+        href: http://192.168.0.209:9000
+        icon: portainer.png
+        description: Docker container management
 - Juegos:
     - Minecraft (PaperMC):
         href: http://192.168.0.217:25565

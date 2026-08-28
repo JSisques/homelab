@@ -5,7 +5,7 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail k3s-server rustfs minecraft stirling-pdf soulfire portfolio uptime-kuma-sync
+SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail portainer-agent k3s-server rustfs minecraft stirling-pdf soulfire portfolio uptime-kuma-sync
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
@@ -27,7 +27,8 @@ ANSIBLE_EXTRA_VARS := \
 	-e "adguard_sync_replica_password=$${ADGUARD_SYNC_REPLICA_PASSWORD}" \
 	-e "minecraft_rcon_password=$${MINECRAFT_RCON_PASSWORD}" \
 	-e "uptime_kuma_username=$${UPTIME_KUMA_USERNAME}" \
-	-e "uptime_kuma_password=$${UPTIME_KUMA_PASSWORD}"
+	-e "uptime_kuma_password=$${UPTIME_KUMA_PASSWORD}" \
+	-e "portainer_api_token=$${PORTAINER_API_TOKEN}"
 
 .PHONY: help init fmt validate plan apply destroy \
 	generate inventory terraform-vars \

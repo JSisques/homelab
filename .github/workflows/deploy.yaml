@@ -87,9 +87,11 @@ jobs:
             -e "n8n_postgres_password=${N8N_POSTGRES_PASSWORD}" \
             -e "cloudflared_credentials_json=${CLOUDFLARED_CREDS_JSON}" \
             -e "${BOT_TOKEN_VAR}" \
-            -e "${CHAT_ID_VAR}"
+            -e "${CHAT_ID_VAR}" \
+            -e "portainer_api_token=${PORTAINER_API_TOKEN}"
         env:
           N8N_POSTGRES_PASSWORD: ${{ secrets.N8N_POSTGRES_PASSWORD }}
           CLOUDFLARED_CREDS_JSON: ${{ secrets.CLOUDFLARED_CREDS_JSON }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PORTAINER_API_TOKEN: ${{ secrets.PORTAINER_API_TOKEN }}

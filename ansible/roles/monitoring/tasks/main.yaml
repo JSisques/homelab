@@ -184,3 +184,20 @@
   community.docker.docker_compose_v2:
     project_src: "{{ monitoring_blackbox_app_dir }}"
     state: present
+
+- name: Create Portainer application directory
+  ansible.builtin.file:
+    path: "{{ monitoring_portainer_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Portainer Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/portainer/compose.yaml"
+    dest: "{{ monitoring_portainer_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Portainer
+  community.docker.docker_compose_v2:
+    project_src: "{{ monitoring_portainer_app_dir }}"
+    state: present
