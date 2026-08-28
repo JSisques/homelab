@@ -42,7 +42,8 @@
 
 - name: Install Argo CD
   ansible.builtin.command: >-
-    k3s kubectl apply --server-side --force-conflicts -n argocd -f {{ k3s_argocd_install_manifest }}
+    k3s kubectl apply --server-side --force-conflicts
+    -n argocd -f {{ k3s_argocd_install_manifest }}
   # Client-side apply stores the whole manifest in a last-applied-configuration
   # annotation, which overflows the 256KiB annotation limit on Argo CD's
   # applicationsets.argoproj.io CRD. Server-side apply tracks field ownership
@@ -65,17 +66,12 @@
     -p '{"data":{"kustomize.buildOptions":"--enable-helm"}}'
   register: k3s_patch_argocd_cm
   changed_when: "'patched' in k3s_patch_argocd_cm.stdout"
+  notify:
+    - Restart the Argo CD repo server to pick up the Kustomize build option
+    - Wait for the Argo CD repo server deployment to become available
 
-- name: Restart the Argo CD repo server to pick up the Kustomize build option
-  ansible.builtin.command: k3s kubectl -n argocd rollout restart deployment/argocd-repo-server
-  when: k3s_patch_argocd_cm is changed
-  changed_when: true
-
-- name: Wait for the Argo CD repo server deployment to become available
-  ansible.builtin.command: >-
-    k3s kubectl -n argocd rollout status deployment/argocd-repo-server --timeout=180s
-  when: k3s_patch_argocd_cm is changed
-  changed_when: false
+- name: Flush handlers so the repo server restart finishes before continuing
+  ansible.builtin.meta: flush_handlers
 
 - name: Fetch kubeconfig from the K3s server
   ansible.builtin.fetch:
