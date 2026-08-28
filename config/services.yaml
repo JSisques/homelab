@@ -714,6 +714,34 @@ services:
       scheme: http
       module: http_2xx
 
+  portainer:
+    name: Portainer
+    category: Infrastructure
+    # Central Docker management UI for every LXC/VM that runs Docker
+    # Compose — connects out to a portainer-agent container on each host
+    # (port 9001, standard agent mode, no Edge Key/enrollment needed since
+    # every host is on the same flat LAN). Runs alongside the rest of the
+    # observability stack on the "monitoring" LXC. See
+    # ansible/roles/portainer-agent/README.md for the fleet-wide agent.
+    tier: internal
+    url: http://192.168.0.209:9000
+    icon: portainer.png
+
+    homepage:
+      enabled: true
+      description: Docker container management
+
+    uptime:
+      enabled: true
+
+    # Portainer CE has no built-in /metrics endpoint. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9000
+      scheme: http
+      module: http_2xx
+
   minecraft:
     name: Minecraft (PaperMC)
     category: Juegos

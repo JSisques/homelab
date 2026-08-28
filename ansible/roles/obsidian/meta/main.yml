@@ -4,3 +4,4 @@ dependencies:
   - role: node-exporter
   - role: promtail
   - role: docker
+  - role: portainer-agent

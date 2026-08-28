@@ -1,0 +1,26 @@
+---
+- name: Deploy Portainer Agent on every Docker host
+  hosts:
+    - adguard-home-1
+    - adguard-home-2
+    - cloudflared
+    - cookidoo-mcp
+    - downloads
+    - homepage
+    - it-tools
+    - jellyfin
+    - minecraft
+    - monitoring
+    - n8n
+    - obsidian
+    - portfolio
+    - rustfs
+    - soulfire
+    - stirling-pdf
+    - traefik
+    - uptime-kuma
+    - wireguard
+  become: true
+
+  roles:
+    - portainer-agent

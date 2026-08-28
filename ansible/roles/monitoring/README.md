@@ -1,8 +1,8 @@
 # Monitoring Ansible Role
 
-Deploys the homelab's full observability stack — Prometheus, Grafana, Loki, Alertmanager, blackbox_exporter, Tempo, and the OTel Collector — onto the shared `monitoring` LXC container, using Docker Compose.
+Deploys the homelab's full observability stack — Prometheus, Grafana, Loki, Alertmanager, blackbox_exporter, Tempo, the OTel Collector, and Portainer — onto the shared `monitoring` LXC container, using Docker Compose.
 
-Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). This role installs Docker (via the `docker` role) and deploys all seven applications side by side, each in its own directory (`/opt/prometheus`, `/opt/grafana`, `/opt/loki`, `/opt/alertmanager`, `/opt/blackbox-exporter`, `/opt/tempo`, `/opt/otel-collector`).
+Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). This role installs Docker (via the `docker` role) and deploys all eight applications side by side, each in its own directory (`/opt/prometheus`, `/opt/grafana`, `/opt/loki`, `/opt/alertmanager`, `/opt/blackbox-exporter`, `/opt/tempo`, `/opt/otel-collector`, `/opt/portainer`).
 
 ## Responsibilities
 
@@ -14,6 +14,7 @@ Terraform creates the LXC (`terraform/proxmox/lxc.tf`, hostname `monitoring`). T
 - Deploy `services/tempo/{compose.yaml,tempo.yaml}` and start it — trace storage, fed by the OTel Collector, see [`services/tempo/README.md`](../../../services/tempo/README.md).
 - Deploy `services/otel-collector/{compose.yaml,config.yaml}` and start it — OTLP ingestion point for applications like `cookidoo-mcp`, fanning out to Prometheus (scraped, not pushed), Loki, and Tempo. See [`services/otel-collector/README.md`](../../../services/otel-collector/README.md).
 - Deploy `services/blackbox-exporter/{compose.yaml,config.yml}` and start it — probes HTTP(S) services that have no native `/metrics` endpoint, see [`services/blackbox-exporter/README.md`](../../../services/blackbox-exporter/README.md).
+- Deploy `services/portainer/compose.yaml` and start it — central Docker management UI, connects out to the `portainer-agent` container deployed on every Docker LXC/VM by [`ansible/roles/portainer-agent/`](../portainer-agent/README.md).
 
 `services/prometheus/prometheus.yml` and `services/prometheus/blackbox-targets.yml` are generated from `config/services.yaml` and `config/hosts.yaml` by `scripts/generation/generate-prometheus.sh` and `scripts/generation/generate-blackbox.sh` respectively, and should not be edited by hand. `services/prometheus/alerts.yml` is hand-authored and IS meant to be edited directly.
 
