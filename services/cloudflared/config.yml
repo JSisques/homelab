@@ -24,6 +24,8 @@ ingress:
     service: http://192.168.0.204:80
   - hostname: jellyfin.jsisques.net
     service: http://192.168.0.204:80
+  - hostname: portfolio.jsisques.net
+    service: http://192.168.0.204:80
 
   # Anything not matched above is refused rather than silently routed.
   - service: http_status:404

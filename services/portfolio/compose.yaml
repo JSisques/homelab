@@ -1,0 +1,12 @@
+services:
+  portfolio:
+    image: ghcr.io/jsisques/portfolio:latest
+    # Own image, re-tagged on every release — always re-pull on deploy
+    # instead of reusing whatever :latest happened to resolve to last
+    # time (see AGENTS.md#self-built-images-own-tools).
+    pull_policy: always
+    container_name: portfolio
+    restart: unless-stopped
+
+    ports:
+      - "80:8080"

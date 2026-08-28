@@ -348,6 +348,19 @@ hosts:
     role:
       - soulfire
 
+  portfolio:
+    type: lxc
+    platform: proxmox
+    octet: 220
+    # Static Astro site pre-built into an nginx-unprivileged image
+    # (ghcr.io/jsisques/portfolio, EXPOSE 8080) — same single-container,
+    # no-database profile as it-tools.
+    cpu: 1
+    memory: 256
+    disk: 4
+    role:
+      - portfolio
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

@@ -71,6 +71,19 @@ Do not hand-edit those outputs. Hand-authored files next to them (e.g. `services
 
 Identifiers are lowercase with hyphens (`uptime-kuma`, `adguard-home-1`). Keep them stable; generators and roles key off them.
 
+## Self-built images (own tools)
+
+Services built by our own release pipelines (e.g. `ghcr.io/jsisques/portfolio`, `sisqueslabs/cookidoo-mcp`) get their `:latest` tag re-pointed on every release — nothing to bump in this repo when a new version ships. Two things make that safe to rely on:
+
+- `services/<name>/compose.yaml`: the image's service sets `pull_policy: always`, so every `docker compose up` (i.e. every Ansible-driven `make deploy-<service>`) re-pulls `:latest` and compares digests instead of reusing whatever happened to be cached locally.
+- `ansible/roles/<name>/tasks/main.yaml`: a `community.docker.docker_prune` task (`images: true`, `images_filters: {dangling: false}`) runs right after the compose step, so the digest `:latest` pointed at before the deploy doesn't linger on the LXC's disk.
+
+A plain container/LXC restart (reboot, `restart: unless-stopped` kicking in) never re-pulls, regardless of `pull_policy` — only an Ansible-driven `docker compose up` does. This is deliberate: updates stay tied to `make deploy-<service>`, not to a background agent (e.g. Watchtower) silently swapping running code with no corresponding Git action.
+
+This does not apply to third-party images (Grafana, Traefik, AdGuard Home, ...) — those keep whatever tag/pin their compose file already has. Only add `pull_policy: always` + the prune task to a service whose image is genuinely ours and moves under a floating `:latest`.
+
+Currently applied to: `cookidoo-mcp`, `portfolio`.
+
 ## Layers
 
 ```text

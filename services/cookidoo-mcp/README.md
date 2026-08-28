@@ -95,6 +95,10 @@ cookidoo-mcp
 - **Uptime Kuma**: an HTTP monitor should target `GET http://192.168.0.212:3000/api/health`, not `/` — the root path has no route and returns `404`, so a plain "is `/` 2xx" check would be a false negative. This is also why `config/services.yaml` doesn't set a `blackbox:` block for this service (`generate-blackbox.sh` always probes the bare host:port with no path).
 - **OpenTelemetry**: traces, metrics, and logs are pushed via OTLP to the homelab's OTel Collector (`services/otel-collector/`, on the `monitoring` LXC at `192.168.0.209:4318`) — see `OTEL_EXPORTER_OTLP_ENDPOINT` in `compose.yml`. There is no native `/metrics` endpoint to scrape directly.
 
+## Updates
+
+cookidoo-mcp is our own image (`sisqueslabs/cookidoo-mcp`), re-tagged on every release rather than version-pinned. `compose.yml` sets `pull_policy: always`, so every `make deploy-cookidoo-mcp` re-pulls `:latest` and compares digests instead of reusing whatever was cached locally — a plain container/LXC restart does not re-pull, only an Ansible-driven `docker compose up` does. The Ansible role prunes unused images afterwards (`community.docker.docker_prune`) so the digest `:latest` pointed at before the deploy doesn't linger on disk. See `AGENTS.md#self-built-images-own-tools`.
+
 ## Deployment
 
 Terraform creates the LXC:
@@ -130,7 +134,8 @@ Ansible
     ├── Create application directory
     ├── Configure Cookidoo credentials (Vault)
     ├── Copy compose.yml
-    └── Start Compose
+    ├── Start Compose (pull_policy: always re-pulls :latest)
+    └── Prune unused images
              │
              ▼
        cookidoo-mcp

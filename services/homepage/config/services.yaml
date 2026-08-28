@@ -15,6 +15,10 @@
         href: https://blog.jsisques.net
         icon: mdi-post-outline
         description: Personal blog
+    - Portfolio:
+        href: https://portfolio.jsisques.net
+        icon: mdi-account-box
+        description: Personal portfolio
 - Automation:
     - n8n:
         href: http://192.168.0.211:5678

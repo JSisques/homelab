@@ -1,0 +1,23 @@
+---
+- name: Create Portfolio application directory
+  ansible.builtin.file:
+    path: "{{ portfolio_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Portfolio Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/portfolio/compose.yaml"
+    dest: "{{ portfolio_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Portfolio
+  community.docker.docker_compose_v2:
+    project_src: "{{ portfolio_app_dir }}"
+    state: present
+
+- name: Prune unused Docker images
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
