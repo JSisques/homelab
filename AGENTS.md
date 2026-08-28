@@ -92,7 +92,7 @@ config/  →  make generate  →  Terraform / Ansible / service configs
 ```
 
 - **Terraform** (`terraform/proxmox/`) — LXCs and VMs exist. No per-service HCL; `for_each` over generated maps. Does not configure the OS.
-- **Ansible** (`ansible/`) — OS, Docker, Node Exporter, Promtail, and Compose deploy. Inventory is generated. Every service role depends on the baseline (`common`, `docker`, `node-exporter`, `promtail`).
+- **Ansible** (`ansible/`) — OS, Docker, Node Exporter, Promtail, and Compose deploy. Inventory is generated. Every service role that runs on Docker depends on the baseline (`common`, `node-exporter`, `promtail`, `docker`, `portainer-agent`) — copy that block into a new role's `meta/main.yml` so it gets monitoring, logging, and Portainer management for free, the same way the 19 existing Docker roles do.
 - **Kubernetes** (`kubernetes/`) — only k3s workloads (Argo CD). Not for LXC services.
 - **`services/`** — Compose and app config that Ansible copies as-is. One directory per deployed stack.
 
