@@ -808,7 +808,7 @@ services:
 
     traefik:
       enabled: true
-      port: 8080
+      port: 80
 
     uptime:
       enabled: true
@@ -817,6 +817,6 @@ services:
     # blackbox_exporter instead, see services/blackbox-exporter/README.md.
     blackbox:
       enabled: true
-      port: 8080
+      port: 80
       scheme: http
       module: http_2xx

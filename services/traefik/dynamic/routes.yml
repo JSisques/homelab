@@ -53,4 +53,4 @@ http:
     portfolio:
       loadBalancer:
         servers:
-          - url: "http://192.168.0.220:8080"
+          - url: "http://192.168.0.220:80"
