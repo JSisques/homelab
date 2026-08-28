@@ -788,3 +788,35 @@ services:
     # Deliberately unmonitored: this LXC is meant to be off between test
     # sessions (see services/minecraft/README.md#load-testing), so an
     # uptime/blackbox check would just alert "down" most of the time.
+
+  portfolio:
+    name: Portfolio
+    category: Applications
+    # Static Astro site (source: github.com/JSisques/portfolio), pre-built
+    # into a Docker image (ghcr.io/jsisques/portfolio) served by
+    # nginx-unprivileged on its own dedicated LXC (see config/hosts.yaml),
+    # exposed publicly only via the Cloudflare Tunnel at
+    # portfolio.jsisques.net — same tier pattern as blog, different
+    # implementation (LXC/Docker instead of Kubernetes).
+    tier: personal
+    url: https://portfolio.jsisques.net
+    icon: mdi-account-box
+
+    homepage:
+      enabled: true
+      description: Personal portfolio
+
+    traefik:
+      enabled: true
+      port: 8080
+
+    uptime:
+      enabled: true
+
+    # No native /metrics — static site with no backend. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx

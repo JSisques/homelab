@@ -29,6 +29,10 @@ http:
       rule: "Host(`jellyfin.jsisques.net`)"
       entryPoints: ["web"]
       service: jellyfin-remote
+    portfolio:
+      rule: "Host(`portfolio.jsisques.net`)"
+      entryPoints: ["web"]
+      service: portfolio
   services:
     sisqueslabs-landing:
       loadBalancer:
@@ -46,3 +50,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://192.168.0.215:8096"
+    portfolio:
+      loadBalancer:
+        servers:
+          - url: "http://192.168.0.220:8080"
