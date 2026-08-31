@@ -91,6 +91,7 @@ The final architecture will combine:
 * Uptime Kuma
 * Traefik / Cloudflare Tunnel
 * RustFS (S3-compatible object storage)
+* Keycloak (identity and access management)
 * VPN (internal-only access)
 * Home Assistant
 * Additional services and personal projects
@@ -103,7 +104,7 @@ Services are split across three access tiers, depending on who they're for and h
 
 | Tier | Domain | Access | Example services |
 | ---- | ------ | ------ | ----------------- |
-| Internal (default) | none — plain LAN `IP:port` | LAN / VPN only, linked from Homepage, never through Traefik or Cloudflare | Grafana, Proxmox, Prometheus, Kafka, Rancher, RustFS, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, Traefik itself, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube, Stirling PDF |
+| Internal (default) | none — plain LAN `IP:port` | LAN / VPN only, linked from Homepage, never through Traefik or Cloudflare | Grafana, Proxmox, Prometheus, Kafka, Rancher, RustFS, Keycloak, Uptime Kuma, Homepage, IT-Tools, n8n, Obsidian, AdGuard Home, Traefik itself, qBittorrent, Prowlarr, Sonarr, Radarr, pyLoad, MeTube, Stirling PDF |
 | Personal | `jsisques.net` | `Cloudflared → Traefik → backend` | Blog (Kubernetes), Jellyfin (`external:` alias — also reachable directly by IP:port on the LAN) |
 | Public | `sisqueslabs.com` | `Cloudflared → Traefik → backend` | Gardenia, Sisques Labs Landing, Days Off (all Kubernetes) |
 
@@ -183,7 +184,7 @@ make status                # show current Terraform-managed infrastructure
 
 `set -a` marks every variable `source .env` sets as exported for the rest of the shell session, so a plain `source .env` without it would leave the variables shell-local and invisible to the `make`/`ansible-playbook` subprocess — `set +a` afterwards just turns that auto-export back off again for anything you type next. Skipping this step is the most common cause of a role's `ansible.builtin.assert` failing with "not set" even though `.env` looks right.
 
-`make deploy-<service>` works for any of `it-tools`, `n8n`, `cookidoo-mcp`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager + Portainer), `homepage`, `uptime-kuma`, `uptime-kuma-sync`, `cloudflared`, `adguard-home-1`, `adguard-home-2`, `adguard-home-sync`, `traefik`, `wireguard`, `pbs`, `k3s-server`, `rustfs`, `minecraft`, `stirling-pdf`, `promtail`, or `portainer-agent` alone (run it against every Docker host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, `downloads`, `rustfs`, `adguard-home-*`, `minecraft`, and `uptime-kuma-sync` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`, `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY`, `ADGUARD_SYNC_ORIGIN_*`/`ADGUARD_SYNC_REPLICA_*`, `MINECRAFT_RCON_PASSWORD` — Minecraft's NAS mount is a manual Proxmox-host step, not an Ansible secret, see `services/minecraft/README.md`; `UPTIME_KUMA_USERNAME`/`UPTIME_KUMA_PASSWORD` — must match the admin account created by Uptime Kuma's own first-run wizard, see `ansible/roles/uptime-kuma-sync/README.md`); see the matching role's README. `uptime-kuma-sync` also needs `yq` and `pip install uptime-kuma-api` on the machine running Ansible (not any LXC — see `scripts/README.md`). `portainer-agent` (and every other Docker-host role, since it's a baseline dependency) optionally reads `PORTAINER_API_TOKEN` — unlike the others, it's not asserted: without it the agent still deploys fine, it just skips auto-registering the host as a Portainer environment (see `ansible/roles/portainer-agent/README.md`).
+`make deploy-<service>` works for any of `it-tools`, `n8n`, `cookidoo-mcp`, `obsidian`, `jellyfin`, `downloads`, `monitoring` (Prometheus + Grafana + Loki + Alertmanager + Portainer), `homepage`, `uptime-kuma`, `uptime-kuma-sync`, `cloudflared`, `adguard-home-1`, `adguard-home-2`, `adguard-home-sync`, `traefik`, `wireguard`, `pbs`, `k3s-server`, `rustfs`, `minecraft`, `stirling-pdf`, `promtail`, `portainer-agent`, or `keycloak` alone (run it against every Docker host at once) — `make services` lists them, and it only runs that one playbook, not the whole fleet. `n8n`, `cloudflared`, `monitoring`, `downloads`, `rustfs`, `adguard-home-*`, `minecraft`, `keycloak`, and `uptime-kuma-sync` need their secrets in the environment first (`N8N_POSTGRES_PASSWORD`, `CLOUDFLARED_CREDS_JSON`, `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, `DOWNLOADS_VPN_SERVICE_PROVIDER`/`DOWNLOADS_VPN_WIREGUARD_PRIVATE_KEY`/`DOWNLOADS_VPN_WIREGUARD_ADDRESSES`, `RUSTFS_ACCESS_KEY`/`RUSTFS_SECRET_KEY`, `ADGUARD_SYNC_ORIGIN_*`/`ADGUARD_SYNC_REPLICA_*`, `MINECRAFT_RCON_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD`/`KEYCLOAK_POSTGRES_PASSWORD` — Minecraft's and Keycloak's NAS mounts are manual Proxmox-host steps, not an Ansible secret, see `services/minecraft/README.md`/`services/keycloak/README.md`; `UPTIME_KUMA_USERNAME`/`UPTIME_KUMA_PASSWORD` — must match the admin account created by Uptime Kuma's own first-run wizard, see `ansible/roles/uptime-kuma-sync/README.md`); see the matching role's README. `uptime-kuma-sync` also needs `yq` and `pip install uptime-kuma-api` on the machine running Ansible (not any LXC — see `scripts/README.md`). `portainer-agent` (and every other Docker-host role, since it's a baseline dependency) optionally reads `PORTAINER_API_TOKEN` — unlike the others, it's not asserted: without it the agent still deploys fine, it just skips auto-registering the host as a Portainer environment (see `ansible/roles/portainer-agent/README.md`).
 
 ## Configuration
 
@@ -336,7 +337,7 @@ CI (`.github/workflows/`) validates every push/PR; the `deploy.yaml` workflow (m
 
 ## Storage
 
-Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network backs Proxmox Backup Server's datastore (`ansible/roles/pbs/`), so LXC/VM backups live off the host they protect, plus Obsidian's vault and Jellyfin's media over their own NFS exports. The general-purpose S3-compatible object store on top of it is now [RustFS](https://rustfs.com/) (`services/rustfs/`, `ansible/roles/rustfs/`) — chosen over MinIO — with its own CIFS share on the NAS, mounted on the Proxmox host and bind-mounted into the LXC; Restic/Borg for backups of anything outside Proxmox's own backup scope is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
+Storage is split across Proxmox disks, Kubernetes persistent volumes (`local-path`, node-local), and Docker named volumes for standalone services. The NAS on the local network backs Proxmox Backup Server's datastore (`ansible/roles/pbs/`), so LXC/VM backups live off the host they protect, plus Obsidian's vault and Jellyfin's media over their own NFS exports. The general-purpose S3-compatible object store on top of it is now [RustFS](https://rustfs.com/) (`services/rustfs/`, `ansible/roles/rustfs/`) — chosen over MinIO — with its own CIFS share on the NAS, mounted on the Proxmox host and bind-mounted into the LXC; Keycloak's dedicated Postgres (`services/keycloak/`, `ansible/roles/keycloak/`) uses the same CIFS-bind-mount pattern for its own NAS share. Restic/Borg for backups of anything outside Proxmox's own backup scope is still planned. See [`docs/storage.md`](docs/storage.md) for details and rules.
 
 ## Secrets
 
@@ -344,13 +345,13 @@ Secrets are never committed in plaintext. In CI (`deploy.yaml`, self-hosted runn
 
 ## Roadmap / Planned Services
 
-Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard (wg-easy), AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD, RustFS, a Minecraft (PaperMC) server that starts on join and sleeps after 10 minutes idle (`services/minecraft/`), Stirling PDF (`services/stirling-pdf/`). The next priorities:
+Scaffolded so far: monitoring (Prometheus/Grafana/Loki/Alertmanager), n8n, it-tools, obsidian, jellyfin, downloads (qBittorrent/gluetun, Prowlarr, Sonarr, Radarr, pyLoad, MeTube), uptime-kuma, Cloudflare Tunnel, WireGuard (wg-easy), AdGuard Home, Traefik, Proxmox Backup Server, a single-node K3s server with Argo CD, RustFS, a Minecraft (PaperMC) server that starts on join and sleeps after 10 minutes idle (`services/minecraft/`), Stirling PDF (`services/stirling-pdf/`), Keycloak (`services/keycloak/`, identity provider for external apps and future k3s workloads). The next priorities:
 
 * **K3s workers** — join the two Raspberry Pis (`config/hosts.yaml` already tags them `role: [k3s, worker]`) as K3s agents, giving the cluster real capacity. Needed before Kafka or Gardenia can actually run.
 * **Kafka on K3s** — the manifests exist (`kubernetes/infrastructure/kafka/`) but need the Strimzi operator wired into the main kustomization first (see the comment in `kubernetes/argocd/applications/kafka.yaml`) and workers in place.
-* **NAS-backed application storage** — PBS, Obsidian, Jellyfin, and now RustFS all use the NAS. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still open.
+* **NAS-backed application storage** — PBS, Obsidian, Jellyfin, RustFS, and now Keycloak all use the NAS. A Restic/Borg-based backup layer for anything outside Proxmox's own backup scope is still open.
+* **Wire Keycloak into apps** — Keycloak itself is deployed, but no service authenticates against it yet; connecting a first client (a k3s workload or an exposed app) is still open.
 * **Vaultwarden** — self-hosted, Bitwarden-compatible password manager.
-* **Authelia / Authentik** — SSO in front of exposed apps.
 * **CrowdSec** — collaborative IPS/IDS reading logs from the exposed services (Cloudflared, AdGuard, Traefik).
 * **OPNsense** (router/firewall) — on hold pending a check of the Proxmox host's actual NIC situation; it needs to sit inline as the real gateway, unlike everything else here, so it's being treated as a separate, more careful project rather than bolted on alongside routine services.
 

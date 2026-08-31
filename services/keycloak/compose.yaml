@@ -1,0 +1,56 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    restart: unless-stopped
+    command: start
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=${KEYCLOAK_ADMIN_USERNAME}
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      - KC_DB_USERNAME=${POSTGRES_USER}
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD}
+
+      # No reverse proxy in front of this LXC (internal tier — plain LAN
+      # IP:port, see config/services.yaml) so Keycloak is told its own
+      # hostname directly instead of trusting X-Forwarded-* headers.
+      - KC_HOSTNAME=192.168.0.221
+      - KC_HOSTNAME_STRICT=false
+      - KC_HTTP_ENABLED=true
+
+      - TZ=Europe/Madrid
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    container_name: keycloak-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      # NAS-backed, not a Docker named volume: /mnt/nas/keycloak comes
+      # from a Proxmox-host CIFS mount bind-mounted into this LXC as
+      # mp0, same pattern as rustfs/minecraft. See
+      # ansible/roles/keycloak/README.md for the host-side setup.
+      - /mnt/nas/keycloak:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5

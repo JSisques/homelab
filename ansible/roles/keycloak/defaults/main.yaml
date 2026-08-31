@@ -1,0 +1,18 @@
+---
+keycloak_app_dir: /opt/keycloak
+
+# Postgres data at /mnt/nas/keycloak comes from a Proxmox-level bind mount
+# (host mounts the NAS CIFS share, LXC gets it as `mp0`), not something
+# this role manages — unprivileged LXCs can't mount CIFS/NFS themselves
+# even with the `mount=cifs;nfs` feature flag (kernel limitation, not
+# just permissions). Same pattern as ansible/roles/rustfs/. See
+# services/keycloak/README.md for the exact host-side setup commands.
+
+keycloak_admin_username: admin
+# Must be provided via Ansible Vault or CI secrets. Never commit a real value.
+keycloak_admin_password: ""
+
+keycloak_postgres_db: keycloak
+keycloak_postgres_user: keycloak
+# Must be provided via Ansible Vault or CI secrets. Never commit a real value.
+keycloak_postgres_password: ""
