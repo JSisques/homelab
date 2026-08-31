@@ -742,6 +742,35 @@ services:
       scheme: http
       module: http_2xx
 
+  keycloak:
+    name: Keycloak
+    category: Security
+    # Identity/access management for external apps and the k3s cluster.
+    # Internal for now (LAN IP:port only) — apps needing a public login
+    # flow reach it over the LAN the same way they'd reach any other
+    # internal backend; revisit with an `external:` alias (see jellyfin)
+    # if a public-facing app ever needs the login page itself reachable
+    # from outside the LAN.
+    tier: internal
+    url: http://192.168.0.221:8080
+    icon: keycloak.png
+
+    homepage:
+      enabled: true
+      description: Identity and access management
+
+    uptime:
+      enabled: true
+
+    # No native /metrics scraped here — Keycloak's Prometheus metrics
+    # feature isn't enabled in services/keycloak/compose.yaml. Probed by
+    # blackbox_exporter instead, see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
   minecraft:
     name: Minecraft (PaperMC)
     category: Juegos

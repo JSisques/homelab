@@ -177,6 +177,10 @@ scrape_configs:
         labels:
           instance: "soulfire"
       - targets:
+          - "192.168.0.221:9100"
+        labels:
+          instance: "keycloak"
+      - targets:
           - "192.168.0.220:9100"
         labels:
           instance: "portfolio"
@@ -262,6 +266,10 @@ scrape_configs:
           - "192.168.0.219:9080"
         labels:
           instance: "soulfire"
+      - targets:
+          - "192.168.0.221:9080"
+        labels:
+          instance: "keycloak"
       - targets:
           - "192.168.0.220:9080"
         labels:

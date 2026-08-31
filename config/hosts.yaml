@@ -350,6 +350,22 @@ hosts:
     role:
       - soulfire
 
+  keycloak:
+    type: lxc
+    platform: proxmox
+    octet: 221
+    # Keycloak (Java/Quarkus) + a dedicated Postgres, sized as the
+    # identity provider for external apps/k3s workloads (not just a
+    # lightweight SSO front for a couple of internal tools). Postgres
+    # data lives on the NAS (Proxmox-host CIFS bind mount, same pattern
+    # as rustfs/minecraft — see services/keycloak/README.md), so disk
+    # here only needs the OS, Docker images, and Keycloak's own runtime.
+    cpu: 2
+    memory: 3072
+    disk: 8
+    role:
+      - keycloak
+
   portfolio:
     type: lxc
     platform: proxmox
