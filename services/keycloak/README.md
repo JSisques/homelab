@@ -75,6 +75,9 @@ Type=cifs
 # root:100000:65536 unprivileged offset (check /etc/subuid if this
 # LXC's mapping is non-default).
 Options=credentials=/etc/pve-nas-keycloak-credentials,uid=100999,gid=100999,vers=3.0,_netdev
+
+[Install]
+WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
