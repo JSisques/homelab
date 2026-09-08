@@ -121,6 +121,25 @@ engram cloud enroll <project>   # repeat per repo you want replicated here
 
 `gentle-ai doctor` reports Engram reachability, so it picks up the Cloud server once configured this way — nothing to change in Gentle-AI itself.
 
+### Always-on replication (autosync)
+
+The commands above sync explicitly, on demand (`engram sync --cloud --project <project>`). For a project to replicate automatically in the background, every time the agent runs, enable [Cloud Autosync](https://github.com/Gentleman-Programming/engram/blob/main/DOCS.md#cloud-autosync) instead — it still only covers projects already enrolled with `engram cloud enroll`, it does not replicate everything on the machine.
+
+Set three environment variables wherever `engram mcp` (or `engram serve`) actually runs:
+
+```bash
+ENGRAM_CLOUD_AUTOSYNC=1   # exact string "1" -- anything else is treated as disabled
+ENGRAM_CLOUD_TOKEN=<the bearer token configured above>
+ENGRAM_CLOUD_SERVER=http://192.168.0.221:18080
+```
+
+**Where to put these matters:**
+
+- **Shell profile** (`~/.zshrc` / `~/.bash_profile`), then restart the agent/terminal — recommended. `engram mcp` inherits its parent shell's environment, so this applies to every project without touching any per-agent config file, and survives `engram setup <agent>` / Gentle-AI re-runs.
+- **The agent's MCP config file directly** (e.g. Claude Code's bare-MCP `.claude/settings.json`, adding an `"env"` object to the `mcpServers.engram` entry) — only safe for a config file you maintain by hand. If Claude Code was set up via `engram setup claude-code`, that command owns `~/.claude/mcp/engram.json` and rewrites it on every re-run (plugin update, `engram setup` re-run, ...), silently dropping any `env` block you added there. Use the shell profile instead for anything set up that way.
+
+If either `ENGRAM_CLOUD_TOKEN` or `ENGRAM_CLOUD_SERVER` is missing, autosync logs an `[autosync] ERROR` and disables itself gracefully — the agent still starts.
+
 ## Updates
 
 Bump `ENGRAM_IMAGE_TAG` in the deployed `.env` (via the Ansible role's `engram_image_tag` variable) after reading the target release's notes, then re-run `make deploy-engram`. Follow upstream's [Release Policy](https://github.com/Gentleman-Programming/engram/blob/main/docs/RELEASE-POLICY.md) before moving off an RC once a stable `v2.x` exists.
