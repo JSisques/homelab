@@ -1,0 +1,7 @@
+---
+- name: Deploy Keycloak
+  hosts: keycloak
+  become: true
+
+  roles:
+    - keycloak

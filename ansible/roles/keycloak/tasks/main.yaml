@@ -1,0 +1,35 @@
+---
+- name: Assert Keycloak credentials are provided
+  ansible.builtin.assert:
+    that:
+      - keycloak_admin_password | length > 0
+      - keycloak_postgres_password | length > 0
+    fail_msg: >-
+      keycloak_admin_password / keycloak_postgres_password are not set.
+      Provide real credentials via Ansible Vault or CI secrets before
+      running this role (see services/keycloak/README.md) — never deploy
+      Keycloak with an empty admin or database password.
+
+- name: Create Keycloak application directory
+  ansible.builtin.file:
+    path: "{{ keycloak_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Keycloak environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ keycloak_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy Keycloak Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/keycloak/compose.yaml"
+    dest: "{{ keycloak_app_dir }}/compose.yaml"
+    mode: "0644"
+
+- name: Start Keycloak
+  community.docker.docker_compose_v2:
+    project_src: "{{ keycloak_app_dir }}"
+    state: present
