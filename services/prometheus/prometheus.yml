@@ -113,6 +113,10 @@ scrape_configs:
         labels:
           instance: "it-tools"
       - targets:
+          - "192.168.0.221:9100"
+        labels:
+          instance: "engram"
+      - targets:
           - "192.168.0.211:9100"
         labels:
           instance: "n8n"
@@ -198,6 +202,10 @@ scrape_configs:
           - "192.168.0.214:9080"
         labels:
           instance: "it-tools"
+      - targets:
+          - "192.168.0.221:9080"
+        labels:
+          instance: "engram"
       - targets:
           - "192.168.0.211:9080"
         labels:

@@ -420,6 +420,27 @@ services:
       scheme: http
       module: http_2xx
 
+  engram:
+    name: Engram
+    category: Automation
+    tier: internal  # holds AI agent memory; authenticated cloud API, LAN only
+    url: http://192.168.0.221:18080
+    icon: mdi-brain
+
+    homepage:
+      enabled: true
+      description: Shared persistent memory backend for AI coding agents
+
+    uptime:
+      # HTTP check should target GET /health, not "/", same caveat as
+      # cookidoo-mcp: the generated monitor probes the bare url above.
+      enabled: true
+
+    # No native /metrics endpoint, and root "/" isn't a mapped route on
+    # the cloud runtime (only /health, /sync/*, /dashboard/*) so a
+    # blackbox_exporter http_2xx probe against the bare url would always
+    # read as down — same reasoning as cookidoo-mcp/obsidian below.
+
   cookidoo-mcp:
     name: Cookidoo MCP
     category: Automation

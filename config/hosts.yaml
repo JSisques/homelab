@@ -88,6 +88,18 @@ hosts:
     role:
       - it-tools
 
+  engram:
+    type: lxc
+    platform: proxmox
+    octet: 221
+    # Go binary + Postgres for chunk storage/dashboard, same profile as
+    # n8n but lighter (no Node app, no workflow execution spikes).
+    cpu: 2
+    memory: 1536
+    disk: 12
+    role:
+      - engram
+
   n8n:
     type: lxc
     platform: proxmox

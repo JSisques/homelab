@@ -8,6 +8,9 @@
 - name: Deploy cookidoo-mcp
   ansible.builtin.import_playbook: cookidoo-mcp.yaml
 
+- name: Deploy engram
+  ansible.builtin.import_playbook: engram.yaml
+
 - name: Deploy Obsidian
   ansible.builtin.import_playbook: obsidian.yaml
 

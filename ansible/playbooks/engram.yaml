@@ -1,0 +1,7 @@
+---
+- name: Deploy engram
+  hosts: engram
+  become: true
+
+  roles:
+    - engram

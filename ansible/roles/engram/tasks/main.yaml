@@ -1,0 +1,39 @@
+---
+- name: Assert Engram Cloud secrets are provided
+  ansible.builtin.assert:
+    that:
+      - engram_cloud_token | length > 0
+      - engram_cloud_admin | length > 0
+      - engram_jwt_secret | length > 0
+      - engram_cloud_token != engram_cloud_admin
+      - engram_jwt_secret != "engram-dev-jwt-secret-for-local-smoke-1234"
+    fail_msg: >-
+      engram_cloud_token / engram_cloud_admin / engram_jwt_secret are not
+      set (or engram_cloud_token/engram_cloud_admin collide, or
+      engram_jwt_secret is upstream's insecure smoke-test default).
+      Provide real, distinct values via Ansible Vault or CI secrets before
+      running this role (see services/engram/README.md).
+
+- name: Create engram application directory
+  ansible.builtin.file:
+    path: "{{ engram_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy engram environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ engram_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy engram Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/engram/compose.yml"
+    dest: "{{ engram_app_dir }}/compose.yml"
+    mode: "0644"
+
+- name: Start engram
+  community.docker.docker_compose_v2:
+    project_src: "{{ engram_app_dir }}"
+    state: present
