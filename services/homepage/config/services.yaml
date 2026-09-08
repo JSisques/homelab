@@ -116,7 +116,7 @@
         description: VPN gateway — client and peer management dashboard
 - Security:
     - Keycloak:
-        href: http://192.168.0.221:8080
+        href: http://192.168.0.222:8080
         icon: keycloak.png
         description: Identity and access management
 - Utilities:

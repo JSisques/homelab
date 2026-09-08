@@ -45,7 +45,7 @@ services/keycloak/
 
 Postgres data lives on the NAS over **CIFS/SMB** (a `proxmox` share, `data/keycloak` subfolder — user/password auth), mounted on the **Proxmox host itself and bind-mounted into the LXC**, not mounted by Ansible inside the container. Unprivileged LXCs can't mount CIFS/NFS themselves (confirmed while building `services/rustfs/` and `services/minecraft/` — `mount error(1): Operation not permitted`, even with Proxmox's `features.mount = ["cifs", "nfs"]` flag set); `ansible/roles/keycloak/` does not manage this mount at all.
 
-Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `keycloak` LXC (`vm_id 221`) exists — create the `data/keycloak` folder inside the NAS's `proxmox` share first:
+Run this once on the **Proxmox host** (`192.168.0.157`), as root, after the `keycloak` LXC (`vm_id 222`) exists — create the `data/keycloak` folder inside the NAS's `proxmox` share first:
 
 ```bash
 mkdir -p /mnt/pve/keycloak
@@ -83,7 +83,7 @@ EOF
 systemctl daemon-reload
 systemctl enable --now mnt-pve-keycloak.mount
 
-pct set 221 -mp0 /mnt/pve/keycloak,mp=/mnt/nas/keycloak
+pct set 222 -mp0 /mnt/pve/keycloak,mp=/mnt/nas/keycloak
 ```
 
 The `pct set` step applies live to a running container (no reboot needed) but is **not tracked by Terraform** (adding a `mount_point` requires `root@pam`; this repo's API token is deliberately least-privilege) — if the LXC is ever destroyed and recreated, redo just that last `pct set` line (the systemd mount unit on the host survives on its own).
@@ -99,7 +99,7 @@ In the homelab deployment these come from Ansible Vault / CI secrets via the `ke
 Reached directly by its LAN `IP:port`, no reverse proxy in front of it (`tier: internal`, see `config/services.yaml`):
 
 ```text
-http://192.168.0.221:8080
+http://192.168.0.222:8080
 ```
 
 Not routed through Traefik or Cloudflared. Apps on the LAN (including k3s workloads, which share the same flat network) reach it directly by this IP:port for OIDC discovery/token/login endpoints, the same way they'd reach any other internal backend. If a public-facing (`personal`/`public` tier) app ever needs the login page itself reachable from outside the LAN, add an `external:` block (see `jellyfin` in `config/services.yaml`) rather than changing Keycloak's own tier.

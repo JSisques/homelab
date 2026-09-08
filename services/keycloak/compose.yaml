@@ -20,7 +20,7 @@ services:
       # No reverse proxy in front of this LXC (internal tier — plain LAN
       # IP:port, see config/services.yaml) so Keycloak is told its own
       # hostname directly instead of trusting X-Forwarded-* headers.
-      - KC_HOSTNAME=192.168.0.221
+      - KC_HOSTNAME=192.168.0.222
       - KC_HOSTNAME_STRICT=false
       - KC_HTTP_ENABLED=true
 

@@ -752,7 +752,7 @@ services:
     # if a public-facing app ever needs the login page itself reachable
     # from outside the LAN.
     tier: internal
-    url: http://192.168.0.221:8080
+    url: http://192.168.0.222:8080
     icon: keycloak.png
 
     homepage:

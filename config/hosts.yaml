@@ -353,7 +353,7 @@ hosts:
   keycloak:
     type: lxc
     platform: proxmox
-    octet: 221
+    octet: 222
     # Keycloak (Java/Quarkus) + a dedicated Postgres, sized as the
     # identity provider for external apps/k3s workloads (not just a
     # lightweight SSO front for a couple of internal tools). Postgres
