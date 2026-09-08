@@ -109,6 +109,18 @@ engram cloud enroll <project>
 engram sync --cloud --project <project>
 ```
 
+### With Gentle-AI
+
+[Gentle-AI](https://github.com/Gentleman-Programming/gentle-ai) (the installer that configures Claude Code/Cursor/OpenCode/etc.) only wires up Engram's local MCP integration — it has no Cloud step of its own. Cloud config lives in `~/.engram/cloud.json`, managed by the `engram` CLI directly, independent of whichever tool installed it. So after Gentle-AI has installed `engram` on a machine, point it at this server with the same commands above:
+
+```bash
+engram cloud config --server http://192.168.0.221:18080
+export ENGRAM_CLOUD_TOKEN=<the bearer token configured above>   # put this in the shell profile, not a one-off export, so it survives new sessions
+engram cloud enroll <project>   # repeat per repo you want replicated here
+```
+
+`gentle-ai doctor` reports Engram reachability, so it picks up the Cloud server once configured this way — nothing to change in Gentle-AI itself.
+
 ## Updates
 
 Bump `ENGRAM_IMAGE_TAG` in the deployed `.env` (via the Ansible role's `engram_image_tag` variable) after reading the target release's notes, then re-run `make deploy-engram`. Follow upstream's [Release Policy](https://github.com/Gentleman-Programming/engram/blob/main/docs/RELEASE-POLICY.md) before moving off an RC once a stable `v2.x` exists.
