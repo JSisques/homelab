@@ -1,0 +1,18 @@
+---
+engram_app_dir: /opt/engram
+
+engram_image_tag: v2.0.0-rc.8
+
+engram_postgres_db: engram_cloud
+engram_postgres_user: engram
+# Must be overridden via Ansible Vault or CI secrets. Never commit a real value.
+engram_postgres_password: changeme
+
+engram_cloud_allowed_projects: "*"
+
+# No sane defaults for these three — the role refuses to run without real
+# values (see tasks/main.yaml), same approach as the cloudflared /
+# cookidoo-mcp roles.
+engram_cloud_token: ""
+engram_cloud_admin: ""
+engram_jwt_secret: ""

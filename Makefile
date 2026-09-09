@@ -5,12 +5,16 @@ TF_DIR       := terraform/proxmox
 ANSIBLE_DIR  := ansible
 INVENTORY    := inventory/hosts.yml
 
-SERVICES := it-tools n8n cookidoo-mcp obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail portainer-agent k3s-server rustfs minecraft stirling-pdf soulfire portfolio uptime-kuma-sync
+SERVICES := it-tools n8n cookidoo-mcp engram obsidian jellyfin downloads monitoring homepage uptime-kuma cloudflared adguard-home-1 adguard-home-2 adguard-home-sync traefik wireguard pbs promtail portainer-agent k3s-server rustfs minecraft stirling-pdf soulfire portfolio uptime-kuma-sync
 
 ANSIBLE_EXTRA_VARS := \
 	-e "n8n_postgres_password=$${N8N_POSTGRES_PASSWORD}" \
 	-e "cookidoo_mcp_email=$${COOKIDOO_MCP_EMAIL}" \
 	-e "cookidoo_mcp_password=$${COOKIDOO_MCP_PASSWORD}" \
+	-e "engram_postgres_password=$${ENGRAM_POSTGRES_PASSWORD}" \
+	-e "engram_cloud_token=$${ENGRAM_CLOUD_TOKEN}" \
+	-e "engram_cloud_admin=$${ENGRAM_CLOUD_ADMIN}" \
+	-e "engram_jwt_secret=$${ENGRAM_JWT_SECRET}" \
 	-e "cloudflared_credentials_json=$${CLOUDFLARED_CREDS_JSON}" \
 	-e "monitoring_alertmanager_telegram_bot_token=$${TELEGRAM_BOT_TOKEN}" \
 	-e "monitoring_alertmanager_telegram_chat_id=$${TELEGRAM_CHAT_ID}" \
