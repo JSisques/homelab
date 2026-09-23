@@ -4,7 +4,7 @@ Public landing page for Sisques Labs —
 [github.com/sisques-labs/sisques-labs-landing](https://github.com/sisques-labs/sisques-labs-landing).
 A static Astro site, built into a Docker image and pushed to
 `sisqueslabs/sisques-labs-landing` on Docker Hub (and mirrored to
-`ghcr.io/sisques-labs/sisques-labs-landing`) by that repo's release-train CI.
+`ghcr.io/sisques-labs/sisques-labs-landing`) by that repo's trunk-based CI.
 This Application just pulls and runs the latest published image — the
 cluster never builds the site itself.
 
