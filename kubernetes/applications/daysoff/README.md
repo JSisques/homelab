@@ -4,7 +4,7 @@ Vacation bridge calculator —
 [github.com/sisques-labs/daysoff](https://github.com/sisques-labs/daysoff).
 A static Astro site, built into a Docker image and pushed to
 `sisqueslabs/daysoff` on Docker Hub (and mirrored to
-`ghcr.io/sisques-labs/daysoff`) by that repo's release-train CI. This
+`ghcr.io/sisques-labs/daysoff`) by that repo's trunk-based CI. This
 Application just pulls and runs the latest published image — the cluster
 never builds the site itself.
 
