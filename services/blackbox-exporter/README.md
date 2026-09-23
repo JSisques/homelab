@@ -15,6 +15,7 @@ Prometheus scrapes `blackbox-exporter:9115/probe` with the target and module pas
 - `http_2xx` — standard HTTP probe, expects any 2xx response. Used for services with valid TLS or plain HTTP.
 - `http_2xx_insecure` — same, but skips TLS certificate verification and accepts any status code. Used for self-signed backends (Proxmox Backup Server, the K3s apiserver) where even a 401/403 response proves the service is up.
 - `tcp_connect` — plain TCP connect probe, for non-HTTP services. Not currently used by any target but available.
+- `http_status_up` — same as `http_2xx`, but also fails the probe unless the response body contains `"status":"UP"`. For services where HTTP 200 doesn't mean actually healthy (e.g. SonarQube's `/api/system/status` returns 200 while still `STARTING`).
 
 ## Adding a target
 

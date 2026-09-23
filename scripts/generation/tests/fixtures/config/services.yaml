@@ -15,6 +15,12 @@ services:
       type: prometheus
       endpoint: http://10.10.10.50:8080/metrics
 
+    blackbox:
+      enabled: true
+      port: 8080
+      scheme: http
+      module: http_2xx
+
   vm-app:
     name: VM App
     category: Applications
@@ -34,6 +40,7 @@ services:
       enabled: true
       port: 9000
       scheme: http
+      path: /health
       module: http_2xx
 
   public-app:

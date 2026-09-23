@@ -157,6 +157,31 @@ uptime:
 
 Additional Uptime Kuma configuration can be added as required.
 
+### Blackbox Probing
+
+The `blackbox` section opts a service into `blackbox_exporter` probing — for services with no native Prometheus `/metrics` endpoint, so they still get an up/down + latency signal.
+
+```yaml
+blackbox:
+  enabled: true
+  port: 9000
+  scheme: http
+  path: /api/system/status
+  module: http_status_up
+```
+
+* `enabled` — must be `true` for the service to appear in the generated target list.
+* `port` — the backend port to probe. The address itself is resolved from `config/hosts.yaml` (host key first, then `role`), same as Traefik.
+* `scheme` — `http` or `https`. Omit it entirely for a non-HTTP probe (e.g. `tcp_connect`), which targets a bare `host:port` with no URL.
+* `path` — optional, appended after `port` only when `scheme` is set (e.g. `/api/system/status`). Defaults to empty, i.e. probing the bare `scheme://host:port`.
+* `module` — the `blackbox_exporter` module name to probe with (`http_2xx`, `http_2xx_insecure`, `tcp_connect`, ...). See `services/blackbox-exporter/README.md` for the available modules and how to add one.
+
+This information is consumed by:
+
+```text
+scripts/generation/generate-blackbox.sh
+```
+
 ## `hosts.yaml`
 
 `hosts.yaml` describes the physical and virtual machines that make up the homelab, plus the `network:` block every one of them resolves its address against.
