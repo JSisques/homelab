@@ -48,11 +48,14 @@ ADDR_MAP="$(yq -c --argjson resolved "$(resolve_addresses "${HOSTS_SOURCE}")" '
 ' "${HOSTS_SOURCE}")"
 
 # Services opt in with a `blackbox: {enabled: true, port: <n>, scheme:
-# http|https, module: <name>}` block. Targets are grouped by module,
-# since blackbox_exporter's file_sd_config groups targets that share a
-# probe module under one `labels:` block (group_by sorts+groups
-# alphabetically by module, which also happens to match the original
-# hand-authored file's http_2xx / http_2xx_insecure split).
+# http|https, path: <optional>, module: <name>}` block. `path` is
+# appended after `port` only when `scheme` is set, for services (e.g.
+# SonarQube's /api/system/status) where a bare http_2xx on "/" would
+# report healthy too early. Targets are grouped by module, since
+# blackbox_exporter's file_sd_config groups targets that share a probe
+# module under one `labels:` block (group_by sorts+groups alphabetically
+# by module, which also happens to match the original hand-authored
+# file's http_2xx / http_2xx_insecure split).
 # shellcheck disable=SC2016 # single quotes are intentional: this is a jq filter, not a shell expansion
 TARGET_GROUPS="$(yq -r --argjson addrs "${ADDR_MAP}" '
   [ .services
@@ -70,7 +73,7 @@ TARGET_GROUPS="$(yq -r --argjson addrs "${ADDR_MAP}" '
         # service actually declares a scheme (http/https probes).
         target: (
           if .value.blackbox.scheme then
-            "\(.value.blackbox.scheme)://\($addrs[$name]):\(.value.blackbox.port)"
+            "\(.value.blackbox.scheme)://\($addrs[$name]):\(.value.blackbox.port)\(.value.blackbox.path // "")"
           else
             "\($addrs[$name]):\(.value.blackbox.port)"
           end
@@ -96,8 +99,9 @@ TARGET_GROUPS="$(yq -r --argjson addrs "${ADDR_MAP}" '
 # Prometheus file_sd_config: targets for services with no native /metrics
 # endpoint, probed by blackbox_exporter instead for basic up/down +
 # latency. A service opts in with a `blackbox: {enabled: true, port: <n>,
-# scheme: http|https, module: <name>}` block in config/services.yaml —
-# see services/blackbox-exporter/README.md for available modules.
+# scheme: http|https, path: <optional>, module: <name>}` block in
+# config/services.yaml — see services/blackbox-exporter/README.md for
+# available modules.
 EOF
     echo "${TARGET_GROUPS}"
 } >"${OUTPUT}"
