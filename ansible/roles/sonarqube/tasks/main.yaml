@@ -1,0 +1,55 @@
+---
+- name: Assert SonarQube JDBC password is provided
+  ansible.builtin.assert:
+    that:
+      - sonarqube_jdbc_password | length > 0
+      - sonarqube_jdbc_password != "changeme"
+    fail_msg: >-
+      sonarqube_jdbc_password is not set (or is still the insecure
+      "changeme" placeholder). Provide a real, distinct value via Ansible
+      Vault or CI secrets before running this role (see
+      services/sonarqube/README.md).
+
+- name: Set vm.max_map_count for Elasticsearch (SonarQube dependency)
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: "524288"
+    sysctl_file: /etc/sysctl.d/99-sonarqube.conf
+    reload: true
+
+- name: Set fs.file-max for SonarQube's file descriptor requirements
+  ansible.posix.sysctl:
+    name: fs.file-max
+    value: "131072"
+    sysctl_file: /etc/sysctl.d/99-sonarqube.conf
+    reload: true
+
+- name: Create SonarQube application directory
+  ansible.builtin.file:
+    path: "{{ sonarqube_app_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy SonarQube environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ sonarqube_app_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Deploy SonarQube Docker Compose file
+  ansible.builtin.copy:
+    src: "{{ services_dir }}/sonarqube/compose.yml"
+    dest: "{{ sonarqube_app_dir }}/compose.yml"
+    mode: "0644"
+
+- name: Start SonarQube
+  community.docker.docker_compose_v2:
+    project_src: "{{ sonarqube_app_dir }}"
+    state: present
+
+- name: Prune unused Docker images
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: false
