@@ -39,6 +39,10 @@
   labels:
     module: http_2xx_insecure
 - targets:
+    - "http://192.168.0.223:9000/api/system/status"  # sonarqube
+  labels:
+    module: http_status_up
+- targets:
     - "192.168.0.217:25565"  # minecraft
   labels:
     module: tcp_connect
