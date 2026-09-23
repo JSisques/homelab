@@ -869,3 +869,32 @@ services:
       port: 80
       scheme: http
       module: http_2xx
+
+  sonarqube:
+    name: SonarQube
+    category: Applications
+    # Code-quality server on its own VM (config/hosts.yaml) — needs
+    # vm.max_map_count=524288, not namespaced, so it can't share the
+    # k3s-server VM or an LXC. No monitoring: block — no native
+    # /metrics endpoint is scraped; blackbox below covers it instead.
+    tier: internal
+    url: http://192.168.0.223:9000
+    icon: sonarqube.png
+
+    homepage:
+      enabled: true
+      description: Code quality and static analysis
+
+    uptime:
+      enabled: true
+
+    # GET /api/system/status returns 200 well before the service is
+    # actually usable (e.g. while status is STARTING), so this probes the
+    # response body for "status":"UP" instead of a bare http_2xx check —
+    # see services/blackbox-exporter/README.md.
+    blackbox:
+      enabled: true
+      port: 9000
+      scheme: http
+      path: /api/system/status
+      module: http_status_up

@@ -375,6 +375,19 @@ hosts:
     role:
       - portfolio
 
+  sonarqube:
+    type: vm
+    platform: proxmox
+    octet: 223
+    cpu: 4
+    memory: 6144
+    # SonarQube bundles Elasticsearch, which refuses to start once disk
+    # usage passes 90% and documents a 30GB minimum for a small (<=1M LOC)
+    # instance — 32 gives it that floor plus a little headroom.
+    disk: 32
+    role:
+      - sonarqube
+
   raspberrypi-01:
     type: physical
     platform: raspberry-pi

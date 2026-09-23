@@ -68,6 +68,9 @@
 - name: Deploy Portfolio
   ansible.builtin.import_playbook: portfolio.yaml
 
+- name: Deploy SonarQube
+  ansible.builtin.import_playbook: sonarqube.yaml
+
 # Runs last: reads config/services.yaml's full catalog, so it wants
 # every other service's Terraform/Ansible state to already be current.
 - name: Sync Uptime Kuma monitors from config/services.yaml

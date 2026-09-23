@@ -1,0 +1,10 @@
+---
+sonarqube_app_dir: /opt/sonarqube
+
+sonarqube_postgres_db: sonar
+sonarqube_postgres_user: sonar
+
+# No sane default — the role refuses to run without a real value (see
+# tasks/main.yaml), same approach as the engram / cookidoo-mcp roles.
+# Used as both POSTGRES_PASSWORD and SONAR_JDBC_PASSWORD.
+sonarqube_jdbc_password: ""

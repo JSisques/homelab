@@ -1,0 +1,61 @@
+services:
+  sonarqube:
+    image: sonarqube:26.9.0.129388-community
+    container_name: sonarqube
+    restart: unless-stopped
+
+    ports:
+      - "9000:9000"
+
+    environment:
+      - SONAR_JDBC_URL=${SONAR_JDBC_URL}
+      - SONAR_JDBC_USERNAME=${SONAR_JDBC_USERNAME}
+      - SONAR_JDBC_PASSWORD=${SONAR_JDBC_PASSWORD}
+
+    ulimits:
+      nofile: 131072
+      nproc: 8192
+
+    # Upstream-recommended hardening: no writable root filesystem beyond
+    # the named volumes below plus /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
+
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    container_name: sonarqube-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_temp:
+  postgres_data:
