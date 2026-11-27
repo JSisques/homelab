@@ -52,7 +52,7 @@ Kubernetes is intentionally absent ([ADR-0001](decisions/0001-single-deployment-
 flowchart TD
   A["PR squash-merged to main"] --> B["release-please opens a release PR"]
   B --> C["Merge the release PR<br/>tag vX.Y.Z"]
-  C --> D["Agent polls GitHub<br/>and sees the new tag"]
+  C --> D["Agent polls GitHub every 5 minutes<br/>and sees the new tag"]
   D --> E{"Major greater than<br/>DEPLOY_MAX_MAJOR?"}
   E -- "yes" --> F["Stop and alert"]
   F --> G["Owner performs the manual steps<br/>from the release notes<br/>and raises DEPLOY_MAX_MAJOR"]
@@ -60,7 +60,7 @@ flowchart TD
   E -- "no" --> H{"Version marked<br/>as failed?"}
   H -- "yes" --> I["Skip it"]
   H -- "no" --> J["OpenTofu + Ansible"]
-  J --> K{"Services healthy<br/>after a few minutes?"}
+  J --> K{"Changed containers healthy<br/>within 10 minutes?"}
   K -- "yes" --> L["Publish the deployed<br/>version as a metric"]
   K -- "no" --> M["Mark the version as failed<br/>do not retry, alert"]
   M --> N["Owner: git revert or fix"]

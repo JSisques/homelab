@@ -17,8 +17,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 |-------|---------------------|-----------|
 | IP addressing plan | How the LXC containers are addressed, starting with `control` | Release 1 |
 | CI checks | Which checks run (gitleaks is agreed). Needed for the release-please workflow and for branch protection ([repository.md](repository.md)) | Release 1 |
-| Agent polling interval | How often the agent checks GitHub for releases | Release 1 |
-| Health check window | How long the agent watches services after a deploy | Release 1 |
 | Dead man's switch provider | Healthchecks.io was suggested | Release 2 |
 | Service data backups | Code, secrets, and state are covered, but not the data services generate from now on (n8n workflows, the engram database, Jellyfin metadata). What is backed up, where, and the role of PBS | First domain with persistent data |
 | Renovate commit types | Which commit type each kind of update gets (patch, minor, major image bumps), given that it decides whether and how a release is created ([ADR-0014](decisions/0014-dependency-updates-with-renovate.md)) | First domain with a service |
