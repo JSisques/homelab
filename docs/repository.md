@@ -9,13 +9,16 @@ Applied on 2026-11-27 with the `github-repo-setup` skill and verified through th
 | Setting | Value |
 |---------|-------|
 | Visibility | Public |
+| Description | `Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone.` |
+| Topics | `ansible`, `docker-compose`, `gitops`, `homelab`, `infrastructure-as-code`, `lxc`, `proxmox`, `release-please`, `self-hosted` |
+| Default branch | `main` |
 | `allow_squash_merge` | `true` |
 | `allow_merge_commit` | `false` |
 | `allow_rebase_merge` | `false` |
 | `delete_branch_on_merge` | `true` |
 | `squash_merge_commit_title` | `PR_TITLE` |
 | `squash_merge_commit_message` | `PR_BODY` |
-| Default local branch | `main` (renamed from `master` before the first commit) |
+| Local branch | Renamed from `master` to `main` before the first commit |
 
 The repository was made public so branch protection is available on the free plan; private repositories return `HTTP 403: Upgrade to GitHub Pro or make this repository public`.
 
@@ -29,6 +32,12 @@ gh api -X PATCH repos/JSisques/homelab \
 
 gh repo edit JSisques/homelab --visibility public --accept-visibility-change-consequences
 
+gh api -X PATCH repos/JSisques/homelab \
+  -f "description=Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone."
+
+gh repo edit JSisques/homelab --add-topic \
+  homelab,infrastructure-as-code,proxmox,ansible,docker-compose,gitops,self-hosted,release-please,lxc
+
 git branch -m master main
 git config branch.main.merge refs/heads/main
 ```
@@ -37,8 +46,8 @@ git config branch.main.merge refs/heads/main
 
 Blocked until two things exist:
 
-1. The `main` branch on GitHub (first push).
-2. A first CI run, which provides the real check names. Check names are never invented.
+1. ~~The `main` branch on GitHub.~~ Done: first push on 2026-11-27 (`d18f418`).
+2. A first CI run, which provides the real check names. Check names are never invented. On 2026-11-27, `main` had 0 check runs.
 
 Then:
 
