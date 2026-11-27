@@ -8,7 +8,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | Recommendation | Needed by | Where |
 |-------|----------------|-----------|-------|
-| OpenTofu instead of Terraform | OpenTofu, for client-side state encryption | Release 1 | [ADR-0007](decisions/0007-encrypted-remote-state.md) |
 | Name of the shared folder | `platform/` | Release 1 | [domains.md](domains.md) |
 | Domains beyond monitoring, tools, and media | See the catalog | Each domain's release | [domains.md](domains.md) |
 | One VPN or two | Two: admin VPN in `network`, friends VPN in `games` | `network` / `games` | [ADR-0010](decisions/0010-vpn-only-access.md) |

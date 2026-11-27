@@ -1,6 +1,6 @@
 # ADR-0007: Encrypted remote infrastructure state
 
-- **Status:** Accepted for the requirements. Tool and provider proposed
+- **Status:** Accepted for the requirements and OpenTofu (confirmed 2026-11-27). Bucket provider proposed
 - **Date:** 2026-11-27
 
 ## Decision
