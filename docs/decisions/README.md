@@ -25,6 +25,7 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0019](0019-diagrams-as-code-with-mermaid.md) | Diagrams as code with Mermaid | Accepted |
 | [0020](0020-deploy-agent-in-python.md) | Deploy agent in Python, run by a systemd timer | Accepted |
 | [0021](0021-agent-polling-and-health-check.md) | Agent polling interval and health check | Accepted |
+| [0022](0022-ip-addressing-plan.md) | IP addressing plan | Accepted (VMID convention proposed) |
 
 ## Statuses
 

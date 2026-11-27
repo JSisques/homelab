@@ -127,6 +127,16 @@ Details: [ADR-0011](decisions/0011-greenfield-bootstrap.md), [ADR-0015](decision
 
 Host updates reboot only in a fixed window, Saturday at 04:00, when needed and with no deploy running ([ADR-0016](decisions/0016-host-reboot-maintenance-window.md)). Host network changes are breaking changes and are applied by hand with console access.
 
+## Addressing
+
+| Range | Contents |
+|-------|----------|
+| `.10` – `.199` | Router DHCP. Also holds the NAS at `.111` |
+| `.200` | Proxmox host |
+| `.201` – `.250` | LXC containers and VMs. `control` is `.201` |
+
+IP addresses belong to LXC containers, never to services: services are reached by name ([ADR-0022](decisions/0022-ip-addressing-plan.md)).
+
 ## Access
 
 Everything is reached through VPN. Nothing is published to the internet today ([ADR-0010](decisions/0010-vpn-only-access.md)).
