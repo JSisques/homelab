@@ -26,6 +26,7 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0020](0020-deploy-agent-in-python.md) | Deploy agent in Python, run by a systemd timer | Accepted |
 | [0021](0021-agent-polling-and-health-check.md) | Agent polling interval and health check | Accepted |
 | [0022](0022-ip-addressing-plan.md) | IP addressing plan | Accepted |
+| [0023](0023-ci-checks.md) | CI checks | Accepted |
 
 ## Statuses
 
