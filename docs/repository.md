@@ -57,7 +57,7 @@ Work is planned as atomic issues: one issue is one unit of behavior, delivered w
 | `platform` | Release 1, part 1: the ground every domain stands on, plus the repository baseline |
 | `control` | Release 1, part 2: the deploy agent, its LXC, release-please and the bootstrap |
 
-Milestones group work by domain; they are not versions (ADR-0013). Each later domain gets its own label and milestone when its work is planned.
+Milestones group work by domain; they are not versions ([ADR-0013](decisions/0013-first-version-and-pre-1-0-behaviour.md)). Each later domain gets its own label and milestone when its work is planned.
 
 ```bash
 gh label create platform --color 1D76DB --description "platform/ domain: host, LXC base, every-LXC base"
