@@ -27,6 +27,12 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0021](0021-agent-polling-and-health-check.md) | Agent polling interval and health check | Accepted |
 | [0022](0022-ip-addressing-plan.md) | IP addressing plan | Accepted |
 | [0023](0023-ci-checks.md) | CI checks | Accepted |
+| [0024](0024-plan-guard-before-apply.md) | The agent refuses plans that destroy or replace resources | Accepted |
+| [0025](0025-lxc-definitions-in-domain-inventories.md) | LXC definitions live in one inventory file per domain | Accepted |
+| [0026](0026-single-opentofu-state.md) | One OpenTofu root module and one state, on a bucket created by hand | Accepted |
+| [0027](0027-release-please-token.md) | release-please uses a fine-grained token, and only `main` can be deployed | Accepted |
+| [0028](0028-bpg-provider-and-debian-13.md) | `bpg/proxmox` provider pinned to an exact version, and Debian 13 in every LXC | Accepted |
+| [0029](0029-renovate-app-and-commit-types.md) | Renovate runs as the hosted app, and its commit type follows what reaches the server | Accepted |
 
 ## Statuses
 
