@@ -55,7 +55,15 @@ What describes the infrastructure never lives inside it.
 | Secrets (`.env`) | Control LXC, NAS copy, encrypted offsite copy | [ADR-0006](decisions/0006-secrets-management.md) |
 | OpenTofu state | External versioned bucket, encrypted client-side | [ADR-0007](decisions/0007-encrypted-remote-state.md) |
 
-Recovery starts with the bootstrap script, which creates only the control LXC; the agent does the rest ([ADR-0011](decisions/0011-greenfield-bootstrap.md)).
+Recovery:
+
+1. Boot the server from a Proxmox ISO with an embedded `answer.toml`; it installs unattended ([ADR-0015](decisions/0015-automated-proxmox-host.md)).
+2. Ansible configures the host: repositories, NAS mount, network bridge, iGPU.
+3. The bootstrap script creates only the control LXC; the agent does the rest ([ADR-0011](decisions/0011-greenfield-bootstrap.md)).
+
+## Host maintenance
+
+Host updates reboot only in a fixed window, Saturday at 04:00, when needed and with no deploy running ([ADR-0016](decisions/0016-host-reboot-maintenance-window.md)). Host network changes are breaking changes and are applied by hand with console access.
 
 ## Access
 

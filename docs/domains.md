@@ -2,7 +2,7 @@
 
 A **domain** is a folder in this repository and a functional area of the homelab. A domain can contain several LXC containers when the grouping rule requires it.
 
-> **Status: proposed.** `monitoring`, `tools`, and `downloads` (here `media`) were chosen by the owner. The remaining domains and the name `platform` are recommendations pending confirmation ([open questions](open-questions.md)).
+> **Status: proposed.** `monitoring`, `tools`, and `downloads` (here `media`) were chosen by the owner, and `platform` was confirmed ([ADR-0017](decisions/0017-platform-includes-the-host.md)). The remaining domains are recommendations pending confirmation ([open questions](open-questions.md)).
 
 ## Grouping rule
 
@@ -18,7 +18,7 @@ From [ADR-0002](decisions/0002-lxc-grouping-rule.md):
 
 | Domain | LXC containers | Why it is split |
 |--------|----------------|-----------------|
-| `platform` | Installed inside every LXC: common base, Docker, Grafana Alloy | — |
+| `platform` | Proxmox host (`answer.toml`, host configuration), LXC base, and inside every LXC: common base, Docker, Grafana Alloy | — |
 | `control` | deploy agent | — |
 | `monitoring` | prometheus, grafana, loki, alertmanager, tempo, otel-collector, uptime-kuma | — |
 | `network` | adguard-home-1 \| adguard-home-2 + adguard-home-sync \| traefik + homepage \| wireguard | DNS replicas (redundancy); WireGuard accepts internet connections |
@@ -31,7 +31,7 @@ From [ADR-0002](decisions/0002-lxc-grouping-rule.md):
 
 ### What goes in `platform`
 
-**Only what is installed inside every machine** — the ground every domain stands on. Anything that runs in one place and is reached over the network belongs to a domain, even if every other service uses it. Traefik and Prometheus are used by everything, and they live in `network` and `monitoring`.
+**The ground every domain stands on**: the Proxmox host, what creates an empty LXC, and what is installed inside every LXC. Anything that runs in one place and is reached over the network belongs to a domain, even if every other service uses it. Traefik and Prometheus are used by everything, and they live in `network` and `monitoring`.
 
 ## Removed from the old repository
 
