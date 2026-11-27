@@ -1,6 +1,6 @@
 # ADR-0003: Repository layout by domain
 
-- **Status:** Accepted (folder name `platform` proposed)
+- **Status:** Accepted (folder name `platform` confirmed 2026-11-27, extended by [ADR-0017](0017-platform-includes-the-host.md))
 - **Date:** 2026-11-27
 
 ## Decision

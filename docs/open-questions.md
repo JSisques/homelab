@@ -8,7 +8,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | Recommendation | Needed by | Where |
 |-------|----------------|-----------|-------|
-| Name of the shared folder | `platform/` | Release 1 | [domains.md](domains.md) |
 | Domains beyond monitoring, tools, and media | See the catalog | Each domain's release | [domains.md](domains.md) |
 | One VPN or two | Two: admin VPN in `network`, friends VPN in `games` | `network` / `games` | [ADR-0010](decisions/0010-vpn-only-access.md) |
 
@@ -16,7 +15,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | What needs deciding | Needed by |
 |-------|---------------------|-----------|
-| Location of the host configuration | Where the Proxmox host's Ansible configuration and the `answer.toml` template live in the repository ([ADR-0015](decisions/0015-automated-proxmox-host.md)) | Release 1 |
 | State bucket provider | AWS S3 or Backblaze B2; both support versioning. Cloudflare R2 does not | Release 1 |
 | Deploy agent implementation | systemd timer + `ansible-pull`, or a custom script | Release 1 |
 | IP addressing plan | How the LXC containers are addressed, starting with `control` | Release 1 |

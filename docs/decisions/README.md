@@ -6,7 +6,7 @@ Each file records one decision: what was decided, why, and what it costs.
 |-----|----------|--------|
 | [0001](0001-single-deployment-path.md) | One deployment path, no Kubernetes | Accepted |
 | [0002](0002-lxc-grouping-rule.md) | LXC grouping rule | Accepted |
-| [0003](0003-repository-layout-by-domain.md) | Repository layout by domain | Accepted (folder name proposed) |
+| [0003](0003-repository-layout-by-domain.md) | Repository layout by domain | Accepted |
 | [0004](0004-pull-based-deployment.md) | Pull-based deployment | Accepted |
 | [0005](0005-deploy-observability.md) | Deployment observability and dead man's switch | Accepted |
 | [0006](0006-secrets-management.md) | Secrets management | Accepted |
@@ -20,6 +20,7 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0014](0014-dependency-updates-with-renovate.md) | Dependency updates with Renovate | Accepted |
 | [0015](0015-automated-proxmox-host.md) | Automated Proxmox host | Accepted |
 | [0016](0016-host-reboot-maintenance-window.md) | Host reboot maintenance window | Accepted |
+| [0017](0017-platform-includes-the-host.md) | `platform/` includes the Proxmox host | Accepted |
 
 ## Statuses
 
