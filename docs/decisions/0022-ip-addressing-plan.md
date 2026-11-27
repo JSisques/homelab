@@ -1,6 +1,6 @@
 # ADR-0022: IP addressing plan
 
-- **Status:** Accepted (VMID convention proposed)
+- **Status:** Accepted, including the VMID convention (confirmed 2026-11-27)
 - **Date:** 2026-11-27
 
 ## Decision
