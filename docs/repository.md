@@ -81,7 +81,13 @@ Then:
 gh api repos/JSisques/homelab/commits/main/check-runs --jq '.check_runs[].name'
 ```
 
-Require them with `strict: true`, no required reviews, no admin enforcement, and no push restrictions.
+Require them with `strict: true`, a pull request before merging (0 approvals), **admin enforcement with no bypass**, and no push restrictions. Admin enforcement is required because `RELEASE_PLEASE_TOKEN` acts as the owner: with a bypass, the token could push straight to `main` ([ADR-0027](decisions/0027-release-please-token.md)).
+
+## Secrets
+
+| Secret | Used by | Details |
+|--------|---------|---------|
+| `RELEASE_PLEASE_TOKEN` | release-please workflow only, on push to `main` | Fine-grained token, this repository only, no expiration ([ADR-0027](decisions/0027-release-please-token.md)) |
 
 ## Public repository rules
 

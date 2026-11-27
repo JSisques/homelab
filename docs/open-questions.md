@@ -13,16 +13,7 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 ## Needed to build release 1
 
-Found while planning the release 1 work. Each one is tracked as a `decision` issue.
-
-| Topic | What needs deciding | Issue |
-|-------|---------------------|-------|
-| Verifying changes before merge | There is no staging environment, and CI cannot reach Proxmox to run `tofu plan`. Today the agent is the first to see what a change does, while applying it | [#5](https://github.com/JSisques/homelab/issues/5) |
-| Single source of truth for LXC definitions | Where the "one place in the code" of [ADR-0022](decisions/0022-ip-addressing-plan.md) is, so OpenTofu and Ansible do not keep separate lists | [#6](https://github.com/JSisques/homelab/issues/6) |
-| OpenTofu state layout | One state or one per domain, and how the state bucket itself is created | [#7](https://github.com/JSisques/homelab/issues/7) |
-| release-please token | Release PRs opened with `GITHUB_TOKEN` do not trigger CI, so branch protection would block them | [#8](https://github.com/JSisques/homelab/issues/8) |
-| Proxmox provider and LXC base OS | Which OpenTofu provider (`bpg/proxmox` is the first candidate) and which Debian release | [#9](https://github.com/JSisques/homelab/issues/9) |
-| Renovate | Hosted Mend app or a workflow, and which commit type each update gets | [#10](https://github.com/JSisques/homelab/issues/10) |
+None left. The six questions found while planning release 1 were answered by [ADR-0024](decisions/0024-plan-guard-before-apply.md) to [ADR-0029](decisions/0029-renovate-app-and-commit-types.md).
 
 ## Not discussed yet
 
