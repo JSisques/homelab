@@ -11,13 +11,25 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 | Domains beyond monitoring, tools, and media | See the catalog | Each domain's release | [domains.md](domains.md) |
 | One VPN or two | Two: admin VPN in `network`, friends VPN in `games` | `network` / `games` | [ADR-0010](decisions/0010-vpn-only-access.md) |
 
+## Needed to build release 1
+
+Found while planning the release 1 work. Each one is tracked as a `decision` issue.
+
+| Topic | What needs deciding | Issue |
+|-------|---------------------|-------|
+| Verifying changes before merge | There is no staging environment, and CI cannot reach Proxmox to run `tofu plan`. Today the agent is the first to see what a change does, while applying it | [#5](https://github.com/JSisques/homelab/issues/5) |
+| Single source of truth for LXC definitions | Where the "one place in the code" of [ADR-0022](decisions/0022-ip-addressing-plan.md) is, so OpenTofu and Ansible do not keep separate lists | [#6](https://github.com/JSisques/homelab/issues/6) |
+| OpenTofu state layout | One state or one per domain, and how the state bucket itself is created | [#7](https://github.com/JSisques/homelab/issues/7) |
+| release-please token | Release PRs opened with `GITHUB_TOKEN` do not trigger CI, so branch protection would block them | [#8](https://github.com/JSisques/homelab/issues/8) |
+| Proxmox provider and LXC base OS | Which OpenTofu provider (`bpg/proxmox` is the first candidate) and which Debian release | [#9](https://github.com/JSisques/homelab/issues/9) |
+| Renovate | Hosted Mend app or a workflow, and which commit type each update gets | [#10](https://github.com/JSisques/homelab/issues/10) |
+
 ## Not discussed yet
 
 | Topic | What needs deciding | Needed by |
 |-------|---------------------|-----------|
 | Dead man's switch provider | Healthchecks.io was suggested | Release 2 |
 | Service data backups | Code, secrets, and state are covered, but not the data services generate from now on (n8n workflows, the engram database, Jellyfin metadata). What is backed up, where, and the role of PBS | First domain with persistent data |
-| Renovate commit types | Which commit type each kind of update gets (patch, minor, major image bumps), given that it decides whether and how a release is created ([ADR-0014](decisions/0014-dependency-updates-with-renovate.md)) | First domain with a service |
 | Internal domain and TLS | Which domain name services use on the LAN, and how Traefik gets certificates for it ([ADR-0022](decisions/0022-ip-addressing-plan.md)) | `network` |
 | DNS during host reboots | Both AdGuard replicas live on the same host, so the LAN has no DNS while it reboots ([ADR-0016](decisions/0016-host-reboot-maintenance-window.md)) | `network` |
 | Portainer | Keep it, or drop it because clicking changes into containers creates drift from Git | Release 2 |

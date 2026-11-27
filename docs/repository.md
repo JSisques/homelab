@@ -10,7 +10,7 @@ Applied on 2026-11-27 with the `github-repo-setup` skill and verified through th
 |---------|-------|
 | Visibility | Public |
 | Description | `Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone.` |
-| Topics | `ansible`, `docker-compose`, `gitops`, `homelab`, `infrastructure-as-code`, `lxc`, `proxmox`, `release-please`, `self-hosted` |
+| Topics | `ansible`, `docker-compose`, `gitops`, `homelab`, `infrastructure-as-code`, `lxc`, `opentofu`, `proxmox`, `release-please`, `self-hosted` |
 | Default branch | `main` |
 | `allow_squash_merge` | `true` |
 | `allow_merge_commit` | `false` |
@@ -36,10 +36,35 @@ gh api -X PATCH repos/JSisques/homelab \
   -f "description=Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone."
 
 gh repo edit JSisques/homelab --add-topic \
-  homelab,infrastructure-as-code,proxmox,ansible,docker-compose,gitops,self-hosted,release-please,lxc
+  homelab,infrastructure-as-code,proxmox,ansible,docker-compose,gitops,self-hosted,release-please,lxc,opentofu
 
 git branch -m master main
 git config branch.main.merge refs/heads/main
+```
+
+## Labels and milestones
+
+Work is planned as atomic issues: one issue is one unit of behavior, delivered with its tests and documentation in one pull request.
+
+| Label | Meaning |
+|-------|---------|
+| `platform` | `platform/` domain: Proxmox host, LXC base, base of every LXC |
+| `control` | `control/` domain: deploy agent and its LXC |
+| `decision` | A design decision to take and record as an ADR |
+
+| Milestone | Contents |
+|-----------|----------|
+| `platform` | Release 1, part 1: the ground every domain stands on, plus the repository baseline |
+| `control` | Release 1, part 2: the deploy agent, its LXC, release-please and the bootstrap |
+
+Milestones group work by domain; they are not versions ([ADR-0013](decisions/0013-first-version-and-pre-1-0-behaviour.md)). Each later domain gets its own label and milestone when its work is planned.
+
+```bash
+gh label create platform --color 1D76DB --description "platform/ domain: host, LXC base, every-LXC base"
+gh label create control --color 5319E7 --description "control/ domain: deploy agent and its LXC"
+gh label create decision --color FBCA04 --description "A design decision to take and record as an ADR"
+gh api repos/JSisques/homelab/milestones -f title=platform -f "description=..."
+gh api repos/JSisques/homelab/milestones -f title=control -f "description=..."
 ```
 
 ## Pending: branch protection
