@@ -17,16 +17,16 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | What needs deciding | Needed by |
 |-------|---------------------|-----------|
-| Proxmox host | Whether installing Proxmox and configuring the host (network bridges, NAS mount, iGPU passthrough) is done by hand or lives in the repository. Today the design assumes Proxmox already exists, which is exactly the kind of knowledge that has to be remembered | Release 1 |
+| Location of the host configuration | Where the Proxmox host's Ansible configuration and the `answer.toml` template live in the repository ([ADR-0015](decisions/0015-automated-proxmox-host.md)) | Release 1 |
 | State bucket provider | AWS S3 or Backblaze B2; both support versioning. Cloudflare R2 does not | Release 1 |
 | Deploy agent implementation | systemd timer + `ansible-pull`, or a custom script | Release 1 |
 | IP addressing plan | How the LXC containers are addressed, starting with `control` | Release 1 |
 | CI checks | Which checks run (gitleaks is agreed). Needed for the release-please workflow and for branch protection ([repository.md](repository.md)) | Release 1 |
-| First version | Start at `v0.1.0` or `v1.0.0`. Under semver, a `0.x` minor bump counts as breaking, which changes how `DEPLOY_MAX_MAJOR` gates releases ([ADR-0008](decisions/0008-release-versioning.md)) | Release 1 |
 | Agent polling interval | How often the agent checks GitHub for releases | Release 1 |
 | Health check window | How long the agent watches services after a deploy | Release 1 |
 | Dead man's switch provider | Healthchecks.io was suggested | Release 2 |
 | Service data backups | Code, secrets, and state are covered, but not the data services generate from now on (n8n workflows, the engram database, Jellyfin metadata). What is backed up, where, and the role of PBS | First domain with persistent data |
-| Image and dependency updates | Who bumps container image versions and tool versions (the old repository used Renovate), and which commit type each update gets, given that every release is deployed automatically | First domain with a service |
+| Renovate commit types | Which commit type each kind of update gets (patch, minor, major image bumps), given that it decides whether and how a release is created ([ADR-0014](decisions/0014-dependency-updates-with-renovate.md)) | First domain with a service |
+| DNS during host reboots | Both AdGuard replicas live on the same host, so the LAN has no DNS while it reboots ([ADR-0016](decisions/0016-host-reboot-maintenance-window.md)) | `network` |
 | Portainer | Keep it, or drop it because clicking changes into containers creates drift from Git | Release 2 |
 | Order of the remaining domains | After `control`, `platform`, and `monitoring` ([ADR-0012](decisions/0012-rollout-order.md)) | Release 3 |

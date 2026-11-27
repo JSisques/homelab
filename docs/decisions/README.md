@@ -16,6 +16,10 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0010](0010-vpn-only-access.md) | VPN-only access | Accepted (VPN layout proposed) |
 | [0011](0011-greenfield-bootstrap.md) | Greenfield start and bootstrap | Accepted |
 | [0012](0012-rollout-order.md) | Rollout order: one domain per release | Accepted |
+| [0013](0013-first-version-and-pre-1-0-behaviour.md) | First version and pre-1.0 behaviour | Accepted |
+| [0014](0014-dependency-updates-with-renovate.md) | Dependency updates with Renovate | Accepted |
+| [0015](0015-automated-proxmox-host.md) | Automated Proxmox host | Accepted |
+| [0016](0016-host-reboot-maintenance-window.md) | Host reboot maintenance window | Accepted |
 
 ## Statuses
 
