@@ -10,7 +10,7 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0004](0004-pull-based-deployment.md) | Pull-based deployment | Accepted |
 | [0005](0005-deploy-observability.md) | Deployment observability and dead man's switch | Accepted |
 | [0006](0006-secrets-management.md) | Secrets management | Accepted |
-| [0007](0007-encrypted-remote-state.md) | Encrypted remote infrastructure state | Accepted (bucket provider proposed) |
+| [0007](0007-encrypted-remote-state.md) | Encrypted remote infrastructure state | Accepted |
 | [0008](0008-release-versioning.md) | Release versioning and the major-version gate | Accepted |
 | [0009](0009-roll-forward.md) | Roll forward instead of rollback | Accepted |
 | [0010](0010-vpn-only-access.md) | VPN-only access | Accepted (VPN layout proposed) |
@@ -21,6 +21,7 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0015](0015-automated-proxmox-host.md) | Automated Proxmox host | Accepted |
 | [0016](0016-host-reboot-maintenance-window.md) | Host reboot maintenance window | Accepted |
 | [0017](0017-platform-includes-the-host.md) | `platform/` includes the Proxmox host | Accepted |
+| [0018](0018-state-bucket-on-aws-s3.md) | State bucket on AWS S3 | Accepted |
 
 ## Statuses
 

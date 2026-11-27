@@ -15,7 +15,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | What needs deciding | Needed by |
 |-------|---------------------|-----------|
-| State bucket provider | AWS S3 or Backblaze B2; both support versioning. Cloudflare R2 does not | Release 1 |
 | Deploy agent implementation | systemd timer + `ansible-pull`, or a custom script | Release 1 |
 | IP addressing plan | How the LXC containers are addressed, starting with `control` | Release 1 |
 | CI checks | Which checks run (gitleaks is agreed). Needed for the release-please workflow and for branch protection ([repository.md](repository.md)) | Release 1 |

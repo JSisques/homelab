@@ -1,6 +1,6 @@
 # ADR-0007: Encrypted remote infrastructure state
 
-- **Status:** Accepted for the requirements and OpenTofu (confirmed 2026-11-27). Bucket provider proposed
+- **Status:** Accepted, including OpenTofu (confirmed 2026-11-27). Bucket provider resolved by [ADR-0018](0018-state-bucket-on-aws-s3.md)
 - **Date:** 2026-11-27
 
 ## Decision
