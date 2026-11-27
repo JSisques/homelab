@@ -10,7 +10,7 @@ Applied on 2026-11-27 with the `github-repo-setup` skill and verified through th
 |---------|-------|
 | Visibility | Public |
 | Description | `Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone.` |
-| Topics | `ansible`, `docker-compose`, `gitops`, `homelab`, `infrastructure-as-code`, `lxc`, `proxmox`, `release-please`, `self-hosted` |
+| Topics | `ansible`, `docker-compose`, `gitops`, `homelab`, `infrastructure-as-code`, `lxc`, `opentofu`, `proxmox`, `release-please`, `self-hosted` |
 | Default branch | `main` |
 | `allow_squash_merge` | `true` |
 | `allow_merge_commit` | `false` |
@@ -36,7 +36,7 @@ gh api -X PATCH repos/JSisques/homelab \
   -f "description=Infrastructure as code for my homelab: one Proxmox server, rebuilt from this repository alone."
 
 gh repo edit JSisques/homelab --add-topic \
-  homelab,infrastructure-as-code,proxmox,ansible,docker-compose,gitops,self-hosted,release-please,lxc
+  homelab,infrastructure-as-code,proxmox,ansible,docker-compose,gitops,self-hosted,release-please,lxc,opentofu
 
 git branch -m master main
 git config branch.main.merge refs/heads/main
