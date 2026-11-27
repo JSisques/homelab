@@ -15,7 +15,6 @@ Undecided topics, ordered by the release that needs them. When one is resolved, 
 
 | Topic | What needs deciding | Needed by |
 |-------|---------------------|-----------|
-| Deploy agent implementation | systemd timer + `ansible-pull`, or a custom script | Release 1 |
 | IP addressing plan | How the LXC containers are addressed, starting with `control` | Release 1 |
 | CI checks | Which checks run (gitleaks is agreed). Needed for the release-please workflow and for branch protection ([repository.md](repository.md)) | Release 1 |
 | Agent polling interval | How often the agent checks GitHub for releases | Release 1 |

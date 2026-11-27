@@ -32,3 +32,4 @@ Everything about this homelab is documented here. If it is not in `docs/`, it do
 - **Recommendations are not decisions.** An ADR that was proposed but not explicitly confirmed stays `Proposed` until it is.
 - **Partly proposed ADRs.** When the proposed part is confirmed, only the status line changes. When it is rejected, a new ADR supersedes it.
 - **Documentation is in English.**
+- **Diagrams are Mermaid, inside the Markdown** ([ADR-0019](decisions/0019-diagrams-as-code-with-mermaid.md)). A change that alters what a diagram shows updates the diagram in the same pull request. Undecided parts are labelled `proposed` or `not decided`.

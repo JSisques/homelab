@@ -22,6 +22,8 @@ Each file records one decision: what was decided, why, and what it costs.
 | [0016](0016-host-reboot-maintenance-window.md) | Host reboot maintenance window | Accepted |
 | [0017](0017-platform-includes-the-host.md) | `platform/` includes the Proxmox host | Accepted |
 | [0018](0018-state-bucket-on-aws-s3.md) | State bucket on AWS S3 | Accepted |
+| [0019](0019-diagrams-as-code-with-mermaid.md) | Diagrams as code with Mermaid | Accepted |
+| [0020](0020-deploy-agent-in-python.md) | Deploy agent in Python, run by a systemd timer | Accepted |
 
 ## Statuses
 
