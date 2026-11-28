@@ -24,4 +24,5 @@ None left. The six questions found while planning release 1 were answered by [AD
 | Internal domain and TLS | Which domain name services use on the LAN, and how Traefik gets certificates for it ([ADR-0022](decisions/0022-ip-addressing-plan.md)) | `network` |
 | DNS during host reboots | Both AdGuard replicas live on the same host, so the LAN has no DNS while it reboots ([ADR-0016](decisions/0016-host-reboot-maintenance-window.md)) | `network` |
 | Portainer | Keep it, or drop it because clicking changes into containers creates drift from Git | Release 2 |
+| Hermes development agent | A Hermes agent with OpenCode and Claude Code installed so it can develop. Which domain and LXC hosts it, how it authenticates to both tools and to Git (secrets per [ADR-0006](decisions/0006-secrets-management.md)), what it may change, and whether its changes go through the single deployment path ([ADR-0001](decisions/0001-single-deployment-path.md)) | Before its domain |
 | Order of the remaining domains | After `control`, `platform`, and `monitoring` ([ADR-0012](decisions/0012-rollout-order.md)) | Release 3 |
